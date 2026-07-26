@@ -35,4 +35,10 @@ abstract class RepositoryModule {
     abstract fun bindConfigRepository(
         impl: ConfigRepositoryImpl
     ): ConfigRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWeeklyPlanRepository(
+        impl: WeeklyPlanRepositoryImpl
+    ): WeeklyPlanRepository
 }

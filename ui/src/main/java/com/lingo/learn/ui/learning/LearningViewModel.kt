@@ -59,7 +59,8 @@ data class QuizState(
 class LearningViewModel @Inject constructor(
     private val asrRepository: AsrRepository,
     private val voiceRecorder: VoiceRecorder,
-    private val systemTtsHelper: SystemTtsHelper
+    private val systemTtsHelper: SystemTtsHelper,
+    private val weeklyPlanRepository: com.lingo.learn.domain.repository.WeeklyPlanRepository
 ) : ViewModel() {
 
     private val _stage = MutableStateFlow(LearningStage.IMMERSION)
@@ -86,8 +87,15 @@ class LearningViewModel @Inject constructor(
     val summary: StateFlow<SessionSummary?> = _summary.asStateFlow()
 
     init {
-        // Load subtitle lines into the audio player for Stage 1
-        audioPlayer.loadSubtitles(_session.value.subtitleLines)
+        viewModelScope.launch {
+            try {
+                val loadedSession = weeklyPlanRepository.getCachedLearningSession(1)
+                _session.value = loadedSession
+                audioPlayer.loadSubtitles(loadedSession.subtitleLines)
+            } catch (e: Exception) {
+                audioPlayer.loadSubtitles(_session.value.subtitleLines)
+            }
+        }
     }
 
     //region Stage 1: Immersion

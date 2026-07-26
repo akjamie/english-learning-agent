@@ -70,7 +70,7 @@ fun DiagnosisScreen(
             DiagnosticQuestion(
                 id = 1,
                 type = QuestionType.LISTENING_EMOJI,
-                title = "Listen and Choose",
+                title = "1. Listen and Choose",
                 description = "Tap the speaker to listen, then select the word you heard:",
                 voicePrompt = "apple",
                 options = listOf("🍎 Apple", "🍌 Banana", "🐱 Cat"),
@@ -79,7 +79,7 @@ fun DiagnosisScreen(
             DiagnosticQuestion(
                 id = 2,
                 type = QuestionType.VOCABULARY,
-                title = "Opposite Word Select",
+                title = "2. Opposite Word Select",
                 description = "Choose the opposite word of 'Hot':",
                 options = listOf("Cold", "Warm", "Big", "Dry"),
                 correctAnswer = "Cold"
@@ -87,7 +87,7 @@ fun DiagnosisScreen(
             DiagnosticQuestion(
                 id = 3,
                 type = QuestionType.PHONICS,
-                title = "Phonics & Sound",
+                title = "3. Phonics & Sound",
                 description = "Which word starts with the /p/ sound?",
                 options = listOf("Pig", "Big", "Dig", "Wig"),
                 correctAnswer = "Pig"
@@ -95,17 +95,58 @@ fun DiagnosisScreen(
             DiagnosticQuestion(
                 id = 4,
                 type = QuestionType.SORT_WORDS,
-                title = "Sentence Ordering",
+                title = "4. Sentence Ordering (Basic)",
                 description = "Tap the word cards to arrange them into a correct sentence:",
                 wordsForSort = listOf("like", "apples", "I"),
                 correctAnswer = "I like apples"
             ),
             DiagnosticQuestion(
                 id = 5,
+                type = QuestionType.VOCABULARY,
+                title = "5. Grammar & Tense",
+                description = "Select the correct word to complete: 'She ___ to school every day.'",
+                options = listOf("walks", "walked", "walking", "walk"),
+                correctAnswer = "walks"
+            ),
+            DiagnosticQuestion(
+                id = 6,
+                type = QuestionType.LISTENING_EMOJI,
+                title = "6. Listening Comprehension",
+                description = "Tap the speaker to listen, then choose the animal:",
+                voicePrompt = "cat",
+                options = listOf("🐶 Dog", "🐱 Cat", "🐰 Rabbit"),
+                correctAnswer = "🐱 Cat"
+            ),
+            DiagnosticQuestion(
+                id = 7,
+                type = QuestionType.VOCABULARY,
+                title = "7. Contextual Antonym",
+                description = "The rabbit is very fast, but the turtle is ___:",
+                options = listOf("slow", "quick", "tall", "heavy"),
+                correctAnswer = "slow"
+            ),
+            DiagnosticQuestion(
+                id = 8,
+                type = QuestionType.VOCABULARY,
+                title = "8. Idiom & Everyday English",
+                description = "What does 'A piece of cake' mean?",
+                options = listOf("Very easy", "Delicious dessert", "Hard problem", "A small birthday party"),
+                correctAnswer = "Very easy"
+            ),
+            DiagnosticQuestion(
+                id = 9,
+                type = QuestionType.SORT_WORDS,
+                title = "9. Sentence Ordering (Intermediate)",
+                description = "Arrange the words into a correct sentence:",
+                wordsForSort = listOf("play", "on", "We", "football", "Sunday"),
+                correctAnswer = "We play football on Sunday"
+            ),
+            DiagnosticQuestion(
+                id = 10,
                 type = QuestionType.SPEAK_ALOUD,
-                title = "Speak Aloud",
-                description = "Press & hold the mic button at the bottom to speak:",
-                voicePrompt = "It is a sunny day."
+                title = "10. Speak Aloud Challenge",
+                description = "Press & hold the mic button at the bottom to read aloud:",
+                voicePrompt = "Practice makes perfect every day."
             )
         )
     }
@@ -444,8 +485,8 @@ fun DiagnosisScreen(
                             if (isRecording) {
                                 isRecording = false
                                 isEvaluated = true
-                                evaluationScore = (82..96).random()
-                                totalScore += evaluationScore
+                                evaluationScore = (85..98).random()
+                                totalScore += (evaluationScore / 10)
                                 answerState = true
                                 lingoExpr = LingoExpression.CELEBRATING
                             }
@@ -468,7 +509,7 @@ fun DiagnosisScreen(
                             val isCorrect = userAns.trim().equals(currentQuestion.correctAnswer.trim(), ignoreCase = true)
                             answerState = isCorrect
                             if (isCorrect) {
-                                totalScore += 20
+                                totalScore += 10
                                 lingoExpr = LingoExpression.CELEBRATING
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             } else {

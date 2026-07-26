@@ -10,10 +10,7 @@ import javax.inject.Singleton
 
 /**
  * Wraps Android system [TextToSpeech] as a zero-cost offline fallback for word and
- * sentence pronunciation. Used when the MiniMax TTS API is not configured or fails.
- *
- * Per design doc section 3.4 (TTS degradation strategy): system TTS quality is lower
- * but guarantees the learning flow remains functional without network or API keys.
+ * sentence pronunciation. Handles asynchronous initialization with a pending speak queue.
  */
 @Singleton
 class SystemTtsHelper @Inject constructor(
@@ -21,30 +18,44 @@ class SystemTtsHelper @Inject constructor(
 ) {
     private var tts: TextToSpeech? = null
     private val isReady = AtomicBoolean(false)
+    private var pendingSpeakRequest: Pair<String, Float>? = null
 
     init {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.US
+                val result = tts?.setLanguage(Locale.US)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    tts?.setLanguage(Locale.ENGLISH)
+                }
                 isReady.set(true)
+                // Flush any pending speak request queued during async init
+                pendingSpeakRequest?.let { (text, rate) ->
+                    speak(text, rate)
+                    pendingSpeakRequest = null
+                }
             }
         }
     }
 
     /**
-     * Speaks the given text. If TTS is not yet ready, the call is silently ignored.
+     * Speaks the given text. Queues the request if TTS is still initializing.
      */
     fun speak(text: String, rate: Float = 1.0f) {
+        if (text.isBlank()) return
+
         if (isReady.get()) {
             tts?.apply {
+                stop()
                 setSpeechRate(rate)
                 speak(text, TextToSpeech.QUEUE_FLUSH, null, "lingo_tts_${System.currentTimeMillis()}")
             }
+        } else {
+            pendingSpeakRequest = Pair(text, rate)
         }
     }
 
     /**
-     * Releases TTS resources. Call when the learning session is destroyed.
+     * Releases TTS resources.
      */
     fun shutdown() {
         tts?.stop()
