@@ -1,0 +1,43 @@
+# Gradle files
+.gradle/
+build/
+*/build/
+
+# Android Studio / IntelliJ files
+.idea/
+*.iml
+*.ipr
+*.iws
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# Downloaded binaries and archives
+*.zip
+yes.txt
+
+# Log & Dump files
+*.log
+*.stackdump
+
+# Compilation outputs
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Key stores
+*.keystore
+*.jks
+*.pepk
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*~

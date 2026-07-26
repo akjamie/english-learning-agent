@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: Lingo the fox mascot face (vector, scales without artifacts) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Left ear outer -->
+    <path android:fillColor="#FF7052" android:pathData="M23,42 L34,14 L48,36 Z" />
+    <!-- Right ear outer -->
+    <path android:fillColor="#FF7052" android:pathData="M60,36 L74,14 L85,42 Z" />
+    <!-- Left inner ear -->
+    <path android:fillColor="#FFB3A7" android:pathData="M28,40 L34,22 L43,36 Z" />
+    <!-- Right inner ear -->
+    <path android:fillColor="#FFB3A7" android:pathData="M65,36 L74,22 L80,40 Z" />
+
+    <!-- Face shape (orange rounded) -->
+    <path android:fillColor="#FF7052"
+        android:pathData="M28,44 C28,35 36,31 45,31 L63,31 C72,31 80,35 80,44 L80,60 C80,75 68,86 54,88 C40,86 28,75 28,60 Z" />
+
+    <!-- White cheek and snout area -->
+    <path android:fillColor="#FFFDF5"
+        android:pathData="M35,57 C35,70 44,79 54,81 C64,79 73,70 73,57 C73,66 64,72 54,72 C44,72 35,66 35,57 Z" />
+
+    <!-- Left eye -->
+    <path android:fillColor="#2C3E50"
+        android:pathData="M40.5,50 a3.5,4 0 1,0 7,0 a3.5,4 0 1,0 -7,0" />
+    <!-- Right eye -->
+    <path android:fillColor="#2C3E50"
+        android:pathData="M60.5,50 a3.5,4 0 1,0 7,0 a3.5,4 0 1,0 -7,0" />
+    <!-- Eye highlights -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M43,49 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M63,49 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0" />
+
+    <!-- Nose -->
+    <path android:fillColor="#2C3E50" android:pathData="M49,61 L59,61 L54,66 Z" />
+
+    <!-- Smile -->
+    <path android:strokeColor="#2C3E50" android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M46,69 Q54,75 62,69" />
+
+    <!-- Left blush -->
+    <path android:fillColor="#FFB3A7" android:fillAlpha="0.6"
+        android:pathData="M35,60 a4.5,3 0 1,0 9,0 a4.5,3 0 1,0 -9,0" />
+    <!-- Right blush -->
+    <path android:fillColor="#FFB3A7" android:fillAlpha="0.6"
+        android:pathData="M64,60 a4.5,3 0 1,0 9,0 a4.5,3 0 1,0 -9,0" />
+</vector>
