@@ -32,16 +32,15 @@
 ---
 
 ## Sprint 2: 每日学习核心流程 (第 3-4 周) - [x]
-- [x] **[Impl]** 环节 1：沉浸式导入音频播放器 (ExoPlayer 字幕逐句高亮、新词弹出卡片与浮动气泡)
+- [x] **[Impl]** 环节 1：沉浸式导入音频播放器 (ExoPlayer/AudioPlayerController 字幕逐句高亮、新词弹出卡片与浮动气泡)
 - [x] **[Impl]** 环节 2：跟读麦克风录音与 ASR 口语评测 (Levenshtein 距离得分绿/橙高亮展示)
-- [x] **[Impl]** 环节 2：巩固小游戏 (拖拽配对 + 听音选图)
+- [x] **[Impl]** 环节 2：巩固小游戏 (拖拽配对 + 听音选图，支持 3-Combo 特效)
 - [x] **[Impl]** 环节 3：每日 Quiz 分段进度卡片与听力防外放耳机播放
 - [x] **[Impl]** 学习任务完成页成就统计与打卡天数动画
-- [x] **[Impl]** 自定义 App Icon (Lingo 狐狸 IP 形象自适应图标)
-- [x] **[Unit Test & Build]** 编写 `AsrRepositoryTest` / `AudioPlayerControllerTest` / `SampleLearningContentTest` 单元测试；运行 `./gradlew test assembleDebug`
-- [x] **[Review & Reflection]** 审查录音权限申请、音频缓存机制，记录音频处理 Skill 经验
+- [x] **[Unit Test & Build]** 运行 `AudioPlayerControllerTest` / `AsrRepositoryTest` / `SampleLearningContentTest` 单元测试；运行 `./gradlew test assembleDebug`
+- [x] **[Review & Reflection]** 审查录音权限申请、音频缓存机制，记录音频处理 Skill 经验至 `docs/dev-workflow.md`
 - [x] **[Docs Sync]** 同步更新 `readme.md` (播放器/录音架构) 与 `agents.md` (评测流程与 Prompt)
-- [x] **[MVP Delivery]** 验证 Sprint 2 阶段可运行 APK (支持完整音频播放与跟读评测)
+- [x] **[MVP Delivery]** 验证 Sprint 2 阶段可运行 APK (支持完整音频播放、跟读评测、小游戏与 Quiz)
 
 ---
 
