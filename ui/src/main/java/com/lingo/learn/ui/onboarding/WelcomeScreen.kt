@@ -25,6 +25,7 @@ import com.lingo.learn.ui.components.LingoExpression
 @Composable
 fun WelcomeScreen(
     onStartClick: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Soft vertical gradient background
@@ -52,7 +53,17 @@ fun WelcomeScreen(
             .fillMaxSize()
             .background(gradientBrush)
             .padding(24.dp)
+            .statusBarsPadding()
     ) {
+        // Top right gear button for Settings
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            androidx.compose.material3.IconButton(onClick = onOpenSettings) {
+                Text("⚙️", fontSize = 24.sp)
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()

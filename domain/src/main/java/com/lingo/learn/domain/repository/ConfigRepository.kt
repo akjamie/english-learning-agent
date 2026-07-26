@@ -1,0 +1,33 @@
+package com.lingo.learn.domain.repository
+
+/**
+ * Clean Architecture domain repository interface for configuration settings.
+ */
+interface ConfigRepository {
+    fun getBaseUrl(): String
+    fun setBaseUrl(value: String)
+
+    fun getAuthToken(): String
+    fun setAuthToken(value: String)
+
+    fun getGroupId(): String
+    fun setGroupId(value: String)
+
+    fun getPrimaryModel(): String
+    fun setPrimaryModel(value: String)
+
+    fun getFallbackModel(): String
+    fun setFallbackModel(value: String)
+
+    fun getTtsModel(): String
+    fun setTtsModel(value: String)
+
+    fun getAsrModel(): String
+    fun setAsrModel(value: String)
+
+    fun getAsrScoreThreshold(): Int
+    fun setAsrScoreThreshold(value: Int)
+
+    fun getMonthlyTokenLimit(): Int
+    fun setMonthlyTokenLimit(value: Int)
+}

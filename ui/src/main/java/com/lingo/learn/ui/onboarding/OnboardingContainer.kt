@@ -16,6 +16,7 @@ enum class OnboardingStep {
 @Composable
 fun OnboardingContainer(
     onFinished: (grade: String, textbook: String, level: String) -> Unit,
+    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var currentStep by remember { mutableStateOf(OnboardingStep.Welcome) }
@@ -42,7 +43,8 @@ fun OnboardingContainer(
         when (step) {
             OnboardingStep.Welcome -> {
                 WelcomeScreen(
-                    onStartClick = { currentStep = OnboardingStep.GradeSelect }
+                    onStartClick = { currentStep = OnboardingStep.GradeSelect },
+                    onOpenSettings = onOpenSettings
                 )
             }
             OnboardingStep.GradeSelect -> {

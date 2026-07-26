@@ -34,36 +34,45 @@ class MainActivity : ComponentActivity() {
                     var isOnboardingCompleted by remember { mutableStateOf(false) }
                     var currentGrade by remember { mutableStateOf("Grade 4") }
                     var isLearning by remember { mutableStateOf(false) }
+                    var isSettingsOpen by remember { mutableStateOf(false) }
 
-                    // Toggle between Dashboard and Learning flow
-                    AnimatedContent(
-                        targetState = isLearning,
-                        transitionSpec = {
-                            slideInHorizontally { width -> width } + fadeIn() with
-                                    slideOutHorizontally { width -> -width } + fadeOut()
-                        },
-                        label = "MainNav"
-                    ) { learning ->
-                        if (!isOnboardingCompleted) {
-                            OnboardingContainer(
-                                onFinished = { grade, textbook, level ->
-                                    currentGrade = grade
-                                    isOnboardingCompleted = true
-                                    isLearning = true
-                                }
-                            )
-                        } else if (!learning) {
-                            DashboardScreen(
-                                grade = currentGrade,
-                                onStartLearning = { isLearning = true },
-                                onPlanClick = {},
-                                onErrorBookClick = {}
-                            )
-                        } else {
-                            LearningContainer(
-                                grade = currentGrade,
-                                onExit = { isLearning = false }
-                            )
+                    if (isSettingsOpen) {
+                        com.lingo.learn.ui.settings.SettingsScreen(
+                            onBack = { isSettingsOpen = false }
+                        )
+                    } else {
+                        // Toggle between Onboarding, Dashboard, and Learning flow
+                        AnimatedContent(
+                            targetState = isLearning,
+                            transitionSpec = {
+                                slideInHorizontally { width -> width } + fadeIn() with
+                                        slideOutHorizontally { width -> -width } + fadeOut()
+                            },
+                            label = "MainNav"
+                        ) { learning ->
+                            if (!isOnboardingCompleted) {
+                                OnboardingContainer(
+                                    onFinished = { grade, textbook, level ->
+                                        currentGrade = grade
+                                        isOnboardingCompleted = true
+                                        isLearning = true
+                                    },
+                                    onOpenSettings = { isSettingsOpen = true }
+                                )
+                            } else if (!learning) {
+                                DashboardScreen(
+                                    grade = currentGrade,
+                                    onStartLearning = { isLearning = true },
+                                    onPlanClick = {},
+                                    onErrorBookClick = {},
+                                    onSettingsClick = { isSettingsOpen = true }
+                                )
+                            } else {
+                                LearningContainer(
+                                    grade = currentGrade,
+                                    onExit = { isLearning = false }
+                                )
+                            }
                         }
                     }
                 }

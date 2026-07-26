@@ -57,6 +57,7 @@ fun DashboardScreen(
     onStartLearning: () -> Unit,
     onPlanClick: () -> Unit,
     onErrorBookClick: () -> Unit,
+    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var streakDays by remember { mutableStateOf(4) }
@@ -81,7 +82,7 @@ fun DashboardScreen(
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1. Header (grade title and streak flame)
+        // 1. Header (grade title, streak flame, and settings button)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -98,13 +99,19 @@ fun DashboardScreen(
                 )
                 Text(
                     text = stringResource(R.string.welcome_back),
-                    fontSize = 20.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2C3E50)
                 )
             }
 
-            StreakCounter(streakDays = streakDays)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StreakCounter(streakDays = streakDays)
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = onSettingsClick) {
+                    Text("⚙️", fontSize = 22.sp)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

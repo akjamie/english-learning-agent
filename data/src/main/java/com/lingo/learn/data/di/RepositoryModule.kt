@@ -29,4 +29,10 @@ abstract class RepositoryModule {
     abstract fun bindAsrRepository(
         impl: AsrRepositoryImpl
     ): AsrRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindConfigRepository(
+        impl: ConfigRepositoryImpl
+    ): ConfigRepository
 }
