@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.lingo.learn.ui.R
 import com.lingo.learn.ui.components.LingoAvatar
 import com.lingo.learn.ui.components.LingoExpression
+import androidx.compose.ui.platform.LocalContext
+import com.lingo.learn.ui.learning.SystemTtsHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -54,6 +56,12 @@ fun DiagnosisScreen(
     onDiagnosisFinished: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val ttsHelper = remember { SystemTtsHelper(context) }
+    DisposableEffect(Unit) {
+        onDispose { ttsHelper.shutdown() }
+    }
+
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -242,9 +250,11 @@ fun DiagnosisScreen(
                                         .background(if (isPlayingVoice) Color(0xFFFFECE5) else Color(0xFFFF7052))
                                         .clickable {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            val prompt = currentQuestion.voicePrompt ?: "apple"
+                                            ttsHelper.speak(prompt, 0.85f)
                                             coroutineScope.launch {
                                                 isPlayingVoice = true
-                                                delay(1000)
+                                                delay(1200)
                                                 isPlayingVoice = false
                                             }
                                         },
@@ -374,37 +384,70 @@ fun DiagnosisScreen(
             contentAlignment = Alignment.Center
         ) {
             if (currentQuestion.type == QuestionType.SPEAK_ALOUD) {
-                val scale by animateFloatAsState(if (isRecording) 1.25f else 1.0f, label = "MicScale")
-                
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .scale(scale)
-                        .clip(CircleShape)
-                        .background(if (isRecording) Color(0xFFFFE0E0) else Color(0xFFFFD449))
-                        .clickable(
-                            onClick = {
-                                if (!isEvaluated) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    coroutineScope.launch {
-                                        isRecording = true
-                                        delay(1500)
-                                        isRecording = false
-                                        isEvaluated = true
-                                        evaluationScore = (75..95).random()
-                                        totalScore += evaluationScore
-                                        answerState = true
-                                        lingoExpr = LingoExpression.CELEBRATING
+                if (isEvaluated) {
+                    Button(
+                        onClick = {
+                            if (currentQuestionIndex < questions.size - 1) {
+                                currentQuestionIndex++
+                                resetQuestionState()
+                            } else {
+                                val rating = when {
+                                    totalScore >= 80 -> "C"
+                                    totalScore >= 50 -> "B"
+                                    else -> "A"
+                                }
+                                onDiagnosisFinished(rating)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2ECC71),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = if (currentQuestionIndex < questions.size - 1) stringResource(R.string.next_question) else "Finish Evaluation 🚀",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    val scale by animateFloatAsState(if (isRecording) 1.25f else 1.0f, label = "MicScale")
+                    
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .scale(scale)
+                            .clip(CircleShape)
+                            .background(if (isRecording) Color(0xFFFFE0E0) else Color(0xFFFFD449))
+                            .clickable(
+                                onClick = {
+                                    if (!isEvaluated) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        coroutineScope.launch {
+                                            isRecording = true
+                                            delay(1500)
+                                            isRecording = false
+                                            isEvaluated = true
+                                            evaluationScore = (75..95).random()
+                                            totalScore += evaluationScore
+                                            answerState = true
+                                            lingoExpr = LingoExpression.CELEBRATING
+                                        }
                                     }
                                 }
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (isRecording) "🟥" else "🎤",
-                        fontSize = 28.sp
-                    )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isRecording) "🟥" else "🎤",
+                            fontSize = 28.sp
+                        )
+                    }
                 }
             } else {
                 val isAnswered = when (currentQuestion.type) {

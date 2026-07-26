@@ -49,6 +49,7 @@ class MainActivity : ComponentActivity() {
                                 onFinished = { grade, textbook, level ->
                                     currentGrade = grade
                                     isOnboardingCompleted = true
+                                    isLearning = true
                                 }
                             )
                         } else if (!learning) {
