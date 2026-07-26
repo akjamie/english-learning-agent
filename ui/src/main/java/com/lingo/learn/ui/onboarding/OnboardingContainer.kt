@@ -1,6 +1,8 @@
 package com.lingo.learn.ui.onboarding
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
@@ -24,18 +26,18 @@ fun OnboardingContainer(
     var selectedTextbook by remember { mutableStateOf("") }
     var calculatedLevel by remember { mutableStateOf("A") }
 
-    // Smooth slide horizontal animation transition
+    // Smooth slide horizontal animation transition with spring stiffness
     AnimatedContent(
         targetState = currentStep,
         transitionSpec = {
             if (targetState.ordinal > initialState.ordinal) {
                 // Slide right: new step enters from right, old exits to left
-                slideInHorizontally { width -> width } + fadeIn() with
-                        slideOutHorizontally { width -> -width } + fadeOut()
+                slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { width -> width } + fadeIn() togetherWith
+                        slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { width -> -width } + fadeOut()
             } else {
                 // Slide left: new step enters from left, old exits to right
-                slideInHorizontally { width -> -width } + fadeIn() with
-                        slideOutHorizontally { width -> width } + fadeOut()
+                slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { width -> -width } + fadeIn() togetherWith
+                        slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { width -> width } + fadeOut()
             }
         },
         label = "OnboardingTransition"

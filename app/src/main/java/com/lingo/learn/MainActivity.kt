@@ -45,8 +45,8 @@ class MainActivity : ComponentActivity() {
                         AnimatedContent(
                             targetState = isLearning,
                             transitionSpec = {
-                                slideInHorizontally { width -> width } + fadeIn() with
-                                        slideOutHorizontally { width -> -width } + fadeOut()
+                                slideInHorizontally(animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)) { width -> width } + fadeIn() togetherWith
+                                        slideOutHorizontally(animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)) { width -> -width } + fadeOut()
                             },
                             label = "MainNav"
                         ) { learning ->

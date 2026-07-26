@@ -201,15 +201,15 @@ private fun ReadAlongContent(
                 }
             }
         } else {
-            // Mic button for recording
+            Spacer(modifier = Modifier.weight(1f))
+            // Ergonomic bottom mic button for recording
             MicButton(
                 isRecording = readAlongState.isRecording,
                 onPressDown = { viewModel.startRecording() },
                 onPressUp = { viewModel.stopRecording() }
             )
         }
-
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

@@ -2,6 +2,7 @@ package com.lingo.learn.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,69 +19,105 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * A press-and-hold microphone button for voice recording.
+ * An ergonomic press-and-hold microphone button with glowing pulse animations.
  *
- * Per design spec 2.4.2: the child long-presses the mic to record, releases to
- * stop and trigger evaluation. The button scales up with a pulse animation while
- * recording to give strong visual feedback.
- *
- * @param isRecording Whether recording is currently active.
- * @param onPressDown Called when the user presses the button (start recording).
- * @param onPressUp Called when the user releases the button (stop + evaluate).
+ * Designed for comfortable bottom-screen thumb reach per design spec 2.4.2.
  */
 @Composable
 fun MicButton(
     isRecording: Boolean,
     onPressDown: () -> Unit,
     onPressUp: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    label: String? = null
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "MicPulse")
-    val pulseScale by infiniteTransition.animateFloat(
+    
+    // Smooth pulse ring scale during recording
+    val ringScale by infiniteTransition.animateFloat(
         initialValue = 1.0f,
-        targetValue = if (isRecording) 1.25f else 1.0f,
+        targetValue = if (isRecording) 1.45f else 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(600, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
         ),
-        label = "MicPulseScale"
+        label = "MicRingScale"
     )
 
-    val buttonColor = if (isRecording) Color(0xFFFF5E5E) else Color(0xFFFF7052)
-    val backgroundColor = if (isRecording) Color(0xFFFFECE5) else Color(0xFFFFFDF5)
+    val ringAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = if (isRecording) 0.0f else 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "MicRingAlpha"
+    )
+
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isRecording) 1.15f else 1.0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "ButtonScale"
+    )
+
+    val mainColor = if (isRecording) Color(0xFFFF5E5E) else Color(0xFFFFD449)
+    val ringColor = if (isRecording) Color(0xFFFF5E5E).copy(alpha = ringAlpha) else Color.Transparent
 
     Column(
-        modifier = modifier,
+        modifier = modifier.padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier
-                .size(80.dp)
-                .scale(pulseScale)
-                .clip(CircleShape)
-                .background(backgroundColor)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = {
-                            onPressDown()
-                            tryAwaitRelease()
-                            onPressUp()
-                        }
-                    )
-                },
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(96.dp)
         ) {
-            Text(
-                text = if (isRecording) "🎙️" else "🎤",
-                fontSize = 36.sp
-            )
+            // Outer glowing animated pulse ring
+            if (isRecording) {
+                Box(
+                    modifier = Modifier
+                        .size(88.dp)
+                        .scale(ringScale)
+                        .clip(CircleShape)
+                        .background(ringColor)
+                )
+            }
+
+            // Main interactive mic button
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .scale(buttonScale)
+                    .clip(CircleShape)
+                    .background(mainColor)
+                    .border(3.dp, if (isRecording) Color(0xFFFF8A8A) else Color(0xFFFFF0B3), CircleShape)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                onPressDown()
+                                try {
+                                    awaitRelease()
+                                } finally {
+                                    onPressUp()
+                                }
+                            }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isRecording) "🎙️" else "🎤",
+                    fontSize = 34.sp
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(6.dp))
+
         Text(
-            text = if (isRecording) "Recording... Speak now!" else "Hold to speak",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isRecording) Color(0xFFFF5E5E) else Color(0xFF7F8C8D)
+            text = label ?: if (isRecording) "Recording... Release when done!" else "Press & Hold to Speak 🎤",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isRecording) Color(0xFFFF5E5E) else Color(0xFF5C6FF2)
         )
     }
 }
