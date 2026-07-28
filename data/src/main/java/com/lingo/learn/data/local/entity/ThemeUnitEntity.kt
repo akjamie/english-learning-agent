@@ -1,10 +1,10 @@
-package com.lingo.learn.data.local.entity
+package org.akj.lingo.learn.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import com.lingo.learn.data.local.converter.AppTypeConverters
-import com.lingo.learn.domain.model.ThemeUnit
+import org.akj.lingo.learn.data.local.converter.AppTypeConverters
+import org.akj.lingo.learn.domain.model.ThemeUnit
 
 @Entity(tableName = "theme_unit")
 @TypeConverters(AppTypeConverters::class)

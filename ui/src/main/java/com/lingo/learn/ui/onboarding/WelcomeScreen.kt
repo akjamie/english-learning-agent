@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.onboarding
+package org.akj.lingo.learn.ui.onboarding
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -18,9 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lingo.learn.ui.R
-import com.lingo.learn.ui.components.LingoAvatar
-import com.lingo.learn.ui.components.LingoExpression
+import org.akj.lingo.learn.ui.R
+import org.akj.lingo.learn.ui.components.LingoAvatar
+import org.akj.lingo.learn.ui.components.LingoExpression
 
 @Composable
 fun WelcomeScreen(

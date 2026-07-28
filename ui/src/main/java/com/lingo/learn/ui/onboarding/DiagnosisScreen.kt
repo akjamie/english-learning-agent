@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.onboarding
+package org.akj.lingo.learn.ui.onboarding
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -23,11 +23,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lingo.learn.ui.R
-import com.lingo.learn.ui.components.LingoAvatar
-import com.lingo.learn.ui.components.LingoExpression
-import com.lingo.learn.ui.components.MicButton
-import com.lingo.learn.ui.learning.SystemTtsHelper
+import org.akj.lingo.learn.ui.R
+import org.akj.lingo.learn.ui.components.LingoAvatar
+import org.akj.lingo.learn.ui.components.LingoExpression
+import org.akj.lingo.learn.ui.components.MicButton
+import org.akj.lingo.learn.ui.learning.SystemTtsHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -54,7 +54,8 @@ enum class QuestionType {
 @Composable
 fun DiagnosisScreen(
     onDiagnosisFinished: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: DiagnosisViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
     val ttsHelper = remember { SystemTtsHelper(context) }
@@ -65,91 +66,25 @@ fun DiagnosisScreen(
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
 
-    val questions = remember {
-        listOf(
-            DiagnosticQuestion(
-                id = 1,
-                type = QuestionType.LISTENING_EMOJI,
-                title = "1. Listen and Choose",
-                description = "Tap the speaker to listen, then select the word you heard:",
-                voicePrompt = "apple",
-                options = listOf("🍎 Apple", "🍌 Banana", "🐱 Cat"),
-                correctAnswer = "🍎 Apple"
-            ),
-            DiagnosticQuestion(
-                id = 2,
-                type = QuestionType.VOCABULARY,
-                title = "2. Opposite Word Select",
-                description = "Choose the opposite word of 'Hot':",
-                options = listOf("Cold", "Warm", "Big", "Dry"),
-                correctAnswer = "Cold"
-            ),
-            DiagnosticQuestion(
-                id = 3,
-                type = QuestionType.PHONICS,
-                title = "3. Phonics & Sound",
-                description = "Which word starts with the /p/ sound?",
-                options = listOf("Pig", "Big", "Dig", "Wig"),
-                correctAnswer = "Pig"
-            ),
-            DiagnosticQuestion(
-                id = 4,
-                type = QuestionType.SORT_WORDS,
-                title = "4. Sentence Ordering (Basic)",
-                description = "Tap the word cards to arrange them into a correct sentence:",
-                wordsForSort = listOf("like", "apples", "I"),
-                correctAnswer = "I like apples"
-            ),
-            DiagnosticQuestion(
-                id = 5,
-                type = QuestionType.VOCABULARY,
-                title = "5. Grammar & Tense",
-                description = "Select the correct word to complete: 'She ___ to school every day.'",
-                options = listOf("walks", "walked", "walking", "walk"),
-                correctAnswer = "walks"
-            ),
-            DiagnosticQuestion(
-                id = 6,
-                type = QuestionType.LISTENING_EMOJI,
-                title = "6. Listening Comprehension",
-                description = "Tap the speaker to listen, then choose the animal:",
-                voicePrompt = "cat",
-                options = listOf("🐶 Dog", "🐱 Cat", "🐰 Rabbit"),
-                correctAnswer = "🐱 Cat"
-            ),
-            DiagnosticQuestion(
-                id = 7,
-                type = QuestionType.VOCABULARY,
-                title = "7. Contextual Antonym",
-                description = "The rabbit is very fast, but the turtle is ___:",
-                options = listOf("slow", "quick", "tall", "heavy"),
-                correctAnswer = "slow"
-            ),
-            DiagnosticQuestion(
-                id = 8,
-                type = QuestionType.VOCABULARY,
-                title = "8. Idiom & Everyday English",
-                description = "What does 'A piece of cake' mean?",
-                options = listOf("Very easy", "Delicious dessert", "Hard problem", "A small birthday party"),
-                correctAnswer = "Very easy"
-            ),
-            DiagnosticQuestion(
-                id = 9,
-                type = QuestionType.SORT_WORDS,
-                title = "9. Sentence Ordering (Intermediate)",
-                description = "Arrange the words into a correct sentence:",
-                wordsForSort = listOf("play", "on", "We", "football", "Sunday"),
-                correctAnswer = "We play football on Sunday"
-            ),
-            DiagnosticQuestion(
-                id = 10,
-                type = QuestionType.SPEAK_ALOUD,
-                title = "10. Speak Aloud Challenge",
-                description = "Press & hold the mic button at the bottom to read aloud:",
-                voicePrompt = "Practice makes perfect every day."
-            )
-        )
+    val questions by viewModel.questions.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadDiagnosticQuestions("Grade 3") // Hardcoded grade for now, ideally passed via nav arg
     }
+
+    if (isLoading) {
+        Box(modifier = modifier.fillMaxSize().background(Color(0xFFFFFDF5)), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                LingoAvatar(expression = LingoExpression.THINKING, modifier = Modifier.size(120.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("🦊 Lingo is preparing your quiz...", fontSize = 18.sp, color = Color(0xFF2C3E50), fontWeight = FontWeight.Bold)
+            }
+        }
+        return
+    }
+
+    if (questions.isEmpty()) return
 
     var currentQuestionIndex by remember { mutableStateOf(0) }
     val currentQuestion = questions[currentQuestionIndex]
@@ -474,7 +409,6 @@ fun DiagnosisScreen(
                         )
                     }
                 } else {
-                    // Ergonomic Bottom Mic Button
                     MicButton(
                         isRecording = isRecording,
                         onPressDown = {
@@ -485,10 +419,15 @@ fun DiagnosisScreen(
                             if (isRecording) {
                                 isRecording = false
                                 isEvaluated = true
-                                evaluationScore = (85..98).random()
-                                totalScore += (evaluationScore / 10)
-                                answerState = true
-                                lingoExpr = LingoExpression.CELEBRATING
+                                lingoExpr = LingoExpression.THINKING
+                                
+                                coroutineScope.launch {
+                                    val result = viewModel.evaluateSpeaking(java.io.File("dummy.wav"), currentQuestion.voicePrompt ?: "")
+                                    evaluationScore = result.overallScore
+                                    totalScore += (evaluationScore / 10)
+                                    answerState = evaluationScore >= 60
+                                    lingoExpr = if (answerState == true) LingoExpression.CELEBRATING else LingoExpression.SAD
+                                }
                             }
                         }
                     )

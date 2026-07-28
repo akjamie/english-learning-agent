@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.lingo.learn.ui"
+    namespace = "org.akj.lingo.learn.ui"
     compileSdk = 34
 
     defaultConfig {
@@ -58,9 +58,14 @@ dependencies {
     implementation(libs.coroutines.core)
 
     // Test
-    testImplementation(libs.junit)
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
     testImplementation(libs.coroutines.test)
     testImplementation("org.mockito:mockito-core:5.10.0")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }

@@ -1,6 +1,6 @@
-package com.lingo.learn.data.di
+package org.akj.lingo.learn.data.di
 
-import com.lingo.learn.data.remote.minimax.MinimaxService
+import org.akj.lingo.learn.data.remote.minimax.MinimaxService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

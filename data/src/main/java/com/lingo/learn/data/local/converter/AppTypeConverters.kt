@@ -1,4 +1,4 @@
-package com.lingo.learn.data.local.converter
+package org.akj.lingo.learn.data.local.converter
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson

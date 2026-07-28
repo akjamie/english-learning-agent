@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.components
+package org.akj.lingo.learn.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas

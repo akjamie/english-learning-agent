@@ -1,7 +1,7 @@
-package com.lingo.learn.data.repository
+package org.akj.lingo.learn.data.repository
 
-import com.lingo.learn.data.prefs.SecureConfigPrefs
-import com.lingo.learn.domain.repository.ConfigRepository
+import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
+import org.akj.lingo.learn.domain.repository.ConfigRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,9 +31,15 @@ class ConfigRepositoryImpl @Inject constructor(
     override fun getAsrModel(): String = prefs.getAsrModel()
     override fun setAsrModel(value: String) = prefs.setAsrModel(value)
 
+    override fun getLlmEndpoint(): String = prefs.getLlmEndpoint()
+    override fun setLlmEndpoint(value: String) = prefs.setLlmEndpoint(value)
+
     override fun getAsrScoreThreshold(): Int = prefs.getAsrScoreThreshold()
     override fun setAsrScoreThreshold(value: Int) = prefs.setAsrScoreThreshold(value)
 
     override fun getMonthlyTokenLimit(): Int = prefs.getMonthlyTokenLimit()
     override fun setMonthlyTokenLimit(value: Int) = prefs.setMonthlyTokenLimit(value)
+
+    override fun getLanguage(): String = prefs.getLanguage()
+    override fun setLanguage(value: String) = prefs.setLanguage(value)
 }

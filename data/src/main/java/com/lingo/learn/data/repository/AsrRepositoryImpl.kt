@@ -1,10 +1,10 @@
-package com.lingo.learn.data.repository
+package org.akj.lingo.learn.data.repository
 
-import com.lingo.learn.data.prefs.SecureConfigPrefs
-import com.lingo.learn.data.remote.minimax.MinimaxService
-import com.lingo.learn.domain.model.PronunciationResult
-import com.lingo.learn.domain.model.WordScore
-import com.lingo.learn.domain.repository.AsrRepository
+import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
+import org.akj.lingo.learn.data.remote.minimax.MinimaxService
+import org.akj.lingo.learn.domain.model.PronunciationResult
+import org.akj.lingo.learn.domain.model.WordScore
+import org.akj.lingo.learn.domain.repository.AsrRepository
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -56,15 +56,16 @@ class AsrRepositoryImpl @Inject constructor(
                     ((1.0 - distance.toDouble() / maxLength.toDouble()) * 100).toInt()
                 }
 
-                val threshold = prefs.getAsrScoreThreshold()
-                val finalScore = if (similarityPercent >= threshold) similarityPercent else threshold
+                val finalScore = similarityPercent.coerceIn(0, 100)
 
-                // Map words correctness
+                // Score each reference word by its best match in ASR output
                 val wordScores = referenceWords.map { refWord ->
-                    val isMatched = asrWords.any { asrWord ->
-                        calculateLevenshteinDistance(refWord, asrWord) <= 1
-                    }
-                    WordScore(word = refWord, score = if (isMatched) (85..100).random() else (20..50).random())
+                    val bestMatch = asrWords.minBy { calculateLevenshteinDistance(refWord, it) }
+                    val dist = calculateLevenshteinDistance(refWord, bestMatch)
+                    val maxLen = maxOf(refWord.length, bestMatch.length)
+                    val wordScore = if (maxLen == 0) 100
+                    else ((1.0 - dist.toDouble() / maxLen) * 100).toInt().coerceIn(0, 100)
+                    WordScore(word = refWord, score = wordScore)
                 }
 
                 val feedback = if (finalScore >= 80) {

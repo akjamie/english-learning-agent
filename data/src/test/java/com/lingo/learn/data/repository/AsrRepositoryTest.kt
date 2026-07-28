@@ -1,11 +1,11 @@
-package com.lingo.learn.data.repository
+package org.akj.lingo.learn.data.repository
 
-import com.lingo.learn.data.prefs.SecureConfigPrefs
-import com.lingo.learn.data.remote.minimax.MinimaxService
-import com.lingo.learn.domain.repository.AsrRepository
-import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Test
+import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
+import org.akj.lingo.learn.data.remote.minimax.MinimaxService
+import org.akj.lingo.learn.domain.repository.AsrRepository
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 
 /**
@@ -21,7 +21,7 @@ class AsrRepositoryTest {
     private lateinit var prefs: SecureConfigPrefs
     private lateinit var repository: AsrRepository
 
-    @Before
+    @BeforeEach
     fun setup() {
         service = Mockito.mock(MinimaxService::class.java)
         prefs = Mockito.mock(SecureConfigPrefs::class.java)

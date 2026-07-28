@@ -1,12 +1,15 @@
-package com.lingo.learn.data.local.dao
+package org.akj.lingo.learn.data.local.dao
 
 import androidx.room.*
-import com.lingo.learn.data.local.entity.ErrorBookEntity
+import org.akj.lingo.learn.data.local.entity.ErrorBookEntity
 
 @Dao
 interface ErrorBookDao {
     @Query("SELECT * FROM error_book WHERE status != 'GRADUATED' ORDER BY priorityScore DESC LIMIT 30")
     suspend fun getTop30Errors(): List<ErrorBookEntity>
+
+    @Query("SELECT COUNT(*) FROM error_book WHERE status != 'GRADUATED'")
+    suspend fun getActiveErrorCount(): Int
 
     @Query("SELECT * FROM error_book WHERE vocabId = :vocabId LIMIT 1")
     suspend fun getErrorByVocabId(vocabId: String): ErrorBookEntity?

@@ -1,4 +1,4 @@
-package com.lingo.learn.domain.model
+package org.akj.lingo.learn.domain.model
 
 //region Stage 1: Immersive Audio Import
 

@@ -1,9 +1,9 @@
-package com.lingo.learn.ui.settings
+package org.akj.lingo.learn.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lingo.learn.domain.repository.ConfigRepository
-import com.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.repository.ConfigRepository
+import org.akj.lingo.learn.domain.repository.LlmRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,8 +20,10 @@ data class SettingsUiState(
     val fallbackModel: String = "",
     val ttsModel: String = "",
     val asrModel: String = "",
+    val llmEndpoint: String = "/v1/chat/completions",
     val asrScoreThreshold: Int = 60,
     val monthlyTokenLimit: Int = 50000,
+    val language: String = "en",
     val isTestingConnection: Boolean = false,
     val connectionTestResult: String? = null,
     val connectionTestSuccess: Boolean? = null,
@@ -54,8 +56,10 @@ class SettingsViewModel @Inject constructor(
                 fallbackModel = configRepository.getFallbackModel(),
                 ttsModel = configRepository.getTtsModel(),
                 asrModel = configRepository.getAsrModel(),
+                llmEndpoint = configRepository.getLlmEndpoint(),
                 asrScoreThreshold = configRepository.getAsrScoreThreshold(),
                 monthlyTokenLimit = configRepository.getMonthlyTokenLimit(),
+                language = configRepository.getLanguage(),
                 isSaved = false
             )
         }
@@ -89,12 +93,20 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(asrModel = value, isSaved = false) }
     }
 
+    fun updateLlmEndpoint(value: String) {
+        _uiState.update { it.copy(llmEndpoint = value, isSaved = false) }
+    }
+
     fun updateAsrScoreThreshold(value: Int) {
         _uiState.update { it.copy(asrScoreThreshold = value, isSaved = false) }
     }
 
     fun updateMonthlyTokenLimit(value: Int) {
         _uiState.update { it.copy(monthlyTokenLimit = value, isSaved = false) }
+    }
+
+    fun updateLanguage(value: String) {
+        _uiState.update { it.copy(language = value, isSaved = false) }
     }
 
     fun saveSettings() {
@@ -108,6 +120,7 @@ class SettingsViewModel @Inject constructor(
         configRepository.setAsrModel(state.asrModel.trim())
         configRepository.setAsrScoreThreshold(state.asrScoreThreshold)
         configRepository.setMonthlyTokenLimit(state.monthlyTokenLimit)
+        configRepository.setLanguage(state.language)
 
         _uiState.update { it.copy(isSaved = true) }
     }

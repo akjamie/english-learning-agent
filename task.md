@@ -51,16 +51,9 @@
 - [ ] **[Impl]** 每周高频词短对话情景产出模块
 - [ ] **[Impl]** 家长周报卡片图片化本地渲染及一键分享
 - [ ] **[Unit Test & Build]** 错题衰减算法单元测试与 LLM JSON 解析单元测试；构建验证
-## Sprint 3: 错题本 + 周计划 + 周报 (第 5-6 周) - [x]
-- [x] **[Impl]** 错题本列表卡片式界面设计与优先级排序算法 (Room Query 自动排序)
-- [x] **[Impl]** 错题详情 3D 翻转卡片 (正面词卡 + 背面释义/慢速 TTS 例句)
-- [x] **[Impl]** 周计划日历视图与基于 LLM 的智能计划自适应生成
-- [x] **[Impl]** 每周高频词短对话情景产出模块
-- [x] **[Impl]** 家长周报卡片图片化本地渲染及一键分享
-- [x] **[Unit Test & Build]** 错题衰减算法单元测试与 LLM JSON 解析单元测试；构建验证
-- [x] **[Review & Reflection]** 总结 Room SQL 复杂排序与 LLM Prompt 调优经验
-- [x] **[Docs Sync]** 同步更新 `readme.md` & `agents.md`
-- [x] **[MVP Delivery]** 交付具备完整错题自适应与周计划生成的 MVP APK
+- [ ] **[Review & Reflection]** 总结 Room SQL 复杂排序与 LLM Prompt 调优经验
+- [ ] **[Docs Sync]** 同步更新 `readme.md` & `agents.md`
+- [ ] **[MVP Delivery]** 交付具备完整错题自适应与周计划生成的 MVP APK
 
 ---
 

@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.onboarding
+package org.akj.lingo.learn.ui.onboarding
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring

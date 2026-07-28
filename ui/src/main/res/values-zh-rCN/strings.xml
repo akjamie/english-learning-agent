@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Welcome Screen -->
+    <string name="welcome_title">Lingo 英语</string>
+    <string name="welcome_subtitle">你的互动英语学习伙伴\n每天15分钟，自信开口说英语</string>
+    <string name="get_started">开始学习！</string>
+
+    <!-- Grade Select Screen -->
+    <string name="select_grade_title">选择你的年级</string>
+    <string name="select_grade_desc">Lingo 会根据你的年龄组定制学习计划</string>
+    <string name="grade_band_primary">小学（4-6年级）</string>
+    <string name="grade_band_primary_desc">词汇、自然拼读和基础日常用语</string>
+    <string name="grade_band_junior">初中（7-9年级）</string>
+    <string name="grade_band_junior_desc">拓展词汇、句法学习和口语考试</string>
+    <string name="grade_band_senior">高中（10-12年级）</string>
+    <string name="grade_band_senior_desc">复杂句式阅读、高级词汇和高考备考</string>
+    <string name="confirm">确认</string>
+
+    <!-- Textbook Confirm Screen -->
+    <string name="confirm_textbook_title">确认教材</string>
+    <string name="confirm_textbook_desc">同步你的学校教材，学习更轻松</string>
+    <string name="pep_textbook_title">人教版 - 推荐</string>
+    <string name="pep_textbook_desc">小学PEP / 初中Target / 高中2019版</string>
+    <string name="other_textbooks_prompt">使用其他教材？</string>
+    <string name="expand_text">展开 ▼</string>
+    <string name="hide_text">收起 ▲</string>
+
+    <!-- Diagnosis Screen -->
+    <string name="verify">验证</string>
+    <string name="next_question">下一题</string>
+    <string name="tap_cards_to_sort">点击下方卡片排序</string>
+    <string name="recording_prompt">录音中… 请清晰念出 🎙️</string>
+    <string name="correct_prompt">太棒了！非常出色！🎉</string>
+    <string name="incorrect_prompt">别担心，下一题加油！💪</string>
+    <string name="speak_aloud_prompt">长按麦克风，大声说出来！</string>
+    <string name="default_question_prompt">仔细观察，选择正确的选项。</string>
+
+    <!-- Dashboard Screen -->
+    <string name="welcome_back">欢迎回来！👋</string>
+    <string name="today_goal">🎯 今日目标</string>
+    <string name="weekly_plan">周计划</string>
+    <string name="track_daily_progress">追踪每日进度</string>
+    <string name="error_book">错题本</string>
+    <string name="target_weak_areas">针对性查漏补缺</string>
+    <string name="completed_review">已完成，再来一遍</string>
+    <string name="start_study">开始学习</string>
+
+    <!-- Learning: Immersive Audio Screen -->
+    <string name="immersion_title">沉浸式听力</string>
+    <string name="new_word_label">新词！</string>
+    <string name="listen_button">听一听</string>
+    <string name="got_it">学会了！</string>
+
+    <!-- Learning: Practice Screen -->
+    <string name="read_aloud_progress">跟读 %1$d / %2$d</string>
+    <string name="listen_first">先听一遍</string>
+    <string name="try_again">再试一次</string>
+    <string name="next_arrow">下一个</string>
+    <string name="hold_to_speak">按住说话</string>
+    <string name="recording_now">录音中… 请念出来！</string>
+
+    <!-- Learning: Quiz Screen -->
+    <string name="from_error_book">来自错题本</string>
+    <string name="see_results">查看成绩</string>
+    <string name="quiz_score_label">测验得分</string>
+    <string name="pronunciation_label">发音评价</string>
+
+    <!-- Learning: Task Complete Screen -->
+    <string name="you_learned">你学会了</string>
+    <string name="new_words_suffix">个新词！</string>
+    <string name="share_with_parents">分享给家长</string>
+    <string name="back_to_home">返回首页</string>
+    <string name="this_week">本周</string>
+
+    <!-- Error Book Screen -->
+    <string name="error_book_title">错题本</string>
+    <string name="no_errors_title">暂无错题！</string>
+    <string name="no_errors_desc">太棒了！所有词汇都已掌握。</string>
+    <string name="sort_priority">优先级</string>
+    <string name="sort_recent">最近</string>
+    <string name="sort_most_errors">最多错误</string>
+    <string name="sort_type">类型</string>
+    <string name="stat_total">总计</string>
+    <string name="stat_review">待复习</string>
+    <string name="stat_completed">已完成</string>
+    <string name="tap_to_flip">点击翻转卡片</string>
+
+    <!-- Weekly Plan Screen -->
+    <string name="weekly_plan_title">周计划</string>
+    <string name="no_plan_title">暂无计划</string>
+    <string name="no_plan_desc">点击下方生成计划</string>
+    <string name="generate_plan">✨ 生成计划</string>
+    <string name="regenerate_plan">🔄 重新生成</string>
+    <string name="generating_plan">生成中…</string>
+    <string name="view_report">📊 报告</string>
+    <string name="day_today">今天</string>
+    <string name="day_start">开始</string>
+
+    <!-- Weekly Report Screen -->
+    <string name="weekly_report_title">周报</string>
+    <string name="weekly_accuracy">本周正确率</string>
+    <string name="monthly_accuracy">月度：%d%%</string>
+    <string name="areas_to_focus">🎯 重点提升</string>
+    <string name="share_report">分享给家长</string>
+    <string name="grade_outstanding">表现优异！🌟</string>
+    <string name="grade_great">做得很好！👍</string>
+    <string name="grade_keep_trying">继续努力！💪</string>
+    <string name="grade_improve">一起进步！📈</string>
+
+    <!-- Error Book Detail -->
+    <string name="error_detail_title">错题详情</string>
+    <string name="error_history">错题记录</string>
+    <string name="error_type_label">题目类型</string>
+    <string name="error_count_label">错误次数</string>
+    <string name="consecutive_correct">连续正确</string>
+    <string name="status_label">状态</string>
+    <string name="practice_tip">练习建议</string>
+    <string name="tips_for_word">\"%s\" 的学习技巧</string>
+</resources>

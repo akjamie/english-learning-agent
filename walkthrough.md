@@ -188,3 +188,65 @@ english-learning-agent/
   - 动态计算两串文本的编辑距离，依公式 $Similarity = (1 - \frac{Distance}{MaxLength}) \times 100$ 将相似度映射为百分制分数。
   - 接入本地设置中的宽松评分阈值（默认 60 分）。若得分低于达标阈值，自动触发温和鼓励策略，为儿童提供 60 分的最低达标“阳光分”保障。
   - 逐字执行编辑距离模糊搜索（距离 $\le 1$ 判定为读对），生成词级发音正确性映射（`WordScore`），并在弱网或配置缺失时自动平滑降级至 Offline 离线模式，保障儿童的口语学习信心。
+
+---
+
+## 🧵 Sprint 2: 每日学习核心流程 (Daily Learning Core Flow)
+
+### 新增文件 (New Files)
+
+#### Domain 层
+| 文件 | 作用 |
+|---|---|
+| `domain/model/LearningContent.kt` | 学习会话数据模型 (SubtitleLine, ReadAlongSentence, GameQuestion, QuizQuestion, LearningSession, SessionSummary) |
+
+#### UI 层 — 组件
+| 文件 | 作用 |
+|---|---|
+| `ui/components/MicButton.kt` | 长按麦克风录音按钮 (脉冲缩放动画 + 状态指示) |
+| `ui/components/WordHighlightText.kt` | 词级发音评分高亮文本 (绿=标准, 橙=需改进) |
+| `ui/components/QuizProgressBar.kt` | Quiz 进度点组件 (●●●○○ 形态) |
+
+#### UI 层 — 学习流程
+| 文件 | 作用 |
+|---|---|
+| `ui/learning/AudioPlayerController.kt` | 音频播放控制器 (协程模拟播放 + 字幕同步 + 新词弹出) |
+| `ui/learning/VoiceRecorder.kt` | MediaRecorder 封装 (录制 → 临时 .m4a 文件) |
+| `ui/learning/SystemTtsHelper.kt` | Android 系统 TTS 封装 (MiniMax TTS 不可用时的离线降级) |
+| `ui/learning/LearningViewModel.kt` | 主 ViewModel (三阶段状态管理 + ASR 评测 + Quiz 评分 + 数据持久化) |
+| `ui/learning/LearningContainer.kt` | 学习容器 (AnimatedContent 四阶段切换) |
+| `ui/learning/ImmersiveAudioScreen.kt` | 环节1: 沉浸式导入 (主题图、进度条、字幕高亮、新词弹出) |
+| `ui/learning/PracticeScreen.kt` | 环节2: 跟读 + 游戏 (录音、ASR 评分、拖拽配对/听音选图、Combo) |
+| `ui/learning/QuizScreen.kt` | 环节3: Quiz (进度点、5题含听力+错题复现、结果页大圆弧) |
+| `ui/learning/TaskCompleteScreen.kt` | 完成页 (新词数、Streak、周进度弧、分享入口) |
+
+#### App 层
+| 文件 | 作用 |
+|---|---|
+| `app/res/drawable/ic_launcher_background.xml` | 自适应图标背景 (Macaron 黄色) |
+| `app/res/drawable/ic_launcher_foreground.xml` | 自适应图标前景 (Lingo 狐狸头矢量) |
+| `app/res/mipmap-anydpi-v26/ic_launcher.xml` | 自适应图标配置 |
+| `app/res/mipmap-anydpi-v26/ic_launcher_round.xml` | 自适应圆形图标 |
+
+### 关键架构决策
+1. **音频播放**：使用协程计时器模拟播放，无需真实音频文件即可演示字幕高亮和新词弹出。
+2. **语音评测**：`AsrRepositoryImpl` 内置离线降级 + Levenshtein 距离算法。
+3. **状态管理**：`LearningViewModel` 使用 `StateFlow` 管理四阶段，通过 `AnimatedContent` 实现滑动过渡。
+4. **数据持久化**：Quiz 结束后自动保存 `LearningRecord`；错误答案记入错题本。
+
+## 🧵 Sprint 3: AI 内容管线 + 自适应数据循环 (AI Content Pipeline & Data Loop)
+
+### 新增文件 (New Files)
+
+| 文件 | 作用 |
+|---|---|
+| `domain/model/GradeBand.kt` | 年级段枚举 (PRIMARY/JUNIOR/SENIOR)，含难度系数、单词数、比例配置 |
+| `domain/usecase/SessionBuilder.kt` | JSON 计划 → LearningSession 转换器 (纯 Kotlin，完全可测试) |
+| `domain/test/GradeBandTest.kt` | 20 个测试 (年级映射、默认值、难度比较) |
+| `domain/test/SessionBuilderTest.kt` | 18 个测试 (JSON 解析、年级自适应、Quiz 生成、错题集成) |
+
+### 关键架构决策
+1. **GradeBand 映射**：支持中英文年级名，未识别默认 PRIMARY。
+2. **SessionBuilder**：从 Plan JSON 提取内容，根据 GradeBand 生成年级适配的字幕、跟读、游戏和 Quiz。
+3. **缓存优先**：`getCachedLearningSession()` 优先从 Room 读取并展开缓存计划，失败回退 SampleContent。
+4. **LLM Prompt 增强**：在 `generateAndCacheWeeklyPlan()` 中注入年级段约束（词汇范围、句子长度、Phonics/Grammar 比例）。

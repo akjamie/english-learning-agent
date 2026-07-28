@@ -71,4 +71,49 @@
     <string name="share_with_parents">Share with parents</string>
     <string name="back_to_home">Back to Home</string>
     <string name="this_week">This Week</string>
+
+    <!-- Error Book Screen -->
+    <string name="error_book_title">Error Book</string>
+    <string name="no_errors_title">No errors yet!</string>
+    <string name="no_errors_desc">Great job! All words mastered.</string>
+    <string name="sort_priority">Priority</string>
+    <string name="sort_recent">Recent</string>
+    <string name="sort_most_errors">Most Errors</string>
+    <string name="sort_type">Type</string>
+    <string name="stat_total">Total</string>
+    <string name="stat_review">Review</string>
+    <string name="stat_completed">Done</string>
+    <string name="tap_to_flip">Tap card to flip</string>
+
+    <!-- Weekly Plan Screen -->
+    <string name="weekly_plan_title">Weekly Plan</string>
+    <string name="no_plan_title">No plan yet</string>
+    <string name="no_plan_desc">Tap below to generate a plan</string>
+    <string name="generate_plan">✨ Generate Plan</string>
+    <string name="regenerate_plan">🔄 Regenerate Plan</string>
+    <string name="generating_plan">Generating...</string>
+    <string name="view_report">📊 Report</string>
+    <string name="day_today">Today</string>
+    <string name="day_start">Start</string>
+
+    <!-- Weekly Report Screen -->
+    <string name="weekly_report_title">Weekly Report</string>
+    <string name="weekly_accuracy">Weekly Accuracy</string>
+    <string name="monthly_accuracy">Monthly: %d%%</string>
+    <string name="areas_to_focus">🎯 Areas to Focus</string>
+    <string name="share_report">Share with Parents</string>
+    <string name="grade_outstanding">Outstanding! 🌟</string>
+    <string name="grade_great">Great work! 👍</string>
+    <string name="grade_keep_trying">Keep trying! 💪</string>
+    <string name="grade_improve">Let\'s improve! 📈</string>
+
+    <!-- Error Book Detail -->
+    <string name="error_detail_title">Error Detail</string>
+    <string name="error_history">Error History</string>
+    <string name="error_type_label">Question Type</string>
+    <string name="error_count_label">Error Count</string>
+    <string name="consecutive_correct">Consecutive Correct</string>
+    <string name="status_label">Status</string>
+    <string name="practice_tip">Practice Tip</string>
+    <string name="tips_for_word">Tips for \"%s\"</string>
 </resources>

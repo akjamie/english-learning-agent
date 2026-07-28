@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.onboarding
+package org.akj.lingo.learn.ui.onboarding
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -25,7 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lingo.learn.ui.R
+import org.akj.lingo.learn.ui.R
 
 @Composable
 fun GradeSelectScreen(

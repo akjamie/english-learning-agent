@@ -1,4 +1,4 @@
-package com.lingo.learn.domain.repository
+package org.akj.lingo.learn.domain.repository
 
 interface LlmRepository {
     suspend fun complete(

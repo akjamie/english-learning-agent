@@ -1,4 +1,4 @@
-package com.lingo.learn.domain.repository
+package org.akj.lingo.learn.domain.repository
 
 /**
  * Clean Architecture domain repository interface for configuration settings.
@@ -25,9 +25,15 @@ interface ConfigRepository {
     fun getAsrModel(): String
     fun setAsrModel(value: String)
 
+    fun getLlmEndpoint(): String
+    fun setLlmEndpoint(value: String)
+
     fun getAsrScoreThreshold(): Int
     fun setAsrScoreThreshold(value: Int)
 
     fun getMonthlyTokenLimit(): Int
     fun setMonthlyTokenLimit(value: Int)
+
+    fun getLanguage(): String
+    fun setLanguage(value: String)
 }

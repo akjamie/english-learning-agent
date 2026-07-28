@@ -1,7 +1,8 @@
-package com.lingo.learn.ui.settings
+package org.akj.lingo.learn.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,6 +181,48 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
+                    )
+                }
+            }
+
+            // Language preference card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "🌐 App Language",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF5C6FF2)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val languages = listOf("en" to "English", "zh" to "中文")
+                        languages.forEach { (code, label) ->
+                            val isSelected = uiState.language == code
+                            val bgColor = if (isSelected) Color(0xFF5C6FF2) else Color(0xFFECEFF1)
+                            val textColor = if (isSelected) Color.White else Color(0xFF2C3E50)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(bgColor)
+                                    .clickable { viewModel.updateLanguage(code) }
+                                    .padding(horizontal = 20.dp, vertical = 10.dp)
+                            ) {
+                                Text(label, fontWeight = FontWeight.Bold, color = textColor, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                    Text(
+                        text = "Restart required to apply language change",
+                        fontSize = 12.sp,
+                        color = Color(0xFF7F8C8D)
                     )
                 }
             }

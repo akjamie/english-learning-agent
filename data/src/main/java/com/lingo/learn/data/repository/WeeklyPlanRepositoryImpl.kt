@@ -1,17 +1,11 @@
-package com.lingo.learn.data.repository
+package org.akj.lingo.learn.data.repository
 
-import com.lingo.learn.data.local.dao.PlanDao
-import com.lingo.learn.data.local.entity.PlanEntity
-import com.lingo.learn.domain.model.GameQuestion
-import com.lingo.learn.domain.model.GameType
-import com.lingo.learn.domain.model.LearningSession
-import com.lingo.learn.domain.model.Plan
-import com.lingo.learn.domain.model.QuizQuestion
-import com.lingo.learn.domain.model.QuizQuestionType
-import com.lingo.learn.domain.model.ReadAlongSentence
-import com.lingo.learn.domain.model.SubtitleLine
-import com.lingo.learn.domain.repository.LlmRepository
-import com.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.data.local.dao.PlanDao
+import org.akj.lingo.learn.data.local.entity.PlanEntity
+import org.akj.lingo.learn.domain.model.*
+import org.akj.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.SessionBuilder
 import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
@@ -23,15 +17,25 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
     private val planDao: PlanDao
 ) : WeeklyPlanRepository {
 
+    private val sessionBuilder = SessionBuilder()
+
     override suspend fun generateAndCacheWeeklyPlan(
         grade: String,
         accuracy: Int,
         weakCategories: List<String>,
         completedMilestones: List<String>
     ): Result<Plan> {
+        val gradeBand = GradeBand.fromGrade(grade)
         val prompt = """
             You are the curriculum planner for Lingo English. 
             Generate a personalized 7-day English learning plan for a student in $grade.
+
+            --- Grade Band Constraints ---
+            - Vocabulary Range: ${gradeBand.defaultVocabularyRange}
+            - Max words per sentence: ${gradeBand.maxWordsPerSentence}
+            - Session duration: ${gradeBand.defaultDurationMinutes} minutes
+            - Phonics ratio: ${(gradeBand.defaultPhonicsRatio * 100).toInt()}%
+            - Grammar ratio: ${(gradeBand.defaultGrammarRatio * 100).toInt()}%
 
             --- Student Learning History ---
             - Average Accuracy: $accuracy%
@@ -41,14 +45,14 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             Output raw valid JSON ONLY matching structure:
             {
               "theme": "School Life & Family",
-              "difficulty_coefficient": 1.2,
+              "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
               "days": [
                 {
                   "day": 1,
                   "focus": "Vocabulary & Dialogue",
                   "target_words": ["classroom", "teacher", "notebook"],
                   "reference_sentence": "Welcome to our sunny classroom!",
-                  "duration_minutes": 15
+                  "duration_minutes": ${gradeBand.defaultDurationMinutes}
                 }
               ]
             }
@@ -60,7 +64,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         val jsonStr = llmResult.getOrNull() ?: """
             {
               "theme": "Daily Life & School",
-              "difficulty_coefficient": 1.0,
+              "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
               "days": []
             }
         """.trimIndent()
@@ -77,7 +81,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             startDate = now,
             endDate = now + 7 * 24 * 3600 * 1000L,
             theme = themeName,
-            difficultyCoefficient = 1.0f,
+            difficultyCoefficient = gradeBand.difficultyCoefficient,
             reviewRatio = 0.2f,
             speechTopics = "School Life, Family, Hobbies",
             weeklyTarget = "Master 20 key words + 7 daily dialogue patterns",
@@ -95,41 +99,115 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         return planDao.getLatestPlan("WEEKLY")?.toDomain()
     }
 
-    override suspend fun getCachedLearningSession(dayIndex: Int): LearningSession {
-        val dayNumber = if (dayIndex in 1..7) dayIndex else 1
+    override suspend fun getCachedLearningSession(dayIndex: Int, grade: String): LearningSession {
+        val gradeBand = GradeBand.fromGrade(grade)
+        val dayNumber = dayIndex.coerceIn(1, 7)
 
-        val subtitles = listOf(
-            SubtitleLine(1, 0, 3000, "Welcome to our sunny classroom!", listOf("classroom")),
-            SubtitleLine(2, 3000, 6500, "Our teacher is very kind and helpful.", listOf("teacher")),
-            SubtitleLine(3, 6500, 10000, "Open your notebook and write down your name.", listOf("notebook"))
+        // Try to build from cached plan first
+        val cachedPlan = planDao.getLatestPlan("WEEKLY")
+        if (cachedPlan != null) {
+            val expanded = sessionBuilder.expandPlanToSession(
+                planSnapshotJson = cachedPlan.snapshotData,
+                gradeBand = gradeBand,
+                dayIndex = dayNumber
+            )
+            if (expanded != null) return expanded
+        }
+
+        // Fall back to grade-appropriate default content via SessionBuilder
+        val defaultJson = generateDefaultPlanJson(gradeBand)
+        val expanded = sessionBuilder.expandPlanToSession(
+            planSnapshotJson = defaultJson,
+            gradeBand = gradeBand,
+            dayIndex = dayNumber
         )
+        if (expanded != null) return expanded
 
-        val readAlong = listOf(
-            ReadAlongSentence(1, "Welcome to our sunny classroom!", "欢迎来到我们阳光明媚的教室！"),
-            ReadAlongSentence(2, "Our teacher is very kind and helpful.", "我们的老师非常亲切且乐于助人。"),
-            ReadAlongSentence(3, "Open your notebook and write down your name.", "打开你的笔记本并写下你的名字。")
-        )
-
-        val games = listOf(
-            GameQuestion(1, GameType.LISTEN_CHOOSE_IMAGE, "Listen and choose the picture:", audioText = "teacher", options = listOf("🍎", "👩‍🏫", "🐱"), correctIndex = 1),
-            GameQuestion(2, GameType.DRAG_MATCH, "Match 'classroom':", options = listOf("教室", "老师", "书包"), correctIndex = 0)
-        )
-
-        val quizQuestions = listOf(
-            QuizQuestion(1, QuizQuestionType.LISTEN_CHOOSE_WORD, "Listen to the word and choose:", audioText = "classroom", options = listOf("🍎 Apple", "🏫 Classroom", "🐱 Cat"), correctIndex = 1),
-            QuizQuestion(2, QuizQuestionType.IMAGE_CHOOSE_WORD, "Choose the word for '老师':", options = listOf("Teacher", "Student", "Doctor"), correctIndex = 0),
-            QuizQuestion(3, QuizQuestionType.SPELL_FILL_BLANK, "Complete the word: cla__room", options = listOf("ss", "tt", "pp"), correctIndex = 0),
-            QuizQuestion(4, QuizQuestionType.SENTENCE_ORDER, "Put the words in correct order:", options = listOf("like", "apples", "I"), correctIndex = 0, correctOrder = listOf("I", "like", "apples")),
-            QuizQuestion(5, QuizQuestionType.READ_ALOUD, "Read this sentence aloud:", audioText = "Welcome to our sunny classroom!", options = emptyList(), correctIndex = 0)
-        )
-
+        // Last resort: hardcoded sample content
+        val sample = SampleLearningContent.createSchoolLifeSession()
         return LearningSession(
-            theme = "Day $dayNumber: School Life",
-            subtitleLines = subtitles,
-            readAlongSentences = readAlong,
-            gameQuestions = games,
-            quizQuestions = quizQuestions,
-            targetNewWords = listOf("classroom", "teacher", "notebook")
+            theme = "Day $dayNumber: ${sample.theme}",
+            subtitleLines = sample.subtitleLines,
+            readAlongSentences = sample.readAlongSentences,
+            gameQuestions = sample.gameQuestions,
+            quizQuestions = sample.quizQuestions,
+            targetNewWords = sample.targetNewWords
         )
+    }
+
+    /**
+     * Generates grade-appropriate default plan JSON so that SessionBuilder can
+     * produce adaptive content even without a cached LLM-generated plan.
+     * This makes Sprint 3 features (grade-adaptive content) visible immediately.
+     */
+    private fun generateDefaultPlanJson(gradeBand: GradeBand): String {
+        val theme = when (gradeBand) {
+            GradeBand.PRIMARY -> "Daily Life"
+            GradeBand.JUNIOR -> "School & Community"
+            GradeBand.SENIOR -> "Academic & Society"
+        }
+        val duration = gradeBand.defaultDurationMinutes
+
+        return when (gradeBand) {
+            GradeBand.PRIMARY -> """
+            {
+                "theme": "$theme",
+                "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+                "days": [{
+                    "day": 1,
+                    "focus": "Vocabulary & Dialogue",
+                    "target_words": ["hello", "school", "friend", "book", "teacher"],
+                    "reference_sentence": "Hello! This is my school. I have a friend and a book.",
+                    "duration_minutes": $duration
+                },{
+                    "day": 2,
+                    "focus": "Classroom Objects",
+                    "target_words": ["pencil", "desk", "chair", "bag", "ruler"],
+                    "reference_sentence": "I have a pencil on my desk. My bag is on the chair.",
+                    "duration_minutes": $duration
+                }]
+            }
+            """.trimIndent()
+
+            GradeBand.JUNIOR -> """
+            {
+                "theme": "$theme",
+                "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+                "days": [{
+                    "day": 1,
+                    "focus": "Grammar & Sentence Structure",
+                    "target_words": ["student", "homework", "library", "subject", "schedule"],
+                    "reference_sentence": "The student finishes homework in the library every afternoon.",
+                    "duration_minutes": $duration
+                },{
+                    "day": 2,
+                    "focus": "Phrasal Verbs & Social Life",
+                    "target_words": ["volunteer", "community", "project", "research", "presentation"],
+                    "reference_sentence": "Our class volunteer project requires research and a final presentation.",
+                    "duration_minutes": $duration
+                }]
+            }
+            """.trimIndent()
+
+            GradeBand.SENIOR -> """
+            {
+                "theme": "$theme",
+                "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+                "days": [{
+                    "day": 1,
+                    "focus": "Academic Vocabulary & Critical Thinking",
+                    "target_words": ["analyze", "conclusion", "evidence", "hypothesis", "methodology"],
+                    "reference_sentence": "The researcher analyzed the evidence and drew a meaningful conclusion.",
+                    "duration_minutes": $duration
+                },{
+                    "day": 2,
+                    "focus": "Debate & Persuasive Writing",
+                    "target_words": ["argument", "persuade", "counterpoint", "rhetoric", "stance"],
+                    "reference_sentence": "The speaker used strong rhetoric to persuade the audience of their stance.",
+                    "duration_minutes": $duration
+                }]
+            }
+            """.trimIndent()
+        }
     }
 }

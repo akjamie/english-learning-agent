@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.learning
+package org.akj.lingo.learn.ui.learning
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -14,11 +14,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lingo.learn.ui.components.LingoAvatar
-import com.lingo.learn.ui.components.LingoExpression
-import com.lingo.learn.ui.components.ProgressRing
-import com.lingo.learn.ui.components.StreakCounter
-import com.lingo.learn.ui.dashboard.GradeTheme
+import org.akj.lingo.learn.ui.components.LingoAvatar
+import org.akj.lingo.learn.ui.components.LingoExpression
+import org.akj.lingo.learn.ui.components.ProgressRing
+import org.akj.lingo.learn.ui.components.StreakCounter
+import org.akj.lingo.learn.ui.dashboard.GradeTheme
 
 /**
  * Task Completion Page.

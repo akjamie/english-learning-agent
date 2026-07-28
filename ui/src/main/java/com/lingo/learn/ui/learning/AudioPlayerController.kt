@@ -1,6 +1,6 @@
-package com.lingo.learn.ui.learning
+package org.akj.lingo.learn.ui.learning
 
-import com.lingo.learn.domain.model.SubtitleLine
+import org.akj.lingo.learn.domain.model.SubtitleLine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

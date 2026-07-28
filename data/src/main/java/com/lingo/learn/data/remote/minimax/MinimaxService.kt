@@ -1,4 +1,4 @@
-package com.lingo.learn.data.remote.minimax
+package org.akj.lingo.learn.data.remote.minimax
 
 import okhttp3.MultipartBody
 import okhttp3.RequestBody

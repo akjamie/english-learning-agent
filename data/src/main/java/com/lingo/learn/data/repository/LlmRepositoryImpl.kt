@@ -1,10 +1,10 @@
-package com.lingo.learn.data.repository
+package org.akj.lingo.learn.data.repository
 
-import com.lingo.learn.data.local.dao.TokenUsageLogDao
-import com.lingo.learn.data.local.entity.TokenUsageLogEntity
-import com.lingo.learn.data.prefs.SecureConfigPrefs
-import com.lingo.learn.data.remote.minimax.*
-import com.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.data.local.dao.TokenUsageLogDao
+import org.akj.lingo.learn.data.local.entity.TokenUsageLogEntity
+import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
+import org.akj.lingo.learn.data.remote.minimax.*
+import org.akj.lingo.learn.domain.repository.LlmRepository
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,10 +21,11 @@ class LlmRepositoryImpl @Inject constructor(
         val apiKey = "Bearer $authToken"
         val groupId = prefs.getGroupId()
         val baseUrl = prefs.getBaseUrl()
-        val url = baseUrl.trimEnd('/') + "/v1/text/chatcompletion_v2"
+        val endpoint = prefs.getLlmEndpoint()
+        val url = baseUrl.trimEnd('/') + endpoint
 
         if (authToken.length < 10 || groupId.isEmpty()) {
-            return Result.failure(Exception("MiniMax Auth Token or Group ID is not configured"))
+            return Result.failure(Exception("Auth Token or Group ID is not configured"))
         }
 
         // 1. Check token budget
@@ -38,23 +39,28 @@ class LlmRepositoryImpl @Inject constructor(
             withTimeout(8000) {
                 val request = MinimaxChatRequest(
                     model = primaryModel,
-                    messages = listOf(MinimaxMessage(role = "user", content = prompt))
+                    messages = listOf(MinimaxMessage(role = "user", content = prompt)),
+                    maxTokens = maxTokens
                 )
                 val response = service.chatCompletion(url, apiKey, groupId, request)
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
-                    val content = body.choices.firstOrNull()?.message?.content
+                    val content = tryParseResponse(body)
                     if (content != null) {
-                        // Record usage
-                        body.usage?.let {
+                        // Record usage - handle both OpenAI and Claude usage formats
+                        val usage = body.usage
+                        val totalTokens = usage?.totalTokens
+                            ?: (usage?.inputTokens ?: usage?.promptTokens ?: 0) +
+                                (usage?.outputTokens ?: usage?.completionTokens ?: 0)
+                        if (totalTokens > 0) {
                             tokenUsageLogDao.insertLog(
                                 TokenUsageLogEntity(
                                     timestamp = System.currentTimeMillis(),
                                     taskType = taskType,
                                     model = "primary",
-                                    inputTokens = it.inputTokens,
-                                    outputTokens = it.outputTokens,
-                                    totalTokens = it.totalTokens
+                                    inputTokens = usage?.inputTokens ?: usage?.promptTokens ?: 0,
+                                    outputTokens = usage?.outputTokens ?: usage?.completionTokens ?: 0,
+                                    totalTokens = totalTokens
                                 )
                             )
                         }
@@ -75,23 +81,27 @@ class LlmRepositoryImpl @Inject constructor(
             withTimeout(8000) {
                 val request = MinimaxChatRequest(
                     model = fallbackModel,
-                    messages = listOf(MinimaxMessage(role = "user", content = prompt))
+                    messages = listOf(MinimaxMessage(role = "user", content = prompt)),
+                    maxTokens = maxTokens
                 )
                 val response = service.chatCompletion(url, apiKey, groupId, request)
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
-                    val content = body.choices.firstOrNull()?.message?.content
+                    val content = tryParseResponse(body)
                     if (content != null) {
-                        // Record usage
-                        body.usage?.let {
+                        val usage = body.usage
+                        val totalTokens = usage?.totalTokens
+                            ?: (usage?.inputTokens ?: usage?.promptTokens ?: 0) +
+                                (usage?.outputTokens ?: usage?.completionTokens ?: 0)
+                        if (totalTokens > 0) {
                             tokenUsageLogDao.insertLog(
                                 TokenUsageLogEntity(
                                     timestamp = System.currentTimeMillis(),
                                     taskType = taskType,
                                     model = "fallback",
-                                    inputTokens = it.inputTokens,
-                                    outputTokens = it.outputTokens,
-                                    totalTokens = it.totalTokens
+                                    inputTokens = usage?.inputTokens ?: usage?.promptTokens ?: 0,
+                                    outputTokens = usage?.outputTokens ?: usage?.completionTokens ?: 0,
+                                    totalTokens = totalTokens
                                 )
                             )
                         }
@@ -110,10 +120,22 @@ class LlmRepositoryImpl @Inject constructor(
         return Result.success(getFallbackTemplate(taskType))
     }
 
+    /**
+     * Tries to extract response text from both OpenAI-compatible and Claude Messages API formats.
+     */
+    private fun tryParseResponse(response: MinimaxChatResponse): String? {
+        val openaiText = response.choices?.firstOrNull()?.message?.content
+        if (!openaiText.isNullOrBlank()) return openaiText
+
+        val claudeText = response.content?.firstOrNull()?.text
+        if (!claudeText.isNullOrBlank()) return claudeText
+
+        return null
+    }
+
     private suspend fun isBudgetExceeded(): Boolean {
         val limit = prefs.getMonthlyTokenLimit()
         val calendar = java.util.Calendar.getInstance()
-        // Calculate the start timestamp of the current month
         calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
         calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
         calendar.set(java.util.Calendar.MINUTE, 0)
@@ -127,6 +149,7 @@ class LlmRepositoryImpl @Inject constructor(
         return when (taskType) {
             "ENCOURAGEMENT" -> "Great job! You made a solid step forward today, let's keep it up tomorrow!"
             "REPORT" -> "Weekly learning successfully completed. All performance metrics met expectations. Suggest focused listening practice next week."
+            "PING" -> "OK"
             else -> "Well done! Let's keep moving forward!"
         }
     }

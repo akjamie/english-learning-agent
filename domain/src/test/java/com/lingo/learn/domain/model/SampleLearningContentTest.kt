@@ -1,7 +1,7 @@
-package com.lingo.learn.domain.model
+package org.akj.lingo.learn.domain.model
 
-import org.junit.Assert.*
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 /**
  * Validates the structure and integrity of [SampleLearningContent], ensuring
@@ -35,9 +35,8 @@ class SampleLearningContentTest {
         for (i in 1 until session.subtitleLines.size) {
             val prev = session.subtitleLines[i - 1]
             val curr = session.subtitleLines[i]
-            assertTrue(
-                "Line ${curr.id} should start after line ${prev.id} ends",
-                curr.startTimeMs >= prev.endTimeMs
+            assertTrue(curr.startTimeMs >= prev.endTimeMs,
+                "Line ${curr.id} should start after line ${prev.id} ends"
             )
         }
     }
@@ -80,9 +79,8 @@ class SampleLearningContentTest {
             it.type == QuizQuestionType.LISTEN_CHOOSE_WORD
         }
 
-        assertTrue(
-            "Quiz must have at least 1 listening question per design spec",
-            listeningQuestions.isNotEmpty()
+        assertTrue(listeningQuestions.isNotEmpty(),
+            "Quiz must have at least 1 listening question per design spec"
         )
     }
 
@@ -91,9 +89,8 @@ class SampleLearningContentTest {
         val session = SampleLearningContent.createSchoolLifeSession()
         val errorBookQuestions = session.quizQuestions.filter { it.isFromErrorBook }
 
-        assertTrue(
-            "Quiz must include 1-2 error-book recurrence questions per design spec",
-            errorBookQuestions.isNotEmpty()
+        assertTrue(errorBookQuestions.isNotEmpty(),
+            "Quiz must include 1-2 error-book recurrence questions per design spec"
         )
     }
 
@@ -101,9 +98,8 @@ class SampleLearningContentTest {
     fun `quiz has at most 5 questions`() {
         val session = SampleLearningContent.createSchoolLifeSession()
 
-        assertTrue(
-            "Daily micro-quiz should have at most 5 questions per design spec",
-            session.quizQuestions.size <= 5
+        assertTrue(session.quizQuestions.size <= 5,
+            "Daily micro-quiz should have at most 5 questions per design spec"
         )
     }
 
@@ -123,10 +119,8 @@ class SampleLearningContentTest {
         }
 
         if (orderQuestion != null) {
-            assertEquals(
-                "Options and correctOrder should have the same size",
-                orderQuestion.options.size,
-                orderQuestion.correctOrder.size
+            assertEquals(orderQuestion.options.size, orderQuestion.correctOrder.size,
+                "Options and correctOrder should have the same size"
             )
             assertTrue(orderQuestion.correctOrder.isNotEmpty())
         }

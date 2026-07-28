@@ -1,7 +1,7 @@
-package com.lingo.learn.data.local.dao
+package org.akj.lingo.learn.data.local.dao
 
 import androidx.room.*
-import com.lingo.learn.data.local.entity.DailyStreakEntity
+import org.akj.lingo.learn.data.local.entity.DailyStreakEntity
 
 @Dao
 interface DailyStreakDao {

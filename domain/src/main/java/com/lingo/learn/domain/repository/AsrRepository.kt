@@ -1,6 +1,6 @@
-package com.lingo.learn.domain.repository
+package org.akj.lingo.learn.domain.repository
 
-import com.lingo.learn.domain.model.PronunciationResult
+import org.akj.lingo.learn.domain.model.PronunciationResult
 import java.io.File
 
 interface AsrRepository {

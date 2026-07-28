@@ -1,9 +1,9 @@
-package com.lingo.learn.data.di
+package org.akj.lingo.learn.data.di
 
 import android.content.Context
 import androidx.room.Room
-import com.lingo.learn.data.local.AppDatabase
-import com.lingo.learn.data.local.dao.*
+import org.akj.lingo.learn.data.local.AppDatabase
+import org.akj.lingo.learn.data.local.dao.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

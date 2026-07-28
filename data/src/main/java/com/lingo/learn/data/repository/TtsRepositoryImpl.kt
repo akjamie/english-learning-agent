@@ -1,11 +1,11 @@
-package com.lingo.learn.data.repository
+package org.akj.lingo.learn.data.repository
 
 import android.content.Context
-import com.lingo.learn.data.local.dao.TtsCacheDao
-import com.lingo.learn.data.local.entity.TtsCacheEntity
-import com.lingo.learn.data.prefs.SecureConfigPrefs
-import com.lingo.learn.data.remote.minimax.*
-import com.lingo.learn.domain.repository.TtsRepository
+import org.akj.lingo.learn.data.local.dao.TtsCacheDao
+import org.akj.lingo.learn.data.local.entity.TtsCacheEntity
+import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
+import org.akj.lingo.learn.data.remote.minimax.*
+import org.akj.lingo.learn.domain.repository.TtsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -1,9 +1,9 @@
-package com.lingo.learn.ui.learning
+package org.akj.lingo.learn.ui.learning
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lingo.learn.domain.model.*
-import com.lingo.learn.domain.repository.AsrRepository
+import org.akj.lingo.learn.domain.model.*
+import org.akj.lingo.learn.domain.repository.AsrRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -60,7 +60,9 @@ class LearningViewModel @Inject constructor(
     private val asrRepository: AsrRepository,
     private val voiceRecorder: VoiceRecorder,
     private val systemTtsHelper: SystemTtsHelper,
-    private val weeklyPlanRepository: com.lingo.learn.domain.repository.WeeklyPlanRepository
+    private val weeklyPlanRepository: org.akj.lingo.learn.domain.repository.WeeklyPlanRepository,
+    private val learningRecordRepository: org.akj.lingo.learn.domain.repository.LearningRecordRepository,
+    private val errorBookRepository: org.akj.lingo.learn.domain.repository.ErrorBookRepository
 ) : ViewModel() {
 
     private val _stage = MutableStateFlow(LearningStage.IMMERSION)
@@ -86,16 +88,23 @@ class LearningViewModel @Inject constructor(
     private val _summary = MutableStateFlow<SessionSummary?>(null)
     val summary: StateFlow<SessionSummary?> = _summary.asStateFlow()
 
-    init {
+    private var currentGrade: String = "Grade 4"
+
+    fun setGrade(grade: String) {
+        currentGrade = grade
         viewModelScope.launch {
             try {
-                val loadedSession = weeklyPlanRepository.getCachedLearningSession(1)
+                val loadedSession = weeklyPlanRepository.getCachedLearningSession(1, currentGrade)
                 _session.value = loadedSession
                 audioPlayer.loadSubtitles(loadedSession.subtitleLines)
             } catch (e: Exception) {
                 audioPlayer.loadSubtitles(_session.value.subtitleLines)
             }
         }
+    }
+
+    init {
+        setGrade(currentGrade)
     }
 
     //region Stage 1: Immersion
@@ -244,6 +253,15 @@ class LearningViewModel @Inject constructor(
             score = newScore,
             lastAnswerCorrect = isCorrect
         )
+
+        val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "vocab_${question.id}"
+        viewModelScope.launch {
+            if (!isCorrect) {
+                errorBookRepository.upsertError(word, "QUIZ_WRONG_ANSWER", question.type.name)
+            } else if (question.isFromErrorBook) {
+                errorBookRepository.markCorrect(word)
+            }
+        }
     }
 
     /** Handles the read-aloud quiz question by triggering ASR evaluation. */
@@ -271,6 +289,12 @@ class LearningViewModel @Inject constructor(
                 isEvaluating = false,
                 result = pronunciationResult
             )
+
+            if (!isCorrect) {
+                errorBookRepository.upsertError(referenceText, "SPEAKING_MISPRONOUNCED", "SPEAK_ALOUD")
+            } else {
+                errorBookRepository.markCorrect(referenceText)
+            }
         }
     }
 
@@ -317,17 +341,34 @@ class LearningViewModel @Inject constructor(
         val quizScore = _quizState.value.score
         val quizTotal = session.quizQuestions.size
         val pronunciationScore = _readAlongState.value.result?.overallScore ?: 85
+        val accuracy = if (quizTotal > 0) quizScore.toFloat() / quizTotal else 1.0f
 
-        _summary.value = SessionSummary(
-            newWordsLearned = session.targetNewWords.size,
-            totalNewWords = session.targetNewWords.size,
-            streakDays = 5,
-            weeklyDayNumber = 5,
-            weeklyTotalDays = 7,
-            quizScore = quizScore,
-            quizTotal = quizTotal,
-            pronunciationScore = pronunciationScore
-        )
+        viewModelScope.launch {
+            val record = org.akj.lingo.learn.domain.model.LearningRecord(
+                id = java.util.UUID.randomUUID().toString(),
+                taskId = "DAILY_${System.currentTimeMillis()}",
+                timestamp = System.currentTimeMillis(),
+                taskType = "DAILY_PRACTICE",
+                accuracy = accuracy,
+                duration = 900L,
+                score = quizScore * 20,
+                streakDays = 1,
+                lastModified = System.currentTimeMillis()
+            )
+            learningRecordRepository.saveSessionRecord(record)
+            val currentStreak = learningRecordRepository.getStreakDays()
+
+            _summary.value = SessionSummary(
+                newWordsLearned = session.targetNewWords.size,
+                totalNewWords = session.targetNewWords.size,
+                streakDays = currentStreak,
+                weeklyDayNumber = 1,
+                weeklyTotalDays = 7,
+                quizScore = quizScore,
+                quizTotal = quizTotal,
+                pronunciationScore = pronunciationScore
+            )
+        }
     }
 
     //endregion

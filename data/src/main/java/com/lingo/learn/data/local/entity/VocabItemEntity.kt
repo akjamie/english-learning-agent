@@ -1,8 +1,8 @@
-package com.lingo.learn.data.local.entity
+package org.akj.lingo.learn.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lingo.learn.domain.model.VocabItem
+import org.akj.lingo.learn.domain.model.VocabItem
 
 @Entity(tableName = "vocab_item")
 data class VocabItemEntity(

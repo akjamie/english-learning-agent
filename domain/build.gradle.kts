@@ -16,6 +16,12 @@ kotlin {
 
 dependencies {
     implementation("javax.inject:javax.inject:1")
-    testImplementation("junit:junit:4.13.2")
+    implementation("org.json:json:20231013")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 

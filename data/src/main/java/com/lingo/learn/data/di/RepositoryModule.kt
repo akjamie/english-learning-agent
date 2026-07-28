@@ -1,7 +1,7 @@
-package com.lingo.learn.data.di
+package org.akj.lingo.learn.data.di
 
-import com.lingo.learn.data.repository.*
-import com.lingo.learn.domain.repository.*
+import org.akj.lingo.learn.data.repository.*
+import org.akj.lingo.learn.domain.repository.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -41,4 +41,16 @@ abstract class RepositoryModule {
     abstract fun bindWeeklyPlanRepository(
         impl: WeeklyPlanRepositoryImpl
     ): WeeklyPlanRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLearningRecordRepository(
+        impl: LearningRecordRepositoryImpl
+    ): LearningRecordRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindErrorBookRepository(
+        impl: ErrorBookRepositoryImpl
+    ): ErrorBookRepository
 }

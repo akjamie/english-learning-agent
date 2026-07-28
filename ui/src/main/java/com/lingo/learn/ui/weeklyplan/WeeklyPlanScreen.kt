@@ -1,0 +1,321 @@
+package org.akj.lingo.learn.ui.weeklyplan
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WeeklyPlanScreen(
+    onBack: () -> Unit,
+    onViewReport: () -> Unit,
+    onStartLearning: (dayIndex: Int) -> Unit = {},
+    modifier: Modifier = Modifier,
+    viewModel: WeeklyPlanViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val today = viewModel.getDayOfWeek()
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFFDF5))
+            .statusBarsPadding()
+            .navigationBarsPadding()
+    ) {
+        TopAppBar(
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("📅", fontSize = 22.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Weekly Plan", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                }
+            },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF2C3E50))
+                }
+            },
+            actions = {
+                TextButton(onClick = onViewReport) {
+                    Text("📊 Report", fontWeight = FontWeight.Bold, color = Color(0xFF5C6FF2))
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFFFFDF5))
+        )
+
+        if (uiState.isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFF5C6FF2))
+            }
+            return@Column
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Date range header
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                if (uiState.theme.isNotBlank()) uiState.theme else "Weekly Plan",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2C3E50)
+                            )
+                            Text(
+                                viewModel.getFormattedDateRange(),
+                                fontSize = 13.sp,
+                                color = Color(0xFF7F8C8D)
+                            )
+                        }
+                        if (uiState.difficultyCoefficient > 0) {
+                            Badge(
+                                containerColor = Color(0xFF5C6FF2).copy(alpha = 0.15f),
+                                contentColor = Color(0xFF5C6FF2)
+                            ) {
+                                Text("Level ${uiState.difficultyCoefficient}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Day cards
+            if (uiState.days.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("📋", fontSize = 48.sp)
+                            Spacer(Modifier.height(12.dp))
+                            Text("No plan yet", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                            Spacer(Modifier.height(4.dp))
+                            Text("Tap below to generate a plan", fontSize = 14.sp, color = Color(0xFF7F8C8D))
+                        }
+                    }
+                }
+            } else {
+                items(uiState.days, key = { it.day }) { dayItem ->
+                    PlanDayCard(dayItem = dayItem, isToday = dayItem.day == today, onStart = onStartLearning)
+                }
+            }
+
+            // Actions
+            item {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.generateNewPlan() },
+                    enabled = !uiState.isGenerating,
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFD449),
+                        contentColor = Color(0xFF2C3E50)
+                    )
+                ) {
+                    if (uiState.isGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF2C3E50)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(
+                        if (uiState.isGenerating) "Generating..." else if (uiState.days.isEmpty()) "✨ Generate Plan" else "🔄 Regenerate Plan",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+
+                uiState.generateError?.let { error ->
+                    Spacer(Modifier.height(8.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFFFFECE5),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            error,
+                            modifier = Modifier.padding(12.dp),
+                            color = Color(0xFFFF7052),
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -> Unit = {}, getFocusEmoji: (String) -> String = ::getFocusEmoji) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (dayItem.isCompleted) 1f else 0f,
+        animationSpec = tween(600),
+        label = "day_progress"
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isToday) 3.dp else 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Day circle indicator
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(if (dayItem.isCompleted) Color(0xFF52D68A) else if (isToday) Color(0xFF5C6FF2) else Color(0xFFECEFF1)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (dayItem.isCompleted) {
+                            Text("✓", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        } else {
+                            Text("${dayItem.day}", color = if (isToday) Color.White else Color(0xFF2C3E50), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column {
+                        Text(
+                            "Day ${dayItem.day}",
+                            fontSize = 13.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                        Text(
+                            "${getFocusEmoji(dayItem.focus)} ${dayItem.focus}",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50)
+                        )
+                    }
+                }
+
+                if (isToday) {
+                    Badge(containerColor = Color(0xFF5C6FF2), contentColor = Color.White) {
+                        Text("Today", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Reference sentence
+            if (dayItem.referenceSentence.isNotBlank()) {
+                Text(
+                    "\"${dayItem.referenceSentence}\"",
+                    fontSize = 14.sp,
+                    color = Color(0xFF7F8C8D),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+
+            // Target words as chips
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                dayItem.targetWords.take(6).forEach { word ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF0F4FF))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(word, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFF5C6FF2))
+                    }
+                }
+                if (dayItem.targetWords.size > 6) {
+                    Text("+${dayItem.targetWords.size - 6}", fontSize = 12.sp, color = Color(0xFF7F8C8D), modifier = Modifier.align(Alignment.CenterVertically))
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⏱️", fontSize = 14.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text("${dayItem.durationMinutes} min", fontSize = 13.sp, color = Color(0xFF7F8C8D))
+                }
+                if (!dayItem.isCompleted && !isToday) {
+                    OutlinedButton(
+                        onClick = { onStart(dayItem.day) },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Start", fontSize = 12.sp, color = Color(0xFF5C6FF2))
+                    }
+                }
+            }
+
+            // Progress bar for completed status
+            if (dayItem.isCompleted) {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFECEFF1))
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(animatedProgress).fillMaxHeight()
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color(0xFF52D68A))
+                    )
+                }
+            }
+        }
+    }
+}
+
+

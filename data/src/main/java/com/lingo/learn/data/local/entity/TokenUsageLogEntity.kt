@@ -1,8 +1,8 @@
-package com.lingo.learn.data.local.entity
+package org.akj.lingo.learn.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lingo.learn.domain.model.TokenUsageLog
+import org.akj.lingo.learn.domain.model.TokenUsageLog
 
 @Entity(tableName = "token_usage_log")
 data class TokenUsageLogEntity(

@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.learning
+package org.akj.lingo.learn.ui.learning
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
@@ -20,8 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.lingo.learn.ui.dashboard.GradeTheme
-import com.lingo.learn.ui.dashboard.getThemeForGrade
+import org.akj.lingo.learn.ui.dashboard.GradeTheme
+import org.akj.lingo.learn.ui.dashboard.getThemeForGrade
 
 /**
  * Top-level container for the Sprint 2 daily learning flow with gamified journey progress.
@@ -36,6 +36,9 @@ fun LearningContainer(
 ) {
     val stage by viewModel.stage.collectAsState()
     val theme = remember(grade) { getThemeForGrade(grade) }
+
+    // Pass grade to ViewModel for grade-adaptive content generation
+    LaunchedEffect(grade) { viewModel.setGrade(grade) }
 
     Column(
         modifier = modifier

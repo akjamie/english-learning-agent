@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.dashboard
+package org.akj.lingo.learn.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,11 +14,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lingo.learn.ui.R
-import com.lingo.learn.ui.components.LingoAvatar
-import com.lingo.learn.ui.components.LingoExpression
-import com.lingo.learn.ui.components.ProgressRing
-import com.lingo.learn.ui.components.StreakCounter
+import org.akj.lingo.learn.ui.R
+import org.akj.lingo.learn.ui.components.LingoAvatar
+import org.akj.lingo.learn.ui.components.LingoExpression
+import org.akj.lingo.learn.ui.components.ProgressRing
+import org.akj.lingo.learn.ui.components.StreakCounter
 
 // Define multi-stage visual theme tokens
 data class GradeTheme(
@@ -58,15 +58,20 @@ fun DashboardScreen(
     onPlanClick: () -> Unit,
     onErrorBookClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: DashboardViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
-    var streakDays by remember { mutableStateOf(4) }
-    var todayProgress by remember { mutableStateOf(0.0f) }
-    val errorCount = 12
+    LaunchedEffect(Unit) {
+        viewModel.loadDashboardData()
+    }
 
-    val themeName = "School Life"
-    val taskDuration = "15 Mins"
-    val taskTarget = "5 Words + 2 Speech"
+    val uiState by viewModel.uiState.collectAsState()
+    val streakDays = uiState.streakDays
+    val todayProgress = uiState.todayProgress
+    val errorCount = uiState.errorCount
+    val themeName = uiState.themeName
+    val taskDuration = uiState.taskDuration
+    val taskTarget = uiState.taskTarget
 
     val lingoExpr = if (todayProgress >= 1.0f) LingoExpression.CELEBRATING else LingoExpression.HAPPY
     

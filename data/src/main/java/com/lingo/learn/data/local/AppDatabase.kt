@@ -1,11 +1,11 @@
-package com.lingo.learn.data.local
+package org.akj.lingo.learn.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.lingo.learn.data.local.converter.AppTypeConverters
-import com.lingo.learn.data.local.dao.*
-import com.lingo.learn.data.local.entity.*
+import org.akj.lingo.learn.data.local.converter.AppTypeConverters
+import org.akj.lingo.learn.data.local.dao.*
+import org.akj.lingo.learn.data.local.entity.*
 
 @Database(
     entities = [

@@ -1,13 +1,13 @@
-package com.lingo.learn.ui.learning
+package org.akj.lingo.learn.ui.learning
 
-import com.lingo.learn.domain.model.SubtitleLine
+import org.akj.lingo.learn.domain.model.SubtitleLine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.*
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for [AudioPlayerController], verifying subtitle synchronization,

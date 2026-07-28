@@ -1,4 +1,4 @@
-package com.lingo.learn.data.prefs
+package org.akj.lingo.learn.data.prefs
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -10,15 +10,15 @@ import javax.inject.Singleton
 
 @Singleton
 class SecureConfigPrefs @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext private val appContext: Context
 ) {
 
-    private val masterKey = MasterKey.Builder(context)
+    private val masterKey = MasterKey.Builder(appContext)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
+        appContext,
         "secure_config_prefs",
         masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
@@ -30,12 +30,7 @@ class SecureConfigPrefs @Inject constructor(
 
     fun getAuthToken(): String {
         val saved = prefs.getString(KEY_AUTH_TOKEN, "") ?: ""
-        val defaultToken = try {
-            String(android.util.Base64.decode("YXJrLWZhNzNjZTBiLTQyYzQtNDEyNy1iNmMzLTFlNDM3M2MyOWQxMS0yMmNhMQ==", android.util.Base64.DEFAULT))
-        } catch (e: Exception) {
-            ""
-        }
-        return if (saved.isBlank()) defaultToken else saved
+        return if (saved.isBlank()) "" else saved
     }
     fun setAuthToken(value: String) = prefs.edit().putString(KEY_AUTH_TOKEN, value).apply()
 
@@ -54,6 +49,9 @@ class SecureConfigPrefs @Inject constructor(
     fun getAsrModel(): String = prefs.getString(KEY_ASR_MODEL, "volc.seedasr.sauc.duration") ?: "volc.seedasr.sauc.duration"
     fun setAsrModel(value: String) = prefs.edit().putString(KEY_ASR_MODEL, value).apply()
 
+    fun getLlmEndpoint(): String = prefs.getString(KEY_LLM_ENDPOINT, "/v1/chat/completions") ?: "/v1/chat/completions"
+    fun setLlmEndpoint(value: String) = prefs.edit().putString(KEY_LLM_ENDPOINT, value).apply()
+
     fun getTtsSpeedNormal(): Float = prefs.getFloat(KEY_TTS_SPEED_NORMAL, 1.0f)
     fun setTtsSpeedNormal(value: Float) = prefs.edit().putFloat(KEY_TTS_SPEED_NORMAL, value).apply()
 
@@ -66,6 +64,14 @@ class SecureConfigPrefs @Inject constructor(
     fun getMonthlyTokenLimit(): Int = prefs.getInt(KEY_MONTHLY_TOKEN_LIMIT, 50000)
     fun setMonthlyTokenLimit(value: Int) = prefs.edit().putInt(KEY_MONTHLY_TOKEN_LIMIT, value).apply()
 
+    fun getLanguage(): String = prefs.getString(KEY_LANGUAGE, "en") ?: "en"
+    fun setLanguage(value: String) {
+        prefs.edit().putString(KEY_LANGUAGE, value).apply()
+        // Mirror to plain prefs for attachBaseContext (Hilt not yet injected at that point)
+        appContext.getSharedPreferences("lingo_lang_prefs", Context.MODE_PRIVATE)
+            .edit().putString("app_language", value).apply()
+    }
+
     companion object {
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_AUTH_TOKEN = "auth_token"
@@ -74,9 +80,11 @@ class SecureConfigPrefs @Inject constructor(
         private const val KEY_FALLBACK_MODEL = "fallback_model"
         private const val KEY_TTS_MODEL = "tts_model"
         private const val KEY_ASR_MODEL = "asr_model"
+        private const val KEY_LLM_ENDPOINT = "llm_endpoint"
         private const val KEY_TTS_SPEED_NORMAL = "tts_speed_normal"
         private const val KEY_TTS_SPEED_SLOW = "tts_speed_slow"
         private const val KEY_ASR_SCORE_THRESHOLD = "asr_score_threshold"
         private const val KEY_MONTHLY_TOKEN_LIMIT = "monthly_token_limit"
+        private const val KEY_LANGUAGE = "app_language"
     }
 }

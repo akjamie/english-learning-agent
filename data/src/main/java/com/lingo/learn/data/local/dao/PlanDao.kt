@@ -1,7 +1,7 @@
-package com.lingo.learn.data.local.dao
+package org.akj.lingo.learn.data.local.dao
 
 import androidx.room.*
-import com.lingo.learn.data.local.entity.PlanEntity
+import org.akj.lingo.learn.data.local.entity.PlanEntity
 
 @Dao
 interface PlanDao {

@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.components
+package org.akj.lingo.learn.ui.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
@@ -11,7 +11,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
-import com.lingo.learn.domain.model.WordScore
+import org.akj.lingo.learn.domain.model.WordScore
 
 /**
  * Renders a sentence with word-level color highlighting based on pronunciation scores.

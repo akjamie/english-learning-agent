@@ -1,4 +1,4 @@
-package com.lingo.learn.domain.model
+package org.akj.lingo.learn.domain.model
 
 data class TokenUsageLog(
     val id: Long = 0,

@@ -1,8 +1,8 @@
-package com.lingo.learn.data.local.entity
+package org.akj.lingo.learn.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.lingo.learn.domain.model.ErrorBookEntry
+import org.akj.lingo.learn.domain.model.ErrorBookEntry
 
 @Entity(tableName = "error_book")
 data class ErrorBookEntity(

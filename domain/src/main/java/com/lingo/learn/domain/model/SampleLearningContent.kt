@@ -1,4 +1,4 @@
-package com.lingo.learn.domain.model
+package org.akj.lingo.learn.domain.model
 
 /**
  * Hardcoded sample learning content for the "School Life" theme.

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.lingo.learn"
+    namespace = "org.akj.lingo.learn"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.lingo.learn"
+        applicationId = "org.akj.lingo.learn"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -76,6 +76,9 @@ dependencies {
 
     // Glance Widget
     implementation(libs.glance.appwidget)
+
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Test
     testImplementation(libs.junit)

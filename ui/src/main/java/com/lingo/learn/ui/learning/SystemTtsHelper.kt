@@ -1,4 +1,4 @@
-package com.lingo.learn.ui.learning
+package org.akj.lingo.learn.ui.learning
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
