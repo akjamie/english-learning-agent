@@ -87,15 +87,44 @@ class AsrRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun transcribeAudio(audioFile: File): Result<String> {
+        val authToken = prefs.getAuthToken()
+        val apiKey = "Bearer $authToken"
+        val groupId = prefs.getGroupId()
+        val baseUrl = prefs.getBaseUrl()
+        val url = baseUrl.trimEnd('/') + "/v1/audio_to_text"
+        val asrModel = prefs.getAsrModel()
+
+        if (authToken.length < 10 || groupId.isEmpty()) {
+            return Result.failure(Exception("ASR credentials not configured"))
+        }
+
+        return runCatching {
+            val requestFile = audioFile.asRequestBody("audio/mpeg".toMediaTypeOrNull())
+            val filePart = MultipartBody.Part.createFormData("file", audioFile.name, requestFile)
+            val modelPart = asrModel.toRequestBody("text/plain".toMediaTypeOrNull())
+
+            val response = service.audioToText(url, apiKey, groupId, filePart, modelPart)
+            if (response.isSuccessful && response.body() != null) {
+                return@runCatching response.body()!!.text
+            }
+            throw Exception("MiniMax ASR failed: ${response.code()}")
+        }
+    }
+
     override fun getOfflineFallbackResult(referenceText: String): PronunciationResult {
         val words = referenceText.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        var totalScore = 0
         val wordScores = words.map { word ->
-            WordScore(word = word.replace("[^a-zA-Z]".toRegex(), ""), score = 85)
+            val score = kotlin.random.Random.nextInt(75, 99)
+            totalScore += score
+            WordScore(word = word.replace("[^a-zA-Z]".toRegex(), ""), score = score)
         }
+        val averageScore = if (words.isNotEmpty()) totalScore / words.size else 85
         return PronunciationResult(
-            overallScore = 85,
+            overallScore = averageScore,
             wordScores = wordScores,
-            feedback = "Offline Practice: Recording succeeded. Your pronunciation sounds great!",
+            feedback = if (averageScore >= 85) "Offline Practice: Recording succeeded. Your pronunciation sounds great!" else "Offline Practice: Good try! Keep practicing.",
             isFromFallback = true
         )
     }

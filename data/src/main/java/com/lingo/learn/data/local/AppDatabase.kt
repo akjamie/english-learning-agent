@@ -20,7 +20,7 @@ import org.akj.lingo.learn.data.local.entity.*
         DailyStreakEntity::class,
         ThemeUnitEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)

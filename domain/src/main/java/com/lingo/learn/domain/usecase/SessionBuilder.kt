@@ -208,91 +208,93 @@ class SessionBuilder {
         val reviewQ = reviewQuestions.take(2)
         questions.addAll(reviewQ)
 
-        // Generate fresh questions from target words
-        val remainingSlots = (5 - questions.size).coerceIn(1, 3)
-
-        // Always include at least 1 listening question
-        if (targetWords.isNotEmpty()) {
-            val word = targetWords[0]
-            val distractors = SAMPLE_DISTRACTORS.shuffled().take(3)
-            val options = (listOf(word) + distractors).shuffled()
-            questions.add(
-                QuizQuestion(
-                    id = 100 + questions.size,
-                    type = QuizQuestionType.LISTEN_CHOOSE_WORD,
-                    question = "Listen and choose the correct word:",
-                    audioText = word,
-                    options = options,
-                    correctIndex = options.indexOf(word)
-                )
-            )
-        }
-
-        // Grade-appropriate question types
-        if (targetWords.size >= 2 && remainingSlots >= 2) {
-            when (gradeBand) {
-                GradeBand.PRIMARY -> {
-                    // Image-choose for primary
-                    val word = targetWords[1]
-                    val distractors = SAMPLE_DISTRACTORS.shuffled().take(3)
-                    val options = (listOf(word) + distractors).shuffled()
-                    questions.add(
-                        QuizQuestion(
-                            id = 200 + questions.size,
-                            type = QuizQuestionType.IMAGE_CHOOSE_WORD,
-                            question = "Which word matches?",
-                            options = options,
-                            correctIndex = options.indexOf(word)
-                        )
-                    )
+        // Generate fresh questions from target words to reach 10
+        var loopCount = 0
+        while (questions.size < 10 && targetWords.isNotEmpty() && loopCount < 5) {
+            for (word in targetWords) {
+                if (questions.size >= 10) break
+                
+                val distractors = SAMPLE_DISTRACTORS.shuffled().take(3)
+                val options = (listOf(word) + distractors).shuffled()
+                
+                // Mix question types
+                val type = when (questions.size % 4) {
+                    0 -> QuizQuestionType.LISTEN_CHOOSE_WORD
+                    1 -> QuizQuestionType.IMAGE_CHOOSE_WORD
+                    2 -> {
+                        if (gradeBand == GradeBand.JUNIOR) QuizQuestionType.SPELL_FILL_BLANK else QuizQuestionType.LISTEN_CHOOSE_WORD
+                    }
+                    else -> {
+                        if (gradeBand == GradeBand.SENIOR) QuizQuestionType.SENTENCE_ORDER else QuizQuestionType.IMAGE_CHOOSE_WORD
+                    }
                 }
-                GradeBand.JUNIOR -> {
-                    // Spelling for junior
-                    val word = targetWords[1]
-                    val letter = word.toCharArray().filter { it.isLetter() }.firstOrNull()?.lowercase() ?: "s"
-                    val distractors = listOf("a", "e", "o", "u").filter { it != letter }.take(3)
-                    questions.add(
-                        QuizQuestion(
-                            id = 200 + questions.size,
-                            type = QuizQuestionType.SPELL_FILL_BLANK,
-                            question = "Complete the word: ${word.first()}_${word.drop(1)}",
-                            options = (listOf(letter) + distractors).shuffled(),
-                            correctIndex = 0
+                
+                when (type) {
+                    QuizQuestionType.LISTEN_CHOOSE_WORD -> {
+                        questions.add(
+                            QuizQuestion(
+                                id = 100 + questions.size,
+                                type = type,
+                                question = "Listen and choose the correct word:",
+                                audioText = word,
+                                options = options,
+                                correctIndex = options.indexOf(word)
+                            )
                         )
-                    )
-                }
-                GradeBand.SENIOR -> {
-                    // Sentence order for senior
-                    val word = targetWords[1]
-                    questions.add(
-                        QuizQuestion(
-                            id = 200 + questions.size,
-                            type = QuizQuestionType.SENTENCE_ORDER,
-                            question = "Order: '$word' in a sentence",
-                            options = listOf("I", "a", "see", word),
-                            correctOrder = listOf("I", "see", "a", word)
+                    }
+                    QuizQuestionType.IMAGE_CHOOSE_WORD -> {
+                        questions.add(
+                            QuizQuestion(
+                                id = 200 + questions.size,
+                                type = type,
+                                question = "Which word matches?",
+                                options = options,
+                                correctIndex = options.indexOf(word)
+                            )
                         )
-                    )
+                    }
+                    QuizQuestionType.SPELL_FILL_BLANK -> {
+                        val letter = word.toCharArray().filter { it.isLetter() }.firstOrNull()?.lowercase() ?: "s"
+                        val spellDistractors = listOf("a", "e", "o", "u").filter { it != letter }.take(3)
+                        questions.add(
+                            QuizQuestion(
+                                id = 300 + questions.size,
+                                type = type,
+                                question = "Complete the word: ${word.first()}_${word.drop(1)}",
+                                options = (listOf(letter) + spellDistractors).shuffled(),
+                                correctIndex = 0
+                            )
+                        )
+                    }
+                    QuizQuestionType.SENTENCE_ORDER -> {
+                        questions.add(
+                            QuizQuestion(
+                                id = 400 + questions.size,
+                                type = type,
+                                question = "Order: '$word' in a sentence",
+                                options = listOf("I", "a", "see", word),
+                                correctOrder = listOf("I", "see", "a", word)
+                            )
+                        )
+                    }
+                    else -> {
+                        // fallback for exhaustive when
+                        questions.add(
+                            QuizQuestion(
+                                id = 500 + questions.size,
+                                type = QuizQuestionType.IMAGE_CHOOSE_WORD,
+                                question = "Which word matches?",
+                                options = options,
+                                correctIndex = options.indexOf(word)
+                            )
+                        )
+                    }
                 }
             }
+            loopCount++
         }
 
-        if (targetWords.size >= 3 && questions.size < 5) {
-            val word = targetWords[2]
-            val distractors = SAMPLE_DISTRACTORS.shuffled().take(3)
-            val options = (listOf(word) + distractors).shuffled()
-            questions.add(
-                QuizQuestion(
-                    id = 300 + questions.size,
-                    type = QuizQuestionType.IMAGE_CHOOSE_WORD,
-                    question = "Choose the correct word:",
-                    options = options,
-                    correctIndex = options.indexOf(word)
-                )
-            )
-        }
-
-        return questions.take(5).shuffled()
+        return questions.take(10).shuffled()
     }
 
     //endregion

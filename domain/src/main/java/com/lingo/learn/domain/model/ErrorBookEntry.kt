@@ -12,5 +12,6 @@ data class ErrorBookEntry(
     val consecutiveCorrectCount: Int,
     val graduationCheckTimestamp: Long,
     val historyJson: String,           // Error history record snapshot
+    val nextReviewTimestamp: Long = 0L, // For Spaced Repetition (1/3/7/14 days)
     val lastModified: Long = System.currentTimeMillis()
 )

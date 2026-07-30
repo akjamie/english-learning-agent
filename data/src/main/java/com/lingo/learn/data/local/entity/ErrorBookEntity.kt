@@ -17,6 +17,7 @@ data class ErrorBookEntity(
     val consecutiveCorrectCount: Int,
     val graduationCheckTimestamp: Long,
     val historyJson: String,
+    val nextReviewTimestamp: Long = 0L,
     val lastModified: Long
 ) {
     fun toDomain() = ErrorBookEntry(
@@ -31,6 +32,7 @@ data class ErrorBookEntity(
         consecutiveCorrectCount = consecutiveCorrectCount,
         graduationCheckTimestamp = graduationCheckTimestamp,
         historyJson = historyJson,
+        nextReviewTimestamp = nextReviewTimestamp,
         lastModified = lastModified
     )
 
@@ -47,6 +49,7 @@ data class ErrorBookEntity(
             consecutiveCorrectCount = domain.consecutiveCorrectCount,
             graduationCheckTimestamp = domain.graduationCheckTimestamp,
             historyJson = domain.historyJson,
+            nextReviewTimestamp = domain.nextReviewTimestamp,
             lastModified = domain.lastModified
         )
     }

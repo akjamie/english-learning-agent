@@ -9,5 +9,7 @@ interface AsrRepository {
         referenceText: String
     ): Result<PronunciationResult>
 
+    suspend fun transcribeAudio(audioFile: File): Result<String>
+
     fun getOfflineFallbackResult(referenceText: String): PronunciationResult
 }

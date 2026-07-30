@@ -28,30 +28,24 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         val gradeBand = GradeBand.fromGrade(grade)
         val prompt = """
             You are the curriculum planner for Lingo English. 
-            Generate a personalized 7-day English learning plan for a student in $grade.
-
-            --- Grade Band Constraints ---
-            - Vocabulary Range: ${gradeBand.defaultVocabularyRange}
-            - Max words per sentence: ${gradeBand.maxWordsPerSentence}
-            - Session duration: ${gradeBand.defaultDurationMinutes} minutes
-            - Phonics ratio: ${(gradeBand.defaultPhonicsRatio * 100).toInt()}%
-            - Grammar ratio: ${(gradeBand.defaultGrammarRatio * 100).toInt()}%
+            Your task is to generate a personalized 7-day English learning plan for a student in $grade using default textbook.
 
             --- Student Learning History ---
             - Average Accuracy: $accuracy%
             - Weak Word Categories: ${weakCategories.joinToString()}
             - Completed Milestones: ${completedMilestones.joinToString()}
 
-            Output raw valid JSON ONLY matching structure:
+            --- Constraints & Output Format ---
+            You must output a raw, valid JSON object ONLY. Do not write markdown blocks like ```json or any prefix text. The JSON must match the following structure:
             {
-              "theme": "School Life & Family",
+              "theme": "Unit theme name",
               "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
               "days": [
                 {
                   "day": 1,
-                  "focus": "Vocabulary & Dialogue",
-                  "target_words": ["classroom", "teacher", "notebook"],
-                  "reference_sentence": "Welcome to our sunny classroom!",
+                  "focus": "Vocabulary / Grammar / Dialogue",
+                  "target_words": ["word1", "word2"],
+                  "reference_sentence": "Standard practice sentence of the day",
                   "duration_minutes": ${gradeBand.defaultDurationMinutes}
                 }
               ]

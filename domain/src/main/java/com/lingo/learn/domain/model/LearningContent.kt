@@ -60,7 +60,9 @@ enum class QuizQuestionType {
     LISTEN_CHOOSE_WORD, // Listen to audio and pick the matching word
     SPELL_FILL_BLANK,   // Fill in the missing letter(s) of a word
     SENTENCE_ORDER,     // Reorder shuffled words into a correct sentence
-    READ_ALOUD          // Read aloud for pronunciation scoring
+    READ_ALOUD,         // Read aloud for pronunciation scoring
+    SPELLING,           // Active spelling production
+    DICTATION           // Listen and type the full sentence
 }
 
 /**
