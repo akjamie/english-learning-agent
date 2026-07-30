@@ -67,6 +67,7 @@ fun OnboardingContainer(
             }
             OnboardingStep.Diagnosis -> {
                 DiagnosisScreen(
+                    grade = selectedGrade,
                     onDiagnosisFinished = {
                         calculatedLevel = it
                         currentStep = OnboardingStep.DiagnosisResult

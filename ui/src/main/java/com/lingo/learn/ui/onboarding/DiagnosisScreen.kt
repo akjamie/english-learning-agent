@@ -53,6 +53,7 @@ enum class QuestionType {
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun DiagnosisScreen(
+    grade: String = "Grade 3",
     onDiagnosisFinished: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DiagnosisViewModel = androidx.hilt.navigation.compose.hiltViewModel()
@@ -69,8 +70,8 @@ fun DiagnosisScreen(
     val questions by viewModel.questions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadDiagnosticQuestions("Grade 3") // Hardcoded grade for now, ideally passed via nav arg
+    LaunchedEffect(grade) {
+        viewModel.loadDiagnosticQuestions(grade)
     }
 
     if (isLoading) {
