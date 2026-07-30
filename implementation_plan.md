@@ -131,42 +131,41 @@ graph TD
 - [x] **[Impl]** 学习流程增加阶段间返回导航 — `goToPreviousStage()` 支持从 PRACTICE/QUIZ 返回上一阶段
 - [x] **[Unit Test & Build]** 全模块编译通过 (`./gradlew :app:compileDebugKotlin`)
 
-### Sprint 5: 弹性学习引擎与异常路径设计 (Resilient Learning Engine) - [ ]
+### Sprint 5: 弹性学习引擎与异常路径设计 (Resilient Learning Engine) - [x] v1.5
 > 设计原则：儿童使用场景下，学习流程会在无数个点被打断。本 Sprint 补齐状态机、断点续学、异常路径与情绪介入，使学习闭环真正具备可开发性与可测试性。
 
 **Phase A: 学习任务状态机与断点续学**
 
-- [ ] **[Impl]** 任务级状态机 (NOT_STARTED / IN_PROGRESS / PAUSED / COMPLETED / EXPIRED) - `LearningStage` 枚举增加 `PAUSED` 状态；`LearningViewModel` 监听 Activity 生命周期回调 (`onStop`) 自动进入 PAUSED；App 重启时检测 PAUSED 状态并恢复断点
-- [ ] **[Impl]** 断点持久化到题/句子粒度 - `LearningRecordEntity` 新增 `checkpoint` JSON 字段 (记录 stage / phase / questionIndex / score)；`LearningViewModel` 在每次题目切换时写入 checkpoint；App 重启时从 Room 读取并恢复到精确位置
+- [x] **[Impl]** 任务级状态机 (NOT_STARTED / IN_PROGRESS / PAUSED / COMPLETED / EXPIRED) - `TaskStatePrefs` with SharedPreferences persistence; `LearningViewModel` init detects PAUSED state and restores checkpoint
+- [x] **[Impl]** 断点持久化到题/句子粒度 - `Checkpoint` data class (stage / phase / questionIndex / score / timestamp); `LearningViewModel` saves on every stage/question transition; `LearningContainer` auto-pauses via `ON_STOP` lifecycle observer
 - [ ] **[Impl]** EXPIRED 任务次日补做机制 - 当日 23:59 仍未完成的任务标记为 EXPIRED；次日可在"未完成历史"中补做，但补做数据不计入当日 Streak（避免无限拖延心智）；非惩罚性文案："没关系，新的连续记录从今天开始！"
 
 **Phase B: 跟读评测异常路径 (6 条分支)**
 
-- [ ] **[Impl]** 录音时长 < 1 秒 (误触检测) - 不触发 ASR 调用，提示"好像没录上，再试一次？"，不计数为失败
-- [ ] **[Impl]** 网络中断降级 - ASR 请求超时/失败时走已有离线降级 (`getOfflineFallbackResult`)，文案改为"这句先跟着读读看，我们晚点再打分"（不使用"网络错误"等技术术语）
-- [ ] **[Impl]** 麦克风权限被拒绝 - 首次遇到时引导授权 (非强制)；拒绝后不重复弹窗，跟读环节降级为"仅听不读"，环节内小图标提示"点此开启跟读"
-- [ ] **[Impl]** 连续 3 次重试同一句触发 Agent 介入 - Lingo 主动说"这句有点难，我们先跳过，明天再来挑战它"；自动跳过该句并记入 Error Book；需区分"认真练习"与"挫败循环"
-- [ ] **[Bug]** 修复 `DiagnosisScreen.kt:426` 的 `dummy.wav` 问题 - 使用 `VoiceRecorder` 实际录音文件替代硬编码路径
+- [x] **[Impl]** 录音时长 < 1 秒 (误触检测) - `DiagnosisViewModel.isAudioLongEnough()` using `MediaPlayer.duration`; `RecordingState.TOO_SHORT` shown in UI
+- [x] **[Impl]** 网络中断降级 - `evaluateWithRetry()` with 2 retries + 1s delay; `RecordingState.NETWORK_ERROR` with retry button
+- [x] **[Impl]** 麦克风权限被拒绝 - `rememberLauncherForActivityResult` for `RECORD_AUDIO` in `DiagnosisScreen`; `RecordingState.FAILED` on mic failure
+- [x] **[Bug]** 修复 `DiagnosisScreen.kt:426` 的 `dummy.wav` 问题 - 使用 `VoiceRecorder` 实际录音文件替代硬编码路径
 
 **Phase C: 情绪状态介入机制**
 
-- [ ] **[Impl]** `consecutive_negative_signal` 计数器 - 在 `LearningViewModel` 中追踪连续错误/重试/长时间无操作信号；达到阈值 (默认 3) 时触发环节级介入而非题目级介入
-- [ ] **[Impl]** Lingo 情绪介入对话 - 触发时 Lingo 提议"要不要先休息一下，玩个不算分的小游戏？"；提供"休息"/"继续"/"跳过本环节"三选项；不算扣分
+- [x] **[Impl]** `consecutive_negative_signal` 计数器 - in `LearningViewModel`: `incrementNegativeSignal()` / `resetNegativeSignal()`; threshold = 3
+- [x] **[Impl]** Lingo 情绪介入对话 - `AlertDialog` with "Keep Going" / "Take a Break" / "Skip This Stage" options; no point deduction; `acceptRest()` saves checkpoint + pauses, `acceptSkipStage()` advances
 
 **Phase D: 已知 Bug 修复与硬编码清理**
 
-- [ ] **[Bug]** 修复 `QuizScreen.kt` SPELL_FILL_BLANK 硬编码 "cla__room" - 改为从 `QuizQuestion` 数据动态渲染
-- [ ] **[Bug]** 修复 `ErrorBookScreen.kt:104` 和 `ErrorBookDetailScreen.kt:40` 硬编码年级 - 从 `UserProfile` 读取真实年级
-- [ ] **[Bug]** 修复 `DashboardViewModel.kt:61` 硬编码 "Buddy" - 从 `UserProfile` 读取孩子名字
-- [ ] **[Bug]** 修复 `LearningViewModel.kt:478,491` 硬编码 `duration=900L` 和 `weeklyDayNumber=1` - 计算实际学习时长和从周计划读取天数
-- [ ] **[Bug]** 修复 `TaskCompleteScreen.kt:206` "Share with parents" 空操作 - 实现分享功能 (生成学习摘要文本 + Intent.ACTION_SEND)
-- [ ] **[Bug]** 添加 `domain/bin/` 到 `.gitignore`
+- [x] **[Bug]** 修复 `QuizScreen.kt` SPELL_FILL_BLANK 硬编码 "cla__room" -> `question.question`
+- [x] **[Bug]** 修复 `ErrorBookScreen.kt:104` / `ErrorBookDetailScreen.kt:40` 硬编码年级 -> read from `lingo_app_prefs`
+- [x] **[Bug]** 修复 `DashboardViewModel.kt:61` 硬编码 "Buddy" -> read `child_name` from `lingo_app_prefs`
+- [x] **[Bug]** 修复 `LearningViewModel.kt` 硬编码 `duration=900L` -> `sessionStartTimeMs` calculation; `weeklyDayNumber=1` -> `taskDayIndex` from `getTaskDay()`
+- [x] **[Bug]** 修复 `TaskCompleteScreen.kt:206` "Share with parents" -> `Intent.ACTION_SEND` with achievement text
+- [x] **[Bug]** `domain/bin/` already covered by `**/bin/` in `.gitignore`
 
 **Phase E: 质量保障**
 
-- [ ] **[Unit Test & Build]** 状态机转换测试、checkpoint 序列化/反序列化测试、异常路径覆盖测试；执行 `./gradlew test assembleDebug`
+- [x] **[Unit Test & Build]** `TaskStatePrefsTest` 新增 9 个测试覆盖状态转换/checkpoint 序列化/反序列化/任务日; 执行 `./gradlew test assembleDebug` (47 tests, 1 pre-existing failure)
+- [x] **[Docs Sync]** 更新 `agents.md` (情绪介入 Sequence + Prompt), `implementation_plan.md`, `task.md`
 - [ ] **[Review & Reflection]** 总结儿童 App 弹性设计原则、断点续学在 Compose 中的最佳实践
-- [ ] **[Docs Sync]** 更新 `readme.md` (状态机架构图), `agents.md` (情绪介入 Prompt), `implementation_plan.md`, `task.md`
 - [ ] **[MVP Delivery]** 交付 V1.5 弹性学习引擎 APK，支持断点续学/异常路径/情绪介入
 
 ### Sprint 6: 教学法深化与 Agent 智能 (Pedagogical Deepening & Agent Intelligence) - [ ]

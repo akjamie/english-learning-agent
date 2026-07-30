@@ -80,6 +80,38 @@ sequenceDiagram
     UI->>Parent: Display daily task cards in DashboardScreen
 ```
 
+### 4. Emotional Intervention Flow
+Triggered after 3 consecutive negative signals (wrong quiz answer, low ASR score, retry, recording failure) within a single stage. Resets on correct answer or stage transition.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Child User
+    participant VM as LearningViewModel
+    participant UI as :ui Module
+
+    User->>UI: Submit wrong answer / Retry / Low score
+    UI->>VM: submitQuizAnswer() / submitGameAnswer()<br/>stopRecording() / retryReadAlong()
+    Note over VM: incrementNegativeSignal()
+    alt consecutiveNegativeSignals >= 3
+        VM->>VM: _showIntervention = true
+        VM-->>UI: showIntervention dialog
+        UI->>UI: Lingo: "Need a break?"
+        alt User taps "Keep Going"
+            UI->>VM: acceptContinue()
+            Note over VM: resetNegativeSignal()
+        else User taps "Take a Break"
+            UI->>VM: acceptRest()
+            Note over VM: saveCheckpoint() + pauseTask()
+        else User taps "Skip This Stage"
+            UI->>VM: acceptSkipStage()
+            Note over VM: advance to next stage + resetNegativeSignal()
+        end
+    else < 3
+        VM-->>UI: Continue normal flow
+    end
+```
+
 ---
 
 ## 📝 Prompt Templates
@@ -127,7 +159,21 @@ The child got this word wrong in a quiz due to: {error_type}.
 4. Keep the explanation under 100 words. Do not be overly academic.
 ```
 
-### 3. Daily Encourager Prompt
+### 3. Emotional Intervention Prompt (Resilient Learning Engine)
+Sprint 5 — triggered after 3 consecutive negative signals (wrong answers, low ASR scores, retries).
+
+```
+You are Lingo, a compassionate fox tutor. A student named {name} has encountered several difficulties in a row.
+
+--- Guidelines ---
+1. Acknowledge the frustration without dwelling on it — be warm and matter-of-fact.
+2. Offer three choices: (a) take a short break, (b) keep going, or (c) skip this part.
+3. Use encouraging, pressure-free language.
+4. Keep the message under 60 words.
+5. Do NOT mention scores, grades, or performance.
+```
+
+### 4. Daily Encourager Prompt
 Creates badges and warm greetings.
 
 ```
