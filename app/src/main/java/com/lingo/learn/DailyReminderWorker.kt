@@ -11,6 +11,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import org.akj.lingo.learn.ui.StreakPrefs
 import java.util.concurrent.TimeUnit
 
 class DailyReminderWorker(
@@ -39,10 +40,32 @@ class DailyReminderWorker(
     }
 
     private fun showNotification() {
+        val streakDays = StreakPrefs.getStreakDays(applicationContext)
+        val todayDone = StreakPrefs.isTodayDone(applicationContext)
+
+        val (title, body) = when {
+            todayDone -> Pair(
+                "🦊 Great work today!",
+                "You're on a ${streakDays}-day streak! See you tomorrow!"
+            )
+            streakDays >= 7 -> Pair(
+                "🔥 ${streakDays}-day streak!",
+                "Don't break your streak! 15 minutes is all you need!"
+            )
+            streakDays > 0 -> Pair(
+                "🦊 Day $streakDays awaits!",
+                "Your ${streakDays}-day streak is waiting for you!"
+            )
+            else -> Pair(
+                "🦊 Time to practice!",
+                "15 minutes daily keeps your English growing!"
+            )
+        }
+
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("🦊 Time to practice!")
-            .setContentText("15 minutes daily keeps your English growing!")
+            .setContentTitle(title)
+            .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .build()
