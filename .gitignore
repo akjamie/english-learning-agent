@@ -28,6 +28,7 @@ yes.txt
 *.aab
 *.dex
 *.class
+**/bin/
 
 # Key stores
 *.keystore

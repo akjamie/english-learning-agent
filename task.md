@@ -44,26 +44,114 @@
 
 ---
 
-## Sprint 3: 错题本 + 周计划 + 周报 (第 5-6 周) - [ ]
-- [ ] **[Impl]** 错题本列表卡片式界面设计与优先级排序算法 (Room Query 自动排序)
-- [ ] **[Impl]** 错题详情 3D 翻转卡片 (正面词卡 + 背面释义/慢速 TTS 例句)
-- [ ] **[Impl]** 周计划日历视图与基于 LLM 的智能计划自适应生成
-- [ ] **[Impl]** 每周高频词短对话情景产出模块
-- [ ] **[Impl]** 家长周报卡片图片化本地渲染及一键分享
-- [ ] **[Unit Test & Build]** 错题衰减算法单元测试与 LLM JSON 解析单元测试；构建验证
-- [ ] **[Review & Reflection]** 总结 Room SQL 复杂排序与 LLM Prompt 调优经验
-- [ ] **[Docs Sync]** 同步更新 `readme.md` & `agents.md`
-- [ ] **[MVP Delivery]** 交付具备完整错题自适应与周计划生成的 MVP APK
+## Sprint 3: 错题本 + 周计划 + 周报 (第 5-6 周) - [x]
+- [x] **[Impl]** 错题本列表卡片式界面设计与优先级排序算法 (Room Query 自动排序)
+- [x] **[Impl]** 错题详情 3D 翻转卡片 (正面词卡 + 背面释义/慢速 TTS 例句)
+- [x] **[Impl]** 周计划日历视图与基于 LLM 的智能计划自适应生成
+- [x] **[Impl]** 每周高频词短对话情景产出模块
+- [x] **[Impl]** 家长周报卡片图片化本地渲染及一键分享
+- [x] **[Unit Test & Build]** 错题衰减算法单元测试与 LLM JSON 解析单元测试；构建验证
+- [x] **[Review & Reflection]** 总结 Room SQL 复杂排序与 LLM Prompt 调优经验
+- [x] **[Docs Sync]** 同步更新 `readme.md` & `agents.md`
+- [x] **[MVP Delivery]** 交付具备完整错题自适应与周计划生成的 MVP APK
 
 ---
 
-## Sprint 4: Widget + Notification + Settings + Optimization (Week 7-8) - [/]
-- [ ] **[Impl]** 2x2 & 4x2 Glance Desktop AppWidgets (4 rendering states)
-- [ ] **[Impl]** WorkManager Daily Encouraging Emotional Push Notifications
+## Sprint 4: Widget + Notification + Settings + Optimization (Week 7-8) - [x]
+- [x] **[Impl]** 2x2 & 4x2 Glance Desktop AppWidgets (4 rendering states)
+- [x] **[Impl]** WorkManager Daily Encouraging Emotional Push Notifications
 - [x] **[Impl]** Visual Settings Screen (`SettingsScreen.kt`) with API Credentials, Three AI Channel Models selection, Token Budget, and Live API Connection Testing
 - [x] **[Impl]** Ergonomic UX Polish: Bottom-thumb Mic Button positioning, glowing pulse ring animations, and direction-aware spring horizontal slide transitions
-- [ ] **[Impl]** ASR/TTS offline degradation fallbacks & child safety mode tuning
+- [x] **[Impl]** ASR/TTS offline degradation fallbacks & child safety mode tuning
 - [x] **[Unit Test & Build]** Complete unit testing & build pipeline (`./gradlew test assembleDebug`)
 - [x] **[Review & Reflection]** Code review, documentation update, and reflection in `docs/dev-workflow.md`
 - [x] **[Docs Sync]** Synchronize `readme.md`, `agents.md`, `task.md`, `walkthrough.md`
 - [x] **[MVP Delivery]** Deliver fresh tested runnable APK (`app-debug.apk`) pushed to GitHub `main`
+
+---
+
+## Sprint 4.5: Bug Fix & UI Polish - [x]
+- [x] **[Impl]** 修复 Dashboard 底部卡片布局不完整 (`MainActivity.kt` `AnimatedContent` 添加 `fillMaxSize`)
+- [x] **[Impl]** 修复入学诊断题始终相同 (`DiagnosisScreen` 传递真实年级，`DiagnosisViewModel` 使用 `GradeBand` 适配，`maxTokens=1500`)
+- [x] **[Impl]** 修复 `DIAGNOSIS` 缺少 LLM 降级模板 (`LlmRepositoryImpl` 新增 10 题 JSON 兜底)
+- [x] **[Impl]** 修复 `LingoAvatar` 小尺寸裁剪 (Canvas 坐标按 `min(canvasW, canvasH)/150f` 等比缩放)
+- [x] **[Impl]** 合并重复结果页 (移除 `QuizResultPage`，Quiz 直接进入 `TaskCompleteScreen`)
+- [x] **[Impl]** 移除 `GameOptionButton` 死代码参数
+- [x] **[Impl]** 沉浸式音频接入真实 TTS (`LearningViewModel` 监听字幕索引，`SystemTtsHelper` 逐句朗读)
+- [x] **[Impl]** 学习流程增加阶段间返回导航 (`goToPreviousStage()`)
+- [x] **[Unit Test & Build]** 全模块编译通过
+
+---
+
+## Sprint 5: Resilient Learning Engine (弹性学习引擎) - [ ]
+> Principle: Children interrupt learning sessions constantly. This sprint adds state machine, checkpoint resume, exception paths, and emotional intervention.
+
+### Phase A: Task State Machine & Checkpoint Resume
+- [ ] **[Impl]** Task state machine (NOT_STARTED / IN_PROGRESS / PAUSED / COMPLETED / EXPIRED) - add PAUSED to `LearningStage`; auto-pause on `onStop`; resume from checkpoint on app restart
+- [ ] **[Impl]** Question-level checkpoint persistence - add `checkpoint` JSON field to `LearningRecordEntity`; save stage/phase/questionIndex/score on every question transition; restore exact position on restart
+- [ ] **[Impl]** EXPIRED task next-day redo - tasks not completed by 23:59 marked EXPIRED; redoable next day but don't count toward streak; non-punitive messaging
+
+### Phase B: Read-Along Exception Paths (6 Branches)
+- [ ] **[Impl]** Recording < 1s (accidental tap) - skip ASR call, prompt "Seems like it didn't record, try again?", no failure count
+- [ ] **[Impl]** Network failure degradation - use existing offline fallback, child-friendly message "Let's just read along for now, we'll score later" (no technical jargon)
+- [ ] **[Impl]** Mic permission denied - one-time auth prompt (non-blocking); degrade to listen-only mode with subtle "tap to enable recording" icon
+- [ ] **[Impl]** 3 consecutive retries on same sentence - Lingo intervenes: "This one's tricky, let's skip it and come back tomorrow"; auto-skip + add to Error Book
+- [ ] **[Bug]** Fix `DiagnosisScreen.kt:426` dummy.wav - use actual `VoiceRecorder` output file
+
+### Phase C: Emotional State Intervention
+- [ ] **[Impl]** `consecutive_negative_signal` counter in `LearningViewModel` - track consecutive errors/retries/idle; threshold=3 triggers stage-level intervention
+- [ ] **[Impl]** Lingo emotional intervention dialog - "Want to take a break and play a no-score mini-game?" with Rest/Continue/Skip options; no penalty
+
+### Phase D: Bug Fixes & Hardcode Cleanup
+- [ ] **[Bug]** Fix `QuizScreen.kt` SPELL_FILL_BLANK hardcoded "cla__room" - render from `QuizQuestion` data
+- [ ] **[Bug]** Fix hardcoded grade in `ErrorBookScreen.kt:104` and `ErrorBookDetailScreen.kt:40` - read from `UserProfile`
+- [ ] **[Bug]** Fix hardcoded "Buddy" in `DashboardViewModel.kt:61` - read from `UserProfile`
+- [ ] **[Bug]** Fix hardcoded `duration=900L` and `weeklyDayNumber=1` in `LearningViewModel.kt` - calculate actual duration and read from plan
+- [ ] **[Bug]** Fix `TaskCompleteScreen.kt:206` no-op share button - implement share (text summary + ACTION_SEND)
+- [ ] **[Bug]** Add `domain/bin/` to `.gitignore`
+
+### Phase E: Quality
+- [ ] **[Unit Test & Build]** State machine transition tests, checkpoint serialization tests, exception path coverage; `./gradlew test assembleDebug`
+- [ ] **[Review & Reflection]** Document resilient design principles for children's apps
+- [ ] **[Docs Sync]** Update `readme.md` (state machine diagram), `agents.md` (intervention prompts), `implementation_plan.md`, `task.md`
+- [ ] **[MVP Delivery]** Deliver V1.5 resilient learning engine APK
+
+---
+
+## Sprint 6: Pedagogical Deepening & Agent Intelligence (教学法深化与 Agent 智能) - [ ]
+> Principle: Build on Sprint 5 resilience infrastructure. Add core pedagogical activities and bounded-autonomy Agent decision-making.
+
+### Phase A: Pedagogical Core Activities
+- [ ] **[Impl]** Pre-teach vocabulary warm-up - enhance existing `PreTeachScreen` with image association and ESA Engage interaction
+- [ ] **[Impl]** Listen-Repeat-Compare loop - TTS demo -> record -> playback comparison (play child's recording) -> ASR score -> optional retry
+- [ ] **[Impl]** Phonics blending for PRIMARY band - CVC word building, onset-rime, minimal pairs discrimination
+- [ ] **[Impl]** Spaced repetition in Quiz - auto-insert Error Book words at Ebbinghaus intervals (1/3/7/14 days); reuse `nextReviewTimestamp` field
+- [ ] **[Impl]** Production task scoring - complete SPELLING/DICTATION evaluation logic (enum exists, scoring incomplete); add sentence writing type
+
+### Phase B: Bounded-Autonomy Agent
+- [ ] **[Impl]** `DiagnoseAnomalyUseCase` - structured learning summary input -> predefined category output (exam pressure / schedule change / motivation decline / difficulty mismatch / uncertain) + confidence; low confidence (<0.6) defers to parent
+- [ ] **[Impl]** `ExplainDecisionUseCase` - explainable AI: generate explanations from persisted plan rationale snapshot (not re-deriving); parent can ask "why more listening this week?"
+- [ ] **[Impl]** Error Book Agent follow-up - child asks "why can't I remember this word?"; Agent uses full error history for personalized explanation
+
+### Phase C: Gamification & Incentives
+- [ ] **[Impl]** Reward animations & XP system - particle effects on correct, XP pop counters, full-screen level-up celebration
+- [ ] **[Impl]** Daily 3-goal system - 1 session / 80%+ accuracy / 5 new words, each tracked with badge rewards
+- [ ] **[Impl]** Hint/Skip system completion - existing 3-level hint (level 1 = LLM); add skip (no XP but no penalty)
+
+### Phase D: Adaptive & Parent Reports
+- [ ] **[Impl]** Adaptive difficulty - adjust sentence length (±3 words) and CEFR level based on last quiz accuracy
+- [ ] **[Impl]** Parent detail report - per-word pronunciation error breakdown, time distribution, weak skill tag cloud, PDF/WeChat export
+- [ ] **[Impl]** Makeup card mechanic - 2 cards/month, streak break triggers active choice (not auto-use), preserves child's agency
+
+### Phase E: Quality
+- [ ] **[Unit Test & Build]** Spaced repetition algorithm tests, Phonics module tests, attribution agent tests, adaptive difficulty tests; `./gradlew test assembleDebug`
+- [ ] **[Review & Reflection]** Document ESA model, bounded-autonomy Agent design, spaced repetition mobile best practices
+- [ ] **[Docs Sync]** Full doc sync for V2.0 architecture
+- [ ] **[MVP Delivery]** Deliver V2.0 pedagogical + Agent intelligence APK
+
+---
+
+## Backlog (Bug Fixes & Enhancements)
+- [x] **[Bug]** Word display issue - words cannot properly display in some areas.
+- [x] **[Bug]** Onboarding/eval queries are all the same - diagnosis screen still generating same questions despite fallback fix, needs further investigation.
+- [x] **[Bug]** Navigation - From learning journey cannot go back to the app home page.
