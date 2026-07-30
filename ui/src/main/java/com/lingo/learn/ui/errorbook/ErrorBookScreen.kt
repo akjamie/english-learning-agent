@@ -31,6 +31,10 @@ fun ErrorBookScreen(
     viewModel: ErrorBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val explanationState by viewModel.explanationState.collectAsState()
+    
+    var selectedEntry by remember { mutableStateOf<ErrorBookEntry?>(null) }
+    var showExplanationDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -92,13 +96,73 @@ fun ErrorBookScreen(
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(uiState.entries, key = { it.id }) { entry ->
-                    ErrorCard(entry = entry, onClick = { onEntryClick(entry) }, viewModel = viewModel)
+                    ErrorCard(
+                        entry = entry,
+                        onClick = {
+                            selectedEntry = entry
+                            showExplanationDialog = true
+                            viewModel.fetchExplanation(entry.vocabId, entry.errorType, "Grade 4")
+                            onEntryClick(entry)
+                        },
+                        viewModel = viewModel
+                    )
                 }
             }
         }
     }
+    
+    if (showExplanationDialog && selectedEntry != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showExplanationDialog = false },
+            containerColor = Color(0xFFFFFDF5)
+        ) {
+            val entry = selectedEntry!!
+            val explanation = explanationState[entry.vocabId]
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                org.akj.lingo.learn.ui.components.LingoAvatar(
+                    expression = if (explanation == null || explanation == "Thinking...") org.akj.lingo.learn.ui.components.LingoExpression.THINKING else org.akj.lingo.learn.ui.components.LingoExpression.HAPPY,
+                    modifier = Modifier.size(80.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Lingo's Tip for '${entry.vocabId}'",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2C3E50)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                if (explanation == null || explanation == "Thinking...") {
+                    CircularProgressIndicator(color = Color(0xFF5C6FF2))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Lingo is thinking...", color = Color.Gray, fontSize = 14.sp)
+                } else {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = explanation,
+                            modifier = Modifier.padding(16.dp),
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            color = Color(0xFF2C3E50)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
 }
-
 @Composable
 private fun StatsBar(total: Int, review: Int, consolidated: Int) {
     Row(

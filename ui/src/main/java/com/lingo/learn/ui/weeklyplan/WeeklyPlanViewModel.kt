@@ -64,11 +64,11 @@ class WeeklyPlanViewModel @Inject constructor(
         }
     }
 
-    fun generateNewPlan() {
+    fun generateNewPlan(grade: String = "Grade 4") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isGenerating = true, generateError = null)
             val result = weeklyPlanRepository.generateAndCacheWeeklyPlan(
-                grade = "Grade 4",
+                grade = grade,
                 accuracy = 75,
                 weakCategories = listOf("Vocabulary", "Pronunciation"),
                 completedMilestones = listOf("First Week Complete")

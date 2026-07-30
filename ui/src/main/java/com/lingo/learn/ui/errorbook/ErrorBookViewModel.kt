@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import org.akj.lingo.learn.domain.usecase.ExplanationAgentUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,11 +25,15 @@ data class ErrorBookUiState(
 
 @HiltViewModel
 class ErrorBookViewModel @Inject constructor(
-    private val errorBookRepository: ErrorBookRepository
+    private val errorBookRepository: ErrorBookRepository,
+    private val explanationAgentUseCase: ExplanationAgentUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ErrorBookUiState())
     val uiState: StateFlow<ErrorBookUiState> = _uiState.asStateFlow()
+    
+    private val _explanationState = MutableStateFlow<Map<String, String>>(emptyMap())
+    val explanationState: StateFlow<Map<String, String>> = _explanationState.asStateFlow()
 
     init { loadErrors() }
 
@@ -96,5 +101,19 @@ class ErrorBookViewModel @Inject constructor(
         "GRADUATION_OBSERVATION" -> "🔵"
         "GRADUATED" -> "🟢"
         else -> "⚪"
+    }
+
+    fun fetchExplanation(word: String, errorType: String, grade: String) {
+        if (_explanationState.value.containsKey(word)) return
+        
+        viewModelScope.launch {
+            _explanationState.value = _explanationState.value + (word to "Thinking...")
+            val result = explanationAgentUseCase(word, errorType, grade)
+            if (result.isSuccess) {
+                _explanationState.value = _explanationState.value + (word to result.getOrNull().orEmpty())
+            } else {
+                _explanationState.value = _explanationState.value + (word to "Failed to get explanation. Try again later.")
+            }
+        }
     }
 }

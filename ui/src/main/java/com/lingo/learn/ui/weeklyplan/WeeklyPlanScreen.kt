@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeeklyPlanScreen(
+    grade: String,
     onBack: () -> Unit,
     onViewReport: () -> Unit,
     onStartLearning: (dayIndex: Int) -> Unit = {},
@@ -138,7 +139,7 @@ fun WeeklyPlanScreen(
             item {
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = { viewModel.generateNewPlan() },
+                    onClick = { viewModel.generateNewPlan(grade) },
                     enabled = !uiState.isGenerating,
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(16.dp),
@@ -184,6 +185,7 @@ fun WeeklyPlanScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -> Unit = {}, getFocusEmoji: (String) -> String = ::getFocusEmoji) {
     val animatedProgress by animateFloatAsState(
@@ -259,8 +261,9 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
             }
 
             // Target words as chips
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 dayItem.targetWords.take(6).forEach { word ->

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.DailyEncouragerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ data class DashboardUiState(
     val themeName: String = "School Life",
     val taskDuration: String = "15 Mins",
     val taskTarget: String = "5 Words + 2 Speech",
+    val greetingMessage: String? = null,
     val isLoading: Boolean = false
 )
 
@@ -26,7 +28,8 @@ data class DashboardUiState(
 class DashboardViewModel @Inject constructor(
     private val learningRecordRepository: LearningRecordRepository,
     private val errorBookRepository: ErrorBookRepository,
-    private val weeklyPlanRepository: WeeklyPlanRepository
+    private val weeklyPlanRepository: WeeklyPlanRepository,
+    private val dailyEncouragerUseCase: DailyEncouragerUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -50,8 +53,15 @@ class DashboardViewModel @Inject constructor(
                     themeName = theme,
                     taskDuration = "15 Mins",
                     taskTarget = "5 Words + 2 Speech",
+                    greetingMessage = null,
                     isLoading = false
                 )
+                
+                // Fetch daily greeting in background
+                val result = dailyEncouragerUseCase("Buddy", streak)
+                if (result.isSuccess) {
+                    _uiState.value = _uiState.value.copy(greetingMessage = result.getOrNull())
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }

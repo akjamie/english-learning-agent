@@ -58,6 +58,7 @@ fun DashboardScreen(
     onPlanClick: () -> Unit,
     onErrorBookClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
+    onRoleplayClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
@@ -119,160 +120,158 @@ fun DashboardScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 2. Main Daily Task Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.3f),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            shape = RoundedCornerShape(24.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
+        if (!uiState.greetingMessage.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = stringResource(R.string.today_goal),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF7F8C8D)
+                LingoAvatar(
+                    expression = LingoExpression.HAPPY,
+                    modifier = Modifier.size(48.dp).padding(top = 4.dp)
                 )
-
-                // Progress ring containing Lingo mascot
-                Box(
-                    modifier = Modifier.size(160.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ProgressRing(
-                        progress = todayProgress,
-                        modifier = Modifier.fillMaxSize(),
-                        strokeWidth = 12f,
-                        activeColor = gradeTheme.activeRingColor
-                    )
-                    LingoAvatar(
-                        expression = lingoExpr,
-                        modifier = Modifier.size(100.dp)
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = themeName,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2C3E50)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Est. time $taskDuration | Goal: $taskTarget",
-                        fontSize = 13.sp,
-                        color = Color(0xFF7F8C8D)
-                    )
-                }
-
-                // Action start learning button
-                Button(
-                    onClick = onStartLearning,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(16.dp)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = gradeTheme.primaryColor,
-                        contentColor = gradeTheme.buttonContentColor
-                    )
+                Spacer(Modifier.width(12.dp))
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = gradeTheme.primaryColor.copy(alpha = 0.15f)),
+                    shape = RoundedCornerShape(
+                        topStart = 4.dp,
+                        topEnd = 20.dp,
+                        bottomEnd = 20.dp,
+                        bottomStart = 20.dp
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Text(
-                        text = if (todayProgress >= 1.0f) stringResource(R.string.completed_review) else stringResource(R.string.start_study),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        text = uiState.greetingMessage!!,
+                        modifier = Modifier.padding(16.dp),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF2C3E50),
+                        lineHeight = 20.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // 3. Bottom shortcut card group
-        Row(
+        // 2. Main Daily Task Card
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.7f),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .weight(1f),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = RoundedCornerShape(32.dp)
         ) {
-            Card(
+            Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(onClick = onPlanClick),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = RoundedCornerShape(20.dp)
+                    .fillMaxSize()
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(Color.White, Color(0xFFF9FAFF))
+                        )
+                    )
+                    .padding(32.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "📅", fontSize = 28.sp)
-                    Column {
-                        Text(text = stringResource(R.string.weekly_plan), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = stringResource(R.string.track_daily_progress), fontSize = 12.sp, color = Color.Gray)
+                    Text(
+                        text = stringResource(R.string.today_goal),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF7F8C8D)
+                    )
+
+                    // Progress ring containing Lingo mascot
+                    Box(
+                        modifier = Modifier.size(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ProgressRing(
+                            progress = todayProgress,
+                            modifier = Modifier.fillMaxSize(),
+                            strokeWidth = 14f,
+                            activeColor = gradeTheme.activeRingColor
+                        )
+                        LingoAvatar(
+                            expression = lingoExpr,
+                            modifier = Modifier.size(120.dp)
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = themeName,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Est. time $taskDuration | Goal: $taskTarget",
+                            fontSize = 15.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+
+                    // Action start learning button
+                    Button(
+                        onClick = onStartLearning,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(24.dp)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = gradeTheme.primaryColor,
+                            contentColor = gradeTheme.buttonContentColor
+                        )
+                    ) {
+                        Text(
+                            text = if (todayProgress >= 1.0f) stringResource(R.string.completed_review) else stringResource(R.string.start_study),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
+        }
 
-            Card(
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // 3. Weekend Roleplay Shortcut
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onRoleplayClick() },
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(onClick = onErrorBookClick),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = RoundedCornerShape(20.dp)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(text = "📝", fontSize = 28.sp)
-                        // Outstanding error counts badge
-                        if (errorCount > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFFFF7052))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "$errorCount",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    }
-                    Column {
-                        Text(text = stringResource(R.string.error_book), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = stringResource(R.string.target_weak_areas), fontSize = 12.sp, color = Color.Gray)
-                    }
+                Text("🎭", fontSize = 32.sp)
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "Weekend Roleplay",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Text(
+                        text = "Practice speaking with Lingo Fox!",
+                        fontSize = 14.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
                 }
             }
         }

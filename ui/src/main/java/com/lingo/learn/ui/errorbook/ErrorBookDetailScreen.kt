@@ -21,15 +21,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
+import org.akj.lingo.learn.ui.components.LingoAvatar
+import org.akj.lingo.learn.ui.components.LingoExpression
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ErrorBookDetailScreen(
     entry: ErrorBookEntry,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ErrorBookViewModel = hiltViewModel()
 ) {
+    val explanationState by viewModel.explanationState.collectAsState()
+    
+    LaunchedEffect(entry.vocabId) {
+        viewModel.fetchExplanation(entry.vocabId, entry.errorType, "3rd grade")
+    }
     var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
@@ -92,7 +101,10 @@ fun ErrorBookDetailScreen(
                                 .fillMaxSize()
                                 .graphicsLayer { rotationY = 180f }
                         ) {
-                            FlipCardBack(entry = entry)
+                            FlipCardBack(
+                                entry = entry,
+                                explanation = explanationState[entry.vocabId] ?: "Thinking..."
+                            )
                         }
                     }
                 }
@@ -216,34 +228,29 @@ private fun FlipCardFront(entry: ErrorBookEntry) {
 }
 
 @Composable
-private fun FlipCardBack(entry: ErrorBookEntry) {
+private fun FlipCardBack(entry: ErrorBookEntry, explanation: String) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            "💡 Tips for \"${entry.vocabId}\"",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF5C6FF2),
-            textAlign = TextAlign.Center
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            LingoAvatar(expression = LingoExpression.HAPPY, modifier = Modifier.size(48.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                "Lingo's Tip for \"${entry.vocabId}\"",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF5C6FF2)
+            )
+        }
         Spacer(Modifier.height(16.dp))
         Text(
-            text = getMnemonic(entry.errorType, entry.vocabId),
+            text = explanation,
             fontSize = 15.sp,
             color = Color(0xFF2C3E50),
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = getExampleSentence(entry.vocabId),
-            fontSize = 14.sp,
-            color = Color(0xFF7F8C8D),
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp
         )
         Spacer(Modifier.height(24.dp))
         Text("Tap to go back →", fontSize = 13.sp, color = Color(0xFFB0BEC5))

@@ -7,10 +7,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Text
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
 import org.akj.lingo.learn.ui.dashboard.DashboardScreen
@@ -18,6 +26,7 @@ import org.akj.lingo.learn.ui.errorbook.ErrorBookDetailScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookScreen
 import org.akj.lingo.learn.ui.learning.LearningContainer
 import org.akj.lingo.learn.ui.onboarding.OnboardingContainer
+import org.akj.lingo.learn.ui.roleplay.RoleplayScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyPlanScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyReportScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,83 +63,110 @@ class MainActivity : ComponentActivity() {
                     var isOnboardingCompleted by remember { mutableStateOf(appPrefs.getBoolean("onboarding_completed", false)) }
                     var currentGrade by remember { mutableStateOf(appPrefs.getString("grade", "Grade 4") ?: "Grade 4") }
                     var isLearning by remember { mutableStateOf(false) }
-                    var isSettingsOpen by remember { mutableStateOf(false) }
-                    var isErrorBookOpen by remember { mutableStateOf(false) }
+
+                    // Navigation States
+                    var currentTab by remember { mutableStateOf(MainTab.HOME) }
+                    
+                    // Sub-screen States
                     var isErrorBookDetailOpen by remember { mutableStateOf(false) }
                     var selectedErrorEntry by remember { mutableStateOf<ErrorBookEntry?>(null) }
-                    var isWeeklyPlanOpen by remember { mutableStateOf(false) }
                     var isWeeklyReportOpen by remember { mutableStateOf(false) }
+                    var isRoleplayOpen by remember { mutableStateOf(false) }
 
-                    when {
-                        isSettingsOpen -> org.akj.lingo.learn.ui.settings.SettingsScreen(
-                            onBack = { isSettingsOpen = false }
-                        )
-                        isErrorBookDetailOpen && selectedErrorEntry != null -> ErrorBookDetailScreen(
-                            entry = selectedErrorEntry!!,
-                            onBack = {
-                                isErrorBookDetailOpen = false
-                                isErrorBookOpen = true
-                            }
-                        )
-                        isErrorBookOpen -> ErrorBookScreen(
-                            onBack = { isErrorBookOpen = false },
-                            onEntryClick = { entry ->
-                                selectedErrorEntry = entry
-                                isErrorBookDetailOpen = true
-                            }
-                        )
-                        isWeeklyReportOpen -> WeeklyReportScreen(
-                            onBack = {
-                                isWeeklyReportOpen = false
-                                isWeeklyPlanOpen = true
-                            }
-                        )
-                        isWeeklyPlanOpen -> WeeklyPlanScreen(
-                            onBack = { isWeeklyPlanOpen = false },
-                            onViewReport = {
-                                isWeeklyPlanOpen = false
-                                isWeeklyReportOpen = true
-                            },
-                            onStartLearning = {
-                                isWeeklyPlanOpen = false
+                    if (!isOnboardingCompleted) {
+                        OnboardingContainer(
+                            onFinished = { grade, textbook, level ->
+                                currentGrade = grade
+                                isOnboardingCompleted = true
                                 isLearning = true
-                            }
-                        )
-                        else -> AnimatedContent(
-                            targetState = isLearning,
-                            transitionSpec = {
-                                slideInHorizontally(animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)) { width -> width } + fadeIn() togetherWith
-                                        slideOutHorizontally(animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)) { width -> -width } + fadeOut()
+                                appPrefs.edit()
+                                    .putBoolean("onboarding_completed", true)
+                                    .putString("grade", grade)
+                                    .putString("textbook", textbook)
+                                    .apply()
                             },
-                            label = "MainNav"
-                        ) { learning ->
-                            if (!isOnboardingCompleted) {
-                                OnboardingContainer(
-                                    onFinished = { grade, textbook, level ->
-                                        currentGrade = grade
-                                        isOnboardingCompleted = true
-                                        isLearning = true
-                                        appPrefs.edit()
-                                            .putBoolean("onboarding_completed", true)
-                                            .putString("grade", grade)
-                                            .putString("textbook", textbook)
-                                            .apply()
+                            onOpenSettings = { currentTab = MainTab.SETTINGS }
+                        )
+                    } else if (isLearning) {
+                        LearningContainer(
+                            grade = currentGrade,
+                            onExit = { isLearning = false }
+                        )
+                    } else if (isErrorBookDetailOpen && selectedErrorEntry != null) {
+                        ErrorBookDetailScreen(
+                            entry = selectedErrorEntry!!,
+                            onBack = { isErrorBookDetailOpen = false }
+                        )
+                    } else if (isWeeklyReportOpen) {
+                        WeeklyReportScreen(
+                            onBack = { isWeeklyReportOpen = false }
+                        )
+                    } else if (isRoleplayOpen) {
+                        RoleplayScreen(
+                            onNavigateBack = { isRoleplayOpen = false }
+                        )
+                    } else {
+                        // Main Scaffold with Bottom Navigation
+                        androidx.compose.material3.Scaffold(
+                            bottomBar = {
+                                NavigationBar(
+                                    containerColor = androidx.compose.ui.graphics.Color(0xFFFFFDF5)
+                                ) {
+                                    val tabs = listOf(MainTab.HOME, MainTab.PLAN, MainTab.ERROR_BOOK, MainTab.SETTINGS)
+                                    val icons = listOf("🏠", "📅", "📖", "⚙️")
+                                    val labels = listOf("Home", "Plan", "Error Book", "Settings")
+                                    
+                                    tabs.forEachIndexed { index, tab ->
+                                        NavigationBarItem(
+                                            selected = currentTab == tab,
+                                            onClick = { currentTab = tab },
+                                            icon = { Text(icons[index], fontSize = 24.sp) },
+                                            label = { Text(labels[index]) },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = androidx.compose.ui.graphics.Color(0xFF5C6FF2),
+                                                selectedTextColor = androidx.compose.ui.graphics.Color(0xFF5C6FF2),
+                                                indicatorColor = androidx.compose.ui.graphics.Color(0xFF5C6FF2).copy(alpha = 0.1f)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        ) { paddingValues ->
+                            Box(modifier = Modifier.padding(paddingValues)) {
+                                AnimatedContent(
+                                    targetState = currentTab,
+                                    transitionSpec = {
+                                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
                                     },
-                                    onOpenSettings = { isSettingsOpen = true }
-                                )
-                            } else if (!learning) {
-                                DashboardScreen(
-                                    grade = currentGrade,
-                                    onStartLearning = { isLearning = true },
-                                    onPlanClick = { isWeeklyPlanOpen = true },
-                                    onErrorBookClick = { isErrorBookOpen = true },
-                                    onSettingsClick = { isSettingsOpen = true }
-                                )
-                            } else {
-                                LearningContainer(
-                                    grade = currentGrade,
-                                    onExit = { isLearning = false }
-                                )
+                                    label = "TabNav"
+                                ) { tab ->
+                                    when (tab) {
+                                        MainTab.HOME -> DashboardScreen(
+                                            grade = currentGrade,
+                                            onStartLearning = { isLearning = true },
+                                            onPlanClick = { currentTab = MainTab.PLAN },
+                                            onErrorBookClick = { currentTab = MainTab.ERROR_BOOK },
+                                            onSettingsClick = { currentTab = MainTab.SETTINGS },
+                                            onRoleplayClick = { isRoleplayOpen = true }
+                                        )
+                                        MainTab.PLAN -> WeeklyPlanScreen(
+                                            grade = currentGrade,
+                                            onBack = { currentTab = MainTab.HOME },
+                                            onViewReport = { isWeeklyReportOpen = true },
+                                            onStartLearning = { isLearning = true }
+                                        )
+                                        MainTab.ERROR_BOOK -> ErrorBookScreen(
+                                            onBack = { currentTab = MainTab.HOME },
+                                            onEntryClick = { entry ->
+                                                selectedErrorEntry = entry
+                                                isErrorBookDetailOpen = true
+                                            }
+                                        )
+                                        MainTab.SETTINGS -> org.akj.lingo.learn.ui.settings.SettingsScreen(
+                                            onBack = { currentTab = MainTab.HOME }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -138,4 +174,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    
+    enum class MainTab { HOME, PLAN, ERROR_BOOK, SETTINGS }
 }
