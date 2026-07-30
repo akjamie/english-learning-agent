@@ -271,7 +271,7 @@ private fun QuizQuestionCard(
 
                 QuizQuestionType.SPELL_FILL_BLANK -> {
                     Text(
-                        text = "cla__room",
+                        text = question.question,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2C3E50)

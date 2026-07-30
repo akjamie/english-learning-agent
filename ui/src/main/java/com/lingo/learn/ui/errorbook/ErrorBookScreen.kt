@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
@@ -32,6 +34,8 @@ fun ErrorBookScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val explanationState by viewModel.explanationState.collectAsState()
+    val currentGrade = LocalContext.current.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
+        .getString("grade", "Grade 4") ?: "Grade 4"
     
     var selectedEntry by remember { mutableStateOf<ErrorBookEntry?>(null) }
     var showExplanationDialog by remember { mutableStateOf(false) }
@@ -101,7 +105,7 @@ fun ErrorBookScreen(
                         onClick = {
                             selectedEntry = entry
                             showExplanationDialog = true
-                            viewModel.fetchExplanation(entry.vocabId, entry.errorType, "Grade 4")
+                            viewModel.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
                             onEntryClick(entry)
                         },
                         viewModel = viewModel

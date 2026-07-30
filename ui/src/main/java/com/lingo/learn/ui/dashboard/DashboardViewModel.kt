@@ -1,7 +1,9 @@
 package org.akj.lingo.learn.ui.dashboard
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
@@ -26,6 +28,7 @@ data class DashboardUiState(
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val learningRecordRepository: LearningRecordRepository,
     private val errorBookRepository: ErrorBookRepository,
     private val weeklyPlanRepository: WeeklyPlanRepository,
@@ -58,7 +61,9 @@ class DashboardViewModel @Inject constructor(
                 )
                 
                 // Fetch daily greeting in background
-                val result = dailyEncouragerUseCase("Buddy", streak)
+                val childName = context.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
+                    .getString("child_name", "Buddy") ?: "Buddy"
+                val result = dailyEncouragerUseCase(childName, streak)
                 if (result.isSuccess) {
                     _uiState.value = _uiState.value.copy(greetingMessage = result.getOrNull())
                 }

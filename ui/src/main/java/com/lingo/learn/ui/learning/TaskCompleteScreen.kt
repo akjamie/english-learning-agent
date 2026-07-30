@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.content.Intent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -203,7 +205,23 @@ fun TaskCompleteScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         // 6. Share to parent (lightweight text link)
-        TextButton(onClick = { /* Sprint 3: Weekly report sharing */ }) {
+        val context = LocalContext.current
+        TextButton(onClick = {
+            val s = summary ?: return@TextButton
+            val shareText = """
+Lingo English — Today's Achievement
+📝 New Words: ${s.newWordsLearned}
+🏆 Quiz Score: ${s.quizScore}/${s.quizTotal}
+🎯 Pronunciation: ${s.pronunciationScore}/100
+🔥 Streak: ${s.streakDays} days
+📅 Day ${s.weeklyDayNumber}/${s.weeklyTotalDays}
+            """.trimIndent()
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+            }
+            context.startActivity(Intent.createChooser(intent, "Share learning report"))
+        }) {
             Text(
                 text = "Share with parents",
                 fontSize = 14.sp,

@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
@@ -35,9 +37,11 @@ fun ErrorBookDetailScreen(
     viewModel: ErrorBookViewModel = hiltViewModel()
 ) {
     val explanationState by viewModel.explanationState.collectAsState()
+    val currentGrade = LocalContext.current.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
+        .getString("grade", "Grade 4") ?: "Grade 4"
     
     LaunchedEffect(entry.vocabId) {
-        viewModel.fetchExplanation(entry.vocabId, entry.errorType, "3rd grade")
+        viewModel.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
     }
     var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
