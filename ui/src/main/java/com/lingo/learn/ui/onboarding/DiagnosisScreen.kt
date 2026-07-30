@@ -1,5 +1,10 @@
 package org.akj.lingo.learn.ui.onboarding
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -23,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import org.akj.lingo.learn.ui.R
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
@@ -69,9 +75,52 @@ fun DiagnosisScreen(
 
     val questions by viewModel.questions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val recordingState by viewModel.recordingState.collectAsState()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.startRecording()
+        }
+    }
+
+    fun requestMicAndRecord() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            when {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED -> {
+                    viewModel.startRecording()
+                }
+                else -> {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            }
+        } else {
+            viewModel.startRecording()
+        }
+    }
 
     LaunchedEffect(grade) {
         viewModel.loadDiagnosticQuestions(grade)
+    }
+
+    val recordingErrorMsg = remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        viewModel.networkError.collect { msg ->
+            recordingErrorMsg.value = msg
+        }
+    }
+    LaunchedEffect(recordingState) {
+        if (recordingState is RecordingState.TOO_SHORT) {
+            recordingErrorMsg.value = "Speak a bit longer and try again!"
+        }
+    }
+    // Clear error after 3 seconds
+    LaunchedEffect(recordingErrorMsg.value) {
+        if (recordingErrorMsg.value != null) {
+            delay(3000)
+            recordingErrorMsg.value = null
+        }
     }
 
     if (isLoading) {
@@ -101,6 +150,33 @@ fun DiagnosisScreen(
 
     var isPlayingVoice by remember { mutableStateOf(false) }
     var totalScore by remember { mutableStateOf(0) }
+
+    // Sync local recording state with ViewModel
+    LaunchedEffect(recordingState) {
+        isRecording = recordingState is RecordingState.RECORDING
+        when (val state = recordingState) {
+            is RecordingState.COMPLETED -> {
+                isEvaluated = true
+                evaluationScore = state.result.overallScore
+                totalScore += (evaluationScore / 10)
+                answerState = evaluationScore >= 60
+                lingoExpr = if (answerState == true) LingoExpression.CELEBRATING else LingoExpression.SAD
+            }
+            is RecordingState.TOO_SHORT -> {
+                isEvaluated = false
+            }
+            is RecordingState.NETWORK_ERROR -> {
+                isEvaluated = false
+            }
+            is RecordingState.FAILED -> {
+                isEvaluated = false
+            }
+            is RecordingState.EVALUATING -> {
+                lingoExpr = LingoExpression.THINKING
+            }
+            else -> {}
+        }
+    }
 
     fun resetQuestionState() {
         selectedOption = null
@@ -358,13 +434,39 @@ fun DiagnosisScreen(
 
                                     Spacer(modifier = Modifier.height(16.dp))
 
-                                    if (isEvaluated) {
-                                        Text(
-                                            text = "Speech Score: $evaluationScore / 100! 🎉",
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF2ECC71),
-                                            fontSize = 18.sp
-                                        )
+                                    when (val state = recordingState) {
+                                        is RecordingState.EVALUATING -> {
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier.size(32.dp),
+                                                                color = Color(0xFF5C6FF2),
+                                                                strokeWidth = 3.dp
+                                                            )
+                                                            Spacer(modifier = Modifier.height(8.dp))
+                                                            Text("Lingo is listening...", fontSize = 13.sp, color = Color(0xFF7F8C8D))
+                                        }
+                                        is RecordingState.TOO_SHORT -> {
+                                                            Text("Recording too short — hold the mic button longer!", fontSize = 14.sp, color = Color(0xFFFF7052))
+                                        }
+                                        is RecordingState.NETWORK_ERROR -> {
+                                                            Text("Network error. Tap retry to try again.", fontSize = 14.sp, color = Color(0xFFFF7052))
+                                                            Spacer(modifier = Modifier.height(8.dp))
+                                                            Button(onClick = { viewModel.retry() }) {
+                                                                Text("Retry")
+                                                            }
+                                        }
+                                        is RecordingState.FAILED -> {
+                                                            Text(state.message, fontSize = 14.sp, color = Color(0xFFFF7052))
+                                        }
+                                        else -> {
+                                            if (isEvaluated) {
+                                                Text(
+                                                    text = "Speech Score: $evaluationScore / 100! 🎉",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF2ECC71),
+                                                    fontSize = 18.sp
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -414,21 +516,11 @@ fun DiagnosisScreen(
                         isRecording = isRecording,
                         onPressDown = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            isRecording = true
+                            requestMicAndRecord()
                         },
                         onPressUp = {
                             if (isRecording) {
-                                isRecording = false
-                                isEvaluated = true
-                                lingoExpr = LingoExpression.THINKING
-                                
-                                coroutineScope.launch {
-                                    val result = viewModel.evaluateSpeaking(java.io.File("dummy.wav"), currentQuestion.voicePrompt ?: "")
-                                    evaluationScore = result.overallScore
-                                    totalScore += (evaluationScore / 10)
-                                    answerState = evaluationScore >= 60
-                                    lingoExpr = if (answerState == true) LingoExpression.CELEBRATING else LingoExpression.SAD
-                                }
+                                viewModel.stopAndEvaluate(currentQuestion.voicePrompt ?: "")
                             }
                         }
                     )

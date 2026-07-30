@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.activity.compose.BackHandler
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 import org.akj.lingo.learn.ui.dashboard.getThemeForGrade
 
@@ -37,9 +40,75 @@ fun LearningContainer(
 ) {
     val stage by viewModel.stage.collectAsState()
     val theme = remember(grade) { getThemeForGrade(grade) }
+    val restoredFromCheckpoint by viewModel.restoredFromCheckpoint.collectAsState()
 
     // Pass grade to ViewModel for grade-adaptive content generation
     LaunchedEffect(grade) { viewModel.setGrade(grade) }
+
+    // Auto-pause when app goes to background
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.pauseTask()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Resume checkpoint dialog
+    if (restoredFromCheckpoint) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Welcome back!") },
+            text = { Text("You have an unfinished session. Continue where you left off?") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissCheckpoint() }) {
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.dismissCheckpoint()
+                    viewModel.pauseTask()
+                }) {
+                    Text("Start Over")
+                }
+            }
+        )
+    }
+
+    // Emotional intervention dialog
+    val showIntervention by viewModel.showIntervention.collectAsState()
+    if (showIntervention) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Need a break?") },
+            text = {
+                Column {
+                    Text("You've been working hard! How about taking a short break or switching things up?")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.acceptSkipStage() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Skip This Stage (no penalty)")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.acceptContinue() }) {
+                    Text("Keep Going")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.acceptRest() }) {
+                    Text("Take a Break")
+                }
+            }
+        )
+    }
 
     // Handle system back button
     BackHandler {

@@ -9,7 +9,10 @@ import org.akj.lingo.learn.domain.repository.AsrRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.akj.lingo.learn.ui.Checkpoint
 import org.akj.lingo.learn.ui.StreakPrefs
+import org.akj.lingo.learn.ui.TaskState
+import org.akj.lingo.learn.ui.TaskStatePrefs
 import javax.inject.Inject
 
 /** Top-level stages of the daily learning flow. */
@@ -67,6 +70,8 @@ data class QuizState(
  * @param voiceRecorder Android MediaRecorder wrapper for capturing child's voice
  * @param systemTtsHelper System TTS fallback for audio playback without API keys
  */
+private const val NEGATIVE_THRESHOLD = 3
+
 @HiltViewModel
 class LearningViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -102,10 +107,24 @@ class LearningViewModel @Inject constructor(
     private val _summary = MutableStateFlow<SessionSummary?>(null)
     val summary: StateFlow<SessionSummary?> = _summary.asStateFlow()
 
+    private val _restoredFromCheckpoint = MutableStateFlow(false)
+    val restoredFromCheckpoint: StateFlow<Boolean> = _restoredFromCheckpoint.asStateFlow()
+
+    private val _checkpointIndex = MutableStateFlow(0)
+    val checkpointIndex: StateFlow<Int> = _checkpointIndex.asStateFlow()
+
+    private var consecutiveNegativeSignals = 0
+
+    private val _showIntervention = MutableStateFlow(false)
+    val showIntervention: StateFlow<Boolean> = _showIntervention.asStateFlow()
+
     private var currentGrade: String = "Grade 4"
+    private var sessionStartTimeMs: Long = System.currentTimeMillis()
+    private var taskDayIndex: Int = 1
 
     fun setGrade(grade: String) {
         currentGrade = grade
+        sessionStartTimeMs = System.currentTimeMillis()
         viewModelScope.launch {
             try {
                 val loadedSession = weeklyPlanRepository.getCachedLearningSession(1, currentGrade)
@@ -114,11 +133,77 @@ class LearningViewModel @Inject constructor(
             } catch (e: Exception) {
                 audioPlayer.loadSubtitles(_session.value.subtitleLines)
             }
+            // Derive weekly day number from stored task day
+            val taskDayStr = TaskStatePrefs.getTaskDay(context)
+            taskDayIndex = try {
+                val fmt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                val taskDay = fmt.parse(taskDayStr)
+                val diff = ((System.currentTimeMillis() - taskDay.time) / (86400000)).toInt()
+                (diff + 1).coerceIn(1, 7)
+            } catch (_: Exception) { 1 }
         }
     }
 
+    //region Emotional Intervention
+
+    private fun incrementNegativeSignal() {
+        consecutiveNegativeSignals++
+        if (consecutiveNegativeSignals >= NEGATIVE_THRESHOLD) {
+            _showIntervention.value = true
+        }
+    }
+
+    private fun resetNegativeSignal() {
+        consecutiveNegativeSignals = 0
+    }
+
+    /** User chooses to take a break — saves checkpoint and emits exit signal. */
+    fun acceptRest() {
+        _showIntervention.value = false
+        resetNegativeSignal()
+        saveCheckpoint()
+        pauseTask()
+    }
+
+    /** User chooses to continue — dismisses dialog, resets counter, no penalty. */
+    fun acceptContinue() {
+        _showIntervention.value = false
+        resetNegativeSignal()
+    }
+
+    /** User chooses to skip current stage — advances and resets counter. */
+    fun acceptSkipStage() {
+        _showIntervention.value = false
+        resetNegativeSignal()
+        when (_stage.value) {
+            LearningStage.PRE_TEACH -> { _stage.value = LearningStage.IMMERSION }
+            LearningStage.IMMERSION -> { _stage.value = LearningStage.PRACTICE; _practicePhase.value = PracticePhase.READ_ALONG }
+            LearningStage.PRACTICE -> { _stage.value = LearningStage.QUIZ }
+            LearningStage.QUIZ -> { _stage.value = LearningStage.COMPLETE; computeSummary() }
+            LearningStage.COMPLETE -> {}
+        }
+    }
+
+    //endregion
+
     init {
         setGrade(currentGrade)
+        // Check for PAUSED checkpoint from previous session
+        val savedState = TaskStatePrefs.getTaskState(context)
+        if (savedState == TaskState.PAUSED) {
+            val ck = TaskStatePrefs.getCheckpoint(context)
+            _stage.value = try { LearningStage.valueOf(ck.stage) } catch (e: Exception) { LearningStage.IMMERSION }
+            if (_stage.value == LearningStage.PRACTICE && ck.phase != null) {
+                _practicePhase.value = try { PracticePhase.valueOf(ck.phase) } catch (e: Exception) { PracticePhase.GAME }
+            }
+            _restoredFromCheckpoint.value = true
+            _checkpointIndex.value = ck.questionIndex
+        }
+        // Mark as in-progress on first load
+        if (savedState != TaskState.IN_PROGRESS && savedState != TaskState.PAUSED) {
+            TaskStatePrefs.setTaskState(context, TaskState.IN_PROGRESS)
+            TaskStatePrefs.setTaskDay(context, java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date()))
+        }
         // Speak subtitle lines via TTS as they become active during immersion playback
         viewModelScope.launch {
             audioPlayer.state
@@ -170,11 +255,52 @@ class LearningViewModel @Inject constructor(
         _stage.value = LearningStage.IMMERSION
     }
 
+    /** Saves the current learning checkpoint to persistent storage. */
+    private fun saveCheckpoint() {
+        val stage = _stage.value
+        val phase = if (stage == LearningStage.PRACTICE) _practicePhase.value.name else null
+        val score = _quizState.value.score * 10 + _gameState.value.score
+        TaskStatePrefs.saveCheckpoint(
+            context,
+            Checkpoint(
+                stage = stage.name,
+                phase = phase,
+                questionIndex = when (stage) {
+                    LearningStage.PRACTICE -> if (_practicePhase.value == PracticePhase.GAME) _gameState.value.currentIndex else _readAlongState.value.currentIndex
+                    LearningStage.QUIZ -> _quizState.value.currentIndex
+                    else -> 0
+                },
+                score = score,
+                timestamp = System.currentTimeMillis()
+            )
+        )
+    }
+
+    /** Pauses the current task (called when app goes to background). */
+    fun pauseTask() {
+        val currentState = TaskStatePrefs.getTaskState(context)
+        if (currentState == TaskState.IN_PROGRESS) {
+            TaskStatePrefs.setTaskState(context, TaskState.PAUSED)
+            saveCheckpoint()
+            audioPlayer.pause()
+        }
+    }
+
+    /** Dismisses the checkpoint restoration and resets to start. */
+    fun dismissCheckpoint() {
+        _restoredFromCheckpoint.value = false
+        TaskStatePrefs.clearCheckpoint(context)
+        TaskStatePrefs.setTaskState(context, TaskState.IN_PROGRESS)
+        _stage.value = LearningStage.IMMERSION
+    }
+
     /** Advances from Stage 1 (immersion) to Stage 2 (practice: read-along). */
     fun proceedToPractice() {
         audioPlayer.pause()
         _stage.value = LearningStage.PRACTICE
         _practicePhase.value = PracticePhase.READ_ALONG
+        resetNegativeSignal()
+        saveCheckpoint()
     }
 
     //endregion
@@ -206,6 +332,8 @@ class LearningViewModel @Inject constructor(
             val pronunciationResult = result.getOrElse {
                 asrRepository.getOfflineFallbackResult(referenceText)
             }
+            if (pronunciationResult.overallScore < 60) incrementNegativeSignal()
+            else resetNegativeSignal()
             _readAlongState.value = _readAlongState.value.copy(
                 isEvaluating = false,
                 result = pronunciationResult,
@@ -251,6 +379,7 @@ class LearningViewModel @Inject constructor(
 
     /** Retries the current read-along sentence (clears previous result). */
     fun retryReadAlong() {
+        incrementNegativeSignal()
         _readAlongState.value = _readAlongState.value.copy(result = null)
     }
 
@@ -268,6 +397,7 @@ class LearningViewModel @Inject constructor(
             // All read-along sentences completed; move to mini-games
             _practicePhase.value = PracticePhase.GAME
         }
+        saveCheckpoint()
     }
 
     //endregion
@@ -282,6 +412,9 @@ class LearningViewModel @Inject constructor(
         val current = _gameState.value
         val question = _session.value.gameQuestions[current.currentIndex]
         val isCorrect = selectedIndex == question.correctIndex
+
+        if (isCorrect) resetNegativeSignal()
+        else incrementNegativeSignal()
 
         val newCombo = if (isCorrect) current.combo + 1 else 0
         val newScore = current.score + if (isCorrect) 10 else 0
@@ -306,6 +439,7 @@ class LearningViewModel @Inject constructor(
             showComboEffect = false
         )
 
+        saveCheckpoint()
         if (current.currentIndex >= total - 1) {
             // All game questions completed; move to quiz
             _stage.value = LearningStage.QUIZ
@@ -329,6 +463,9 @@ class LearningViewModel @Inject constructor(
         val current = _quizState.value
         val question = _session.value.quizQuestions[current.currentIndex]
         val isCorrect = selectedIndex == question.correctIndex
+
+        if (isCorrect) resetNegativeSignal()
+        else incrementNegativeSignal()
 
         current.selectedAnswers.add(selectedIndex)
         val newScore = current.score + if (isCorrect) 1 else 0
@@ -442,6 +579,7 @@ class LearningViewModel @Inject constructor(
                 dynamicHint = null,
                 isGeneratingHint = false
             )
+            saveCheckpoint()
         } else {
             // All quiz questions answered; proceed directly to completion
             _stage.value = LearningStage.COMPLETE
@@ -473,7 +611,7 @@ class LearningViewModel @Inject constructor(
                 timestamp = System.currentTimeMillis(),
                 taskType = "DAILY_PRACTICE",
                 accuracy = accuracy,
-                duration = 900L,
+                duration = ((System.currentTimeMillis() - sessionStartTimeMs) / 1000).coerceIn(60, 3600),
                 score = quizScore * 20,
                 streakDays = 1,
                 lastModified = System.currentTimeMillis()
@@ -481,13 +619,15 @@ class LearningViewModel @Inject constructor(
             learningRecordRepository.saveSessionRecord(record)
             val currentStreak = learningRecordRepository.getStreakDays()
 
+            TaskStatePrefs.setTaskState(context, TaskState.COMPLETED)
+            TaskStatePrefs.clearCheckpoint(context)
             StreakPrefs.saveStreakData(context, currentStreak, todayDone = true)
 
             _summary.value = SessionSummary(
                 newWordsLearned = session.targetNewWords.size,
                 totalNewWords = session.targetNewWords.size,
                 streakDays = currentStreak,
-                weeklyDayNumber = 1,
+                weeklyDayNumber = taskDayIndex,
                 weeklyTotalDays = 7,
                 quizScore = quizScore,
                 quizTotal = quizTotal,
