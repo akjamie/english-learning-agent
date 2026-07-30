@@ -22,7 +22,6 @@ import org.akj.lingo.learn.domain.model.QuizQuestionType
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
 import org.akj.lingo.learn.ui.components.MicButton
-import org.akj.lingo.learn.ui.components.ProgressRing
 import org.akj.lingo.learn.ui.components.QuizProgressBar
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 
@@ -47,16 +46,6 @@ fun QuizScreen(
     val quizState by viewModel.quizState.collectAsState()
     val readAlongState by viewModel.readAlongState.collectAsState()
     val session by viewModel.session.collectAsState()
-
-    if (quizState.showResult) {
-        QuizResultPage(
-            score = quizState.score,
-            total = session.quizQuestions.size,
-            theme = theme,
-            onComplete = onComplete
-        )
-        return
-    }
 
     val currentQuestion = session.quizQuestions.getOrNull(quizState.currentIndex) ?: return
 
@@ -123,6 +112,9 @@ fun QuizScreen(
                 question = currentQuestion,
                 theme = theme,
                 lastAnswerCorrect = quizState.lastAnswerCorrect,
+                hintLevel = quizState.hintLevel,
+                dynamicHint = quizState.dynamicHint,
+                isGeneratingHint = quizState.isGeneratingHint,
                 readAlongState = readAlongState,
                 onPlayAudio = { text -> viewModel.playQuizAudio(text) },
                 onSelectAnswer = { index -> viewModel.submitQuizAnswer(index) },
@@ -153,6 +145,29 @@ fun QuizScreen(
                     fontSize = 16.sp
                 )
             }
+        } else {
+            // Action Buttons: Hint and Skip
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { viewModel.incrementHint() },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "💡 Hint (${quizState.hintLevel}/3)",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                TextButton(
+                    onClick = { viewModel.skipQuizQuestion() },
+                    modifier = Modifier.weight(1f).height(50.dp)
+                ) {
+                    Text("⏭️ Skip (No Penalty)", color = Color.Gray, fontWeight = FontWeight.Bold)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -164,6 +179,9 @@ private fun QuizQuestionCard(
     question: QuizQuestion,
     theme: GradeTheme,
     lastAnswerCorrect: Boolean?,
+    hintLevel: Int,
+    dynamicHint: String?,
+    isGeneratingHint: Boolean,
     readAlongState: ReadAlongState,
     onPlayAudio: (String) -> Unit,
     onSelectAnswer: (Int) -> Unit,
@@ -190,6 +208,34 @@ private fun QuizQuestionCard(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Progressive Hint Display
+            if (isGeneratingHint) {
+                Surface(color = Color(0xFFFFF9E6), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFFD48806), strokeWidth = 2.dp)
+                        Text(text = "Lingo Fox is thinking...", color = Color(0xFFD48806))
+                    }
+                }
+            } else if (dynamicHint != null) {
+                Surface(color = Color(0xFFFFF9E6), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Text(text = "💡 $dynamicHint", modifier = Modifier.padding(12.dp), color = Color(0xFFD48806))
+                }
+            } else if (hintLevel > 0) {
+                val hintText = when (hintLevel) {
+                    1 -> "Translation: [中文翻译: ${question.audioText ?: question.options.getOrNull(question.correctIndex) ?: '?'}]"
+                    2 -> "First letter: ${question.options.getOrNull(question.correctIndex)?.firstOrNull() ?: '?'}"
+                    3 -> "Answer: ${question.options.getOrNull(question.correctIndex) ?: '?'}"
+                    else -> ""
+                }
+                Surface(color = Color(0xFFFFF9E6), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    Text(text = "💡 $hintText", modifier = Modifier.padding(12.dp), color = Color(0xFFD48806))
+                }
+            }
 
             when (question.type) {
                 QuizQuestionType.LISTEN_CHOOSE_WORD -> {
@@ -283,6 +329,35 @@ private fun QuizQuestionCard(
                         }
                     }
                 }
+
+                QuizQuestionType.SPELLING, QuizQuestionType.DICTATION -> {
+                    var textInput by remember { mutableStateOf("") }
+                    OutlinedTextField(
+                        value = textInput,
+                        onValueChange = { textInput = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(if (question.type == QuizQuestionType.SPELLING) "Type the word" else "Type the sentence") },
+                        singleLine = true,
+                        enabled = lastAnswerCorrect == null
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (lastAnswerCorrect == null) {
+                        Button(
+                            onClick = { 
+                                // Simplified check for dictation/spelling
+                                val isCorrect = question.options.getOrNull(question.correctIndex).equals(textInput.trim(), ignoreCase = true)
+                                // We simulate the option select by creating a correct match if true, else wrong
+                                if (isCorrect) onSelectAnswer(question.correctIndex) else onSelectAnswer(-1)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = theme.primaryColor)
+                        ) {
+                            Text("Submit", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+
 
                 QuizQuestionType.READ_ALOUD -> {
                     val audioText = question.audioText
@@ -416,90 +491,4 @@ private fun LetterOptionButton(
     }
 }
 
-@Composable
-private fun QuizResultPage(
-    score: Int,
-    total: Int,
-    theme: GradeTheme,
-    onComplete: () -> Unit
-) {
-    val progress = if (total > 0) score.toFloat() / total else 0f
 
-    val lingoExpr = when {
-        progress >= 0.8f -> LingoExpression.CELEBRATING
-        progress >= 0.6f -> LingoExpression.HAPPY
-        else -> LingoExpression.SAD
-    }
-
-    val resultMessage = when {
-        progress >= 0.8f -> "Brilliant work! You're a star!"
-        progress >= 0.6f -> "Good job! Keep it up!"
-        else -> "Don't worry, practice makes perfect!"
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(theme.surfaceColor)
-            .padding(horizontal = 24.dp)
-            .statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        LingoAvatar(expression = lingoExpr, modifier = Modifier.size(100.dp))
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Score ring
-        Box(
-            modifier = Modifier.size(180.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            ProgressRing(
-                progress = progress,
-                modifier = Modifier.fillMaxSize(),
-                strokeWidth = 12f,
-                activeColor = theme.activeRingColor
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "$score",
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2C3E50)
-                )
-                Text(
-                    text = "/ $total",
-                    fontSize = 16.sp,
-                    color = Color(0xFF7F8C8D)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = resultMessage,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF2C3E50),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onComplete,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = theme.primaryColor,
-                contentColor = theme.buttonContentColor
-            )
-        ) {
-            Text(text = "See Today's Achievements ->", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
-    }
-}

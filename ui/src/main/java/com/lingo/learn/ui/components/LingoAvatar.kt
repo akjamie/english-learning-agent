@@ -4,25 +4,23 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.dp
+import kotlin.math.min
 import kotlin.math.sin
 
 enum class LingoExpression {
-    HAPPY,          // Default smiling face
-    CELEBRATING,    // Celebratory bounce when answer is correct
-    SAD,            // Sad expression when answer is wrong
-    THINKING,       // Thinking state for loading or diagnostic analysis
-    SLEEPY,         // Sleepy expression for bedtime reminder
-    EXCITED         // Combo streak visual sparks
+    HAPPY,
+    CELEBRATING,
+    SAD,
+    THINKING,
+    SLEEPY,
+    EXCITED
 }
 
 @Composable
@@ -30,10 +28,8 @@ fun LingoAvatar(
     expression: LingoExpression,
     modifier: Modifier = Modifier
 ) {
-    // Animation transition base parameters
     val transition = updateTransition(targetState = expression, label = "LingoExpression")
 
-    // Ear tilting angles
     val earTiltLeft by transition.animateFloat(label = "EarTiltLeft") { state ->
         when (state) {
             LingoExpression.SAD -> 25f
@@ -49,7 +45,6 @@ fun LingoAvatar(
         }
     }
 
-    // Eye height ratio (1.0 = round eyes, 0.0 = squinting/closed)
     val eyeHeightScale by transition.animateFloat(label = "EyeHeightScale") { state ->
         when (state) {
             LingoExpression.CELEBRATING, LingoExpression.SLEEPY -> 0f
@@ -57,7 +52,6 @@ fun LingoAvatar(
         }
     }
 
-    // Breathing offset animations
     val infiniteTransition = rememberInfiniteTransition(label = "LingoBreathing")
     val breatheOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -69,7 +63,6 @@ fun LingoAvatar(
         label = "Breathe"
     )
 
-    // Celebrating bounce animations
     val celebrateOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = if (expression == LingoExpression.CELEBRATING) -15f else 0f,
@@ -80,203 +73,163 @@ fun LingoAvatar(
         label = "CelebrateJump"
     )
 
-    Box(modifier = modifier.size(150.dp)) {
+    Box(modifier = modifier) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val width = size.width
-            val height = size.height
-            val centerX = width / 2
-            val centerY = height / 2 + breatheOffset + celebrateOffset
+            val canvasW = size.width
+            val canvasH = size.height
+            val baseSize = 150f
+            val s = min(canvasW, canvasH) / baseSize
+            val cx = canvasW / 2
+            val cy = canvasH / 2 + (breatheOffset + celebrateOffset) * s
 
-            // Fox primary colors
+            fun xoff(offset: Float) = cx + offset * s
+            fun yoff(offset: Float) = cy + offset * s
+
             val orangeColor = Color(0xFFFF7052)
             val whiteColor = Color(0xFFFFFDF5)
             val darkColor = Color(0xFF2C3E50)
             val blushColor = Color(0xFFFFB3A7)
             val yellowAccent = Color(0xFFFFD449)
 
-            // 1. Draw ears
-            // Left ear
             val leftEarPath = Path().apply {
-                moveTo(centerX - 50f, centerY - 40f)
-                lineTo(centerX - 90f, centerY - 110f)
-                lineTo(centerX - 10f, centerY - 70f)
+                moveTo(xoff(-50f), yoff(-40f))
+                lineTo(xoff(-90f), yoff(-110f))
+                lineTo(xoff(-10f), yoff(-70f))
                 close()
             }
             drawPath(leftEarPath, orangeColor)
-            // Left inner ear
             val leftInnerEarPath = Path().apply {
-                moveTo(centerX - 47f, centerY - 45f)
-                lineTo(centerX - 78f, centerY - 95f)
-                lineTo(centerX - 20f, centerY - 65f)
+                moveTo(xoff(-47f), yoff(-45f))
+                lineTo(xoff(-78f), yoff(-95f))
+                lineTo(xoff(-20f), yoff(-65f))
                 close()
             }
             drawPath(leftInnerEarPath, blushColor)
 
-            // Right ear
             val rightEarPath = Path().apply {
-                moveTo(centerX + 50f, centerY - 40f)
-                lineTo(centerX + 90f, centerY - 110f)
-                lineTo(centerX + 10f, centerY - 70f)
+                moveTo(xoff(50f), yoff(-40f))
+                lineTo(xoff(90f), yoff(-110f))
+                lineTo(xoff(10f), yoff(-70f))
                 close()
             }
             drawPath(rightEarPath, orangeColor)
-            // Right inner ear
             val rightInnerEarPath = Path().apply {
-                moveTo(centerX + 47f, centerY - 45f)
-                lineTo(centerX + 78f, centerY - 95f)
-                lineTo(centerX + 20f, centerY - 65f)
+                moveTo(xoff(47f), yoff(-45f))
+                lineTo(xoff(78f), yoff(-95f))
+                lineTo(xoff(20f), yoff(-65f))
                 close()
             }
             drawPath(rightInnerEarPath, blushColor)
 
-            // 2. Draw face shape
             drawOval(
                 color = orangeColor,
-                topLeft = Offset(centerX - 70f, centerY - 60f),
-                size = Size(140f, 120f)
+                topLeft = Offset(xoff(-70f), yoff(-60f)),
+                size = Size(140f * s, 120f * s)
             )
 
-            // 3. White cheek accents (Duolingo flat design)
             val leftCheekPath = Path().apply {
-                moveTo(centerX - 70f, centerY)
-                quadraticBezierTo(centerX - 50f, centerY + 30f, centerX - 20f, centerY + 50f)
-                quadraticBezierTo(centerX - 50f, centerY + 50f, centerX - 70f, centerY + 20f)
+                moveTo(xoff(-70f), yoff(0f))
+                quadraticBezierTo(xoff(-50f), yoff(30f), xoff(-20f), yoff(50f))
+                quadraticBezierTo(xoff(-50f), yoff(50f), xoff(-70f), yoff(20f))
                 close()
             }
             drawPath(leftCheekPath, whiteColor)
-
             val rightCheekPath = Path().apply {
-                moveTo(centerX + 70f, centerY)
-                quadraticBezierTo(centerX + 50f, centerY + 30f, centerX + 20f, centerY + 50f)
-                quadraticBezierTo(centerX + 50f, centerY + 50f, centerX + 70f, centerY + 20f)
+                moveTo(xoff(70f), yoff(0f))
+                quadraticBezierTo(xoff(50f), yoff(30f), xoff(20f), yoff(50f))
+                quadraticBezierTo(xoff(50f), yoff(50f), xoff(70f), yoff(20f))
                 close()
             }
             drawPath(rightCheekPath, whiteColor)
 
-            // 4. Blush circles
             drawCircle(
                 color = blushColor.copy(alpha = 0.8f),
-                radius = 12f,
-                center = Offset(centerX - 40f, centerY + 15f)
+                radius = 12f * s,
+                center = Offset(xoff(-40f), yoff(15f))
             )
             drawCircle(
                 color = blushColor.copy(alpha = 0.8f),
-                radius = 12f,
-                center = Offset(centerX + 40f, centerY + 15f)
+                radius = 12f * s,
+                center = Offset(xoff(40f), yoff(15f))
             )
 
-            // 5. Draw eyes
-            val eyeY = centerY - 10f
-            val eyeWidth = 14f
-            val eyeHeight = 22f
+            val eyeY = cy - 10f * s
+            val eyeWidth = 14f * s
+            val eyeHeight = 22f * s
 
             if (expression == LingoExpression.CELEBRATING) {
-                // Closed happy eyes (^ ^)
-                val leftEyePath = Path().apply {
-                    moveTo(centerX - 40f, eyeY + 5f)
-                    quadraticBezierTo(centerX - 30f, eyeY - 8f, centerX - 20f, eyeY + 5f)
+                val lep = Path().apply {
+                    moveTo(xoff(-40f), eyeY + 5f * s)
+                    quadraticBezierTo(xoff(-30f), eyeY - 8f * s, xoff(-20f), eyeY + 5f * s)
                 }
-                drawPath(leftEyePath, darkColor, style = Stroke(width = 5f))
-
-                val rightEyePath = Path().apply {
-                    moveTo(centerX + 20f, eyeY + 5f)
-                    quadraticBezierTo(centerX + 30f, eyeY - 8f, centerX + 40f, eyeY + 5f)
+                drawPath(lep, darkColor, style = Stroke(width = 5f * s))
+                val rep = Path().apply {
+                    moveTo(xoff(20f), eyeY + 5f * s)
+                    quadraticBezierTo(xoff(30f), eyeY - 8f * s, xoff(40f), eyeY + 5f * s)
                 }
-                drawPath(rightEyePath, darkColor, style = Stroke(width = 5f))
+                drawPath(rep, darkColor, style = Stroke(width = 5f * s))
             } else if (expression == LingoExpression.SLEEPY) {
-                // Sleepy eyes (- -)
-                drawLine(
-                    color = darkColor,
-                    start = Offset(centerX - 42f, eyeY),
-                    end = Offset(centerX - 22f, eyeY),
-                    strokeWidth = 6f
-                )
-                drawLine(
-                    color = darkColor,
-                    start = Offset(centerX + 22f, eyeY),
-                    end = Offset(centerX + 42f, eyeY),
-                    strokeWidth = 6f
-                )
+                drawLine(darkColor, Offset(xoff(-42f), eyeY), Offset(xoff(-22f), eyeY), strokeWidth = 6f * s)
+                drawLine(darkColor, Offset(xoff(22f), eyeY), Offset(xoff(42f), eyeY), strokeWidth = 6f * s)
             } else if (expression == LingoExpression.THINKING) {
-                // Thinking eyes (one squinting, one open)
                 drawOval(
                     color = darkColor,
-                    topLeft = Offset(centerX - 38f - eyeWidth / 2, eyeY - eyeHeight / 2),
+                    topLeft = Offset(xoff(-38f) - eyeWidth / 2, eyeY - eyeHeight / 2),
                     size = Size(eyeWidth, eyeHeight)
                 )
-                val rightEyePath = Path().apply {
-                    moveTo(centerX + 20f, eyeY + 3f)
-                    quadraticBezierTo(centerX + 30f, eyeY - 3f, centerX + 40f, eyeY + 3f)
+                val rep = Path().apply {
+                    moveTo(xoff(20f), eyeY + 3f * s)
+                    quadraticBezierTo(xoff(30f), eyeY - 3f * s, xoff(40f), eyeY + 3f * s)
                 }
-                drawPath(rightEyePath, darkColor, style = Stroke(width = 5f))
+                drawPath(rep, darkColor, style = Stroke(width = 5f * s))
             } else {
-                // Open eyes
                 drawOval(
                     color = darkColor,
-                    topLeft = Offset(centerX - 38f - eyeWidth / 2, eyeY - (eyeHeight * eyeHeightScale) / 2),
+                    topLeft = Offset(xoff(-38f) - eyeWidth / 2, eyeY - (eyeHeight * eyeHeightScale) / 2),
                     size = Size(eyeWidth, eyeHeight * eyeHeightScale)
                 )
                 drawOval(
                     color = darkColor,
-                    topLeft = Offset(centerX + 38f - eyeWidth / 2, eyeY - (eyeHeight * eyeHeightScale) / 2),
+                    topLeft = Offset(xoff(38f) - eyeWidth / 2, eyeY - (eyeHeight * eyeHeightScale) / 2),
                     size = Size(eyeWidth, eyeHeight * eyeHeightScale)
                 )
                 if (eyeHeightScale > 0.5f) {
-                    drawCircle(
-                        color = Color.White,
-                        radius = 4f,
-                        center = Offset(centerX - 36f, eyeY - 4f)
-                    )
-                    drawCircle(
-                        color = Color.White,
-                        radius = 4f,
-                        center = Offset(centerX + 40f, eyeY - 4f)
-                    )
+                    drawCircle(Color.White, 4f * s, Offset(xoff(-36f), eyeY - 4f * s))
+                    drawCircle(Color.White, 4f * s, Offset(xoff(40f), eyeY - 4f * s))
                 }
             }
 
-            // 6. Nose and mouth
-            val noseY = centerY + 10f
+            val noseY = cy + 10f * s
             val nosePath = Path().apply {
-                moveTo(centerX - 8f, noseY)
-                lineTo(centerX + 8f, noseY)
-                lineTo(centerX, noseY + 6f)
+                moveTo(xoff(-8f), noseY)
+                lineTo(xoff(8f), noseY)
+                lineTo(xoff(0f), noseY + 6f * s)
                 close()
             }
             drawPath(nosePath, darkColor)
 
             if (expression == LingoExpression.SAD) {
-                // Sad mouth
-                val sadMouthPath = Path().apply {
-                    moveTo(centerX - 10f, noseY + 16f)
-                    quadraticBezierTo(centerX, noseY + 8f, centerX + 10f, noseY + 16f)
+                val smp = Path().apply {
+                    moveTo(xoff(-10f), noseY + 16f * s)
+                    quadraticBezierTo(xoff(0f), noseY + 8f * s, xoff(10f), noseY + 16f * s)
                 }
-                drawPath(sadMouthPath, darkColor, style = Stroke(width = 4f))
+                drawPath(smp, darkColor, style = Stroke(width = 4f * s))
             } else if (expression == LingoExpression.HAPPY || expression == LingoExpression.CELEBRATING || expression == LingoExpression.EXCITED) {
-                // Smiling open mouth
-                val mouthPath = Path().apply {
-                    moveTo(centerX - 12f, noseY + 10f)
-                    quadraticBezierTo(centerX - 6f, noseY + 18f, centerX, noseY + 10f)
-                    quadraticBezierTo(centerX + 6f, noseY + 18f, centerX + 12f, noseY + 10f)
+                val mp = Path().apply {
+                    moveTo(xoff(-12f), noseY + 10f * s)
+                    quadraticBezierTo(xoff(-6f), noseY + 18f * s, xoff(0f), noseY + 10f * s)
+                    quadraticBezierTo(xoff(6f), noseY + 18f * s, xoff(12f), noseY + 10f * s)
                 }
-                drawPath(mouthPath, darkColor, style = Stroke(width = 4.5f))
+                drawPath(mp, darkColor, style = Stroke(width = 4.5f * s))
             } else {
-                // Simple straight line mouth
-                drawLine(
-                    color = darkColor,
-                    start = Offset(centerX - 6f, noseY + 12f),
-                    end = Offset(centerX + 6f, noseY + 12f),
-                    strokeWidth = 4f
-                )
+                drawLine(darkColor, Offset(xoff(-6f), noseY + 12f * s), Offset(xoff(6f), noseY + 12f * s), strokeWidth = 4f * s)
             }
 
-            // 7. Excited combo spark effects (EXCITED state only)
             if (expression == LingoExpression.EXCITED) {
-                val sparkColor = yellowAccent
-                drawCircle(sparkColor, 6f, Offset(centerX - 85f, centerY - 60f))
-                drawCircle(sparkColor, 4f, Offset(centerX - 95f, centerY - 30f))
-                drawCircle(sparkColor, 6f, Offset(centerX + 85f, centerY - 60f))
-                drawCircle(sparkColor, 4f, Offset(centerX + 95f, centerY - 30f))
+                drawCircle(yellowAccent, 6f * s, Offset(xoff(-85f), yoff(-60f)))
+                drawCircle(yellowAccent, 4f * s, Offset(xoff(-95f), yoff(-30f)))
+                drawCircle(yellowAccent, 6f * s, Offset(xoff(85f), yoff(-60f)))
+                drawCircle(yellowAccent, 4f * s, Offset(xoff(95f), yoff(-30f)))
             }
         }
     }

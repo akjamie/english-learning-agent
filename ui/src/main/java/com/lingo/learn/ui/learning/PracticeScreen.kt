@@ -144,8 +144,11 @@ private fun ReadAlongContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // TTS demo button
-                TextButton(onClick = { viewModel.speakWord(currentSentence.text) }) {
-                    Text("🔊 Listen first", color = theme.primaryColor, fontWeight = FontWeight.Bold)
+                TextButton(
+                    onClick = { viewModel.playReadAlongDemo() },
+                    enabled = !readAlongState.isPlayingDemo
+                ) {
+                    Text(if (readAlongState.isPlayingDemo) "🔊 Playing..." else "🔊 Listen first", color = theme.primaryColor, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -179,11 +182,19 @@ private fun ReadAlongContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
+                    onClick = { viewModel.playReadAlongSelf() },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = !readAlongState.isPlayingSelf
+                ) {
+                    Text(if (readAlongState.isPlayingSelf) "Playing..." else "🔁 Compare", fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
                     onClick = { viewModel.retryReadAlong() },
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("🔄 Try Again", fontWeight = FontWeight.Bold)
+                    Text("🔄 Retry", fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = { viewModel.nextReadAlongSentence() },
@@ -347,9 +358,7 @@ private fun GameContent(
                         GameOptionButton(
                             text = option,
                             theme = theme,
-                            isSelected = gameState.lastAnswerCorrect != null,
                             isCorrect = absoluteIndex == currentQuestion.correctIndex,
-                            isThisSelected = false,
                             enabled = gameState.lastAnswerCorrect == null,
                             onClick = {
                                 viewModel.submitGameAnswer(absoluteIndex)
@@ -391,9 +400,7 @@ private fun GameContent(
 private fun RowScope.GameOptionButton(
     text: String,
     theme: GradeTheme,
-    isSelected: Boolean,
     isCorrect: Boolean,
-    isThisSelected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit
 ) {

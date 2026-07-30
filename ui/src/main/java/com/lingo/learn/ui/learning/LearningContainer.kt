@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 import org.akj.lingo.learn.ui.dashboard.getThemeForGrade
 
@@ -39,6 +40,11 @@ fun LearningContainer(
 
     // Pass grade to ViewModel for grade-adaptive content generation
     LaunchedEffect(grade) { viewModel.setGrade(grade) }
+
+    // Handle system back button
+    BackHandler {
+        onExit()
+    }
 
     Column(
         modifier = modifier
@@ -72,6 +78,11 @@ fun LearningContainer(
                 .weight(1f)
         ) { currentStage ->
             when (currentStage) {
+                LearningStage.PRE_TEACH -> PreTeachScreen(
+                    viewModel = viewModel,
+                    theme = theme,
+                    onProceed = { viewModel.proceedToImmersion() }
+                )
                 LearningStage.IMMERSION -> ImmersiveAudioScreen(
                     viewModel = viewModel,
                     theme = theme,
@@ -85,7 +96,7 @@ fun LearningContainer(
                 LearningStage.QUIZ -> QuizScreen(
                     viewModel = viewModel,
                     theme = theme,
-                    onComplete = { viewModel.proceedToComplete() }
+                    onComplete = { /* transitions to COMPLETE handled in ViewModel */ }
                 )
                 LearningStage.COMPLETE -> TaskCompleteScreen(
                     viewModel = viewModel,
@@ -104,6 +115,7 @@ fun LearningJourneyHeader(
     onClose: () -> Unit
 ) {
     val stages = listOf(
+        Pair(LearningStage.PRE_TEACH, "💡 Warm-up"),
         Pair(LearningStage.IMMERSION, "🎧 Immersion"),
         Pair(LearningStage.PRACTICE, "🎤 Practice"),
         Pair(LearningStage.QUIZ, "🧩 Quiz"),
@@ -123,7 +135,7 @@ fun LearningJourneyHeader(
         ) {
             IconButton(onClick = onClose) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.Default.Close,
                     contentDescription = "Exit Learning",
                     tint = Color(0xFF2C3E50)
                 )

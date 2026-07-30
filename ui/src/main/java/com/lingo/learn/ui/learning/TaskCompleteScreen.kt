@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.akj.lingo.learn.ui.components.ConfettiEffect
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
 import org.akj.lingo.learn.ui.components.ProgressRing
@@ -46,15 +47,16 @@ fun TaskCompleteScreen(
         label = "WordCount"
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(theme.surfaceColor)
-            .padding(horizontal = 24.dp)
-            .statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(theme.surfaceColor)
+                .padding(horizontal = 24.dp)
+                .statusBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
 
         // 1. Lingo celebrating
         LingoAvatar(expression = LingoExpression.CELEBRATING, modifier = Modifier.size(90.dp))
@@ -226,7 +228,11 @@ fun TaskCompleteScreen(
             Text(text = "Back to Home", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        // Confetti overlay
+        ConfettiEffect(modifier = Modifier.fillMaxSize(), isVisible = true)
     }
 }
 
