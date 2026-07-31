@@ -53,4 +53,10 @@ abstract class RepositoryModule {
     abstract fun bindErrorBookRepository(
         impl: ErrorBookRepositoryImpl
     ): ErrorBookRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAgentDecisionLogRepository(
+        impl: AgentDecisionLogRepositoryImpl
+    ): AgentDecisionLogRepository
 }

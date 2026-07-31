@@ -24,12 +24,32 @@ object DatabaseModule {
             }
         }
 
+        val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE plan ADD COLUMN rationaleSnapshot TEXT DEFAULT NULL")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `agent_decision_log` (
+                        `id` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `decisionType` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `description` TEXT NOT NULL,
+                        `metadata` TEXT NOT NULL DEFAULT '{}',
+                        `confidence` REAL NOT NULL DEFAULT 1.0,
+                        `lastModified` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+            }
+        }
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "english_learning_agent_db"
         )
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .fallbackToDestructiveMigration()
         .build()
     }
 
@@ -62,4 +82,7 @@ object DatabaseModule {
 
     @Provides
     fun provideThemeUnitDao(db: AppDatabase): ThemeUnitDao = db.themeUnitDao()
+
+    @Provides
+    fun provideAgentDecisionLogDao(db: AppDatabase): AgentDecisionLogDao = db.agentDecisionLogDao()
 }
