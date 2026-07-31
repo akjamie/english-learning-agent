@@ -26,6 +26,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 import org.akj.lingo.learn.ui.dashboard.getThemeForGrade
+import org.akj.lingo.learn.ui.components.SpeechBubble
 
 /**
  * Top-level container for the Sprint 2 daily learning flow with gamified journey progress.
@@ -128,6 +129,17 @@ fun LearningContainer(
             theme = theme,
             onClose = onExit
         )
+
+        // Lingo Observation bubble (Sprint 6) — non-blocking, auto-dismisses
+        val observation by viewModel.observation.collectAsState()
+        val currentObservation = observation
+        if (currentObservation != null) {
+            SpeechBubble(
+                message = currentObservation.message,
+                visible = true,
+                onDismiss = { viewModel.dismissObservation() }
+            )
+        }
 
         // Stage Card Content with Smooth Vertical Spring Transitions
         AnimatedContent(

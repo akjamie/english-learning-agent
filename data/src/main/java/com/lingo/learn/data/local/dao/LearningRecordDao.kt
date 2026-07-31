@@ -14,7 +14,7 @@ interface LearningRecordDao {
     @Query("SELECT * FROM learning_record WHERE taskId = :taskId LIMIT 1")
     suspend fun getRecordByTaskId(taskId: String): LearningRecordEntity?
 
-    @Query("SELECT * FROM learning_record WHERE timestamp >= :startOfDayTimestamp LIMIT 1")
+    @Query("SELECT * FROM learning_record WHERE timestamp >= :startOfDayTimestamp AND taskType = 'DAILY_PRACTICE' LIMIT 1")
     suspend fun getTodayRecord(startOfDayTimestamp: Long): LearningRecordEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

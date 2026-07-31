@@ -13,7 +13,13 @@ interface LearningRecordRepository {
     suspend fun saveSessionRecord(record: LearningRecord)
 
     /**
-     * Get learning records from the past 7 days.
+     * Get all learning records since the given timestamp (raw, including per-question attempts).
+     * Used by the Observation Agent for longitudinal comparisons.
+     */
+    suspend fun getRecordsSince(timestamp: Long): List<LearningRecord>
+
+    /**
+     * Get daily session records from the past 7 days.
      */
     suspend fun getWeeklyRecords(): List<LearningRecord>
 

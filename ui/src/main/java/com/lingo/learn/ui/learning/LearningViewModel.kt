@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.model.*
 import org.akj.lingo.learn.domain.repository.AsrRepository
+import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
+import org.akj.lingo.learn.domain.usecase.Observation
+import org.akj.lingo.learn.domain.usecase.ObservationTriggerEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -81,7 +84,9 @@ class LearningViewModel @Inject constructor(
     private val weeklyPlanRepository: org.akj.lingo.learn.domain.repository.WeeklyPlanRepository,
     private val learningRecordRepository: org.akj.lingo.learn.domain.repository.LearningRecordRepository,
     private val errorBookRepository: org.akj.lingo.learn.domain.repository.ErrorBookRepository,
-    private val llmRepository: org.akj.lingo.learn.domain.repository.LlmRepository
+    private val llmRepository: org.akj.lingo.learn.domain.repository.LlmRepository,
+    private val observationTriggerEngine: ObservationTriggerEngine,
+    private val agentDecisionLogRepository: AgentDecisionLogRepository
 ) : ViewModel() {
 
     private val _stage = MutableStateFlow(LearningStage.PRE_TEACH)
@@ -117,6 +122,11 @@ class LearningViewModel @Inject constructor(
 
     private val _showIntervention = MutableStateFlow(false)
     val showIntervention: StateFlow<Boolean> = _showIntervention.asStateFlow()
+
+    private val _observation = MutableStateFlow<Observation?>(null)
+    val observation: StateFlow<Observation?> = _observation.asStateFlow()
+
+    private var readAlongAttempts = 0
 
     private var currentGrade: String = "Grade 4"
     private var sessionStartTimeMs: Long = System.currentTimeMillis()
@@ -182,6 +192,70 @@ class LearningViewModel @Inject constructor(
             LearningStage.QUIZ -> { _stage.value = LearningStage.COMPLETE; computeSummary() }
             LearningStage.COMPLETE -> {}
         }
+    }
+
+    //endregion
+
+    //region Lingo Observation Agent (Sprint 6)
+
+    /** Dismisses the currently showing observation bubble. */
+    fun dismissObservation() {
+        _observation.value = null
+    }
+
+    /**
+     * Persists a lightweight per-attempt learning record so the Observation Agent
+     * has word-level history to compare against across days.
+     */
+    private suspend fun recordAttempt(word: String, taskType: String, accuracy: Float) {
+        learningRecordRepository.saveSessionRecord(
+            LearningRecord(
+                id = java.util.UUID.randomUUID().toString(),
+                taskId = word,
+                timestamp = System.currentTimeMillis(),
+                taskType = taskType,
+                accuracy = accuracy,
+                duration = 0L,
+                score = 0,
+                streakDays = 0,
+                lastModified = System.currentTimeMillis()
+            )
+        )
+    }
+
+    /**
+     * Runs the longitudinal observation rules against the last 7 days of records.
+     * Only one bubble at a time; matched observations are persisted to the decision log.
+     */
+    private suspend fun evaluateObservation(
+        word: String,
+        score: Int?,
+        questionType: String?,
+        attemptCount: Int
+    ) {
+        if (_observation.value != null) return
+        val recentRecords = learningRecordRepository.getRecordsSince(
+            System.currentTimeMillis() - 7 * 24 * 3600 * 1000L
+        )
+        val matched = observationTriggerEngine.checkObservation(
+            currentWord = word,
+            currentScore = score,
+            questionType = questionType,
+            attemptCount = attemptCount,
+            recentRecords = recentRecords
+        ) ?: return
+
+        _observation.value = matched
+        agentDecisionLogRepository.insert(
+            AgentDecisionLog(
+                id = java.util.UUID.randomUUID().toString(),
+                decisionType = "OBSERVATION_MADE",
+                title = "Lingo observed: ${matched.message}",
+                description = matched.message,
+                metadata = """{"type":"${matched.type.name}","word":"${matched.word}"}""",
+                confidence = 0.85f
+            )
+        )
     }
 
     //endregion
@@ -332,6 +406,7 @@ class LearningViewModel @Inject constructor(
             val pronunciationResult = result.getOrElse {
                 asrRepository.getOfflineFallbackResult(referenceText)
             }
+            readAlongAttempts++
             if (pronunciationResult.overallScore < 60) incrementNegativeSignal()
             else resetNegativeSignal()
             _readAlongState.value = _readAlongState.value.copy(
@@ -341,6 +416,8 @@ class LearningViewModel @Inject constructor(
                 cumulativeScore = _readAlongState.value.cumulativeScore + pronunciationResult.overallScore,
                 evaluationsCount = _readAlongState.value.evaluationsCount + 1
             )
+            recordAttempt(referenceText, "SPEAKING", pronunciationResult.overallScore / 100f)
+            evaluateObservation(referenceText, pronunciationResult.overallScore, "SPEAKING", readAlongAttempts)
         }
     }
 
@@ -380,6 +457,7 @@ class LearningViewModel @Inject constructor(
     /** Retries the current read-along sentence (clears previous result). */
     fun retryReadAlong() {
         incrementNegativeSignal()
+        readAlongAttempts++
         _readAlongState.value = _readAlongState.value.copy(result = null)
     }
 
@@ -393,6 +471,7 @@ class LearningViewModel @Inject constructor(
                 currentIndex = current.currentIndex + 1,
                 result = null
             )
+            readAlongAttempts = 0
         } else {
             // All read-along sentences completed; move to mini-games
             _practicePhase.value = PracticePhase.GAME
@@ -426,6 +505,12 @@ class LearningViewModel @Inject constructor(
             lastAnswerCorrect = isCorrect,
             showComboEffect = showCombo
         )
+
+        val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "game_${question.id}"
+        viewModelScope.launch {
+            recordAttempt(word, "GAME", if (isCorrect) 1.0f else 0.0f)
+            evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1)
+        }
     }
 
     /** Advances to the next game question, or transitions to quiz. */
@@ -482,6 +567,8 @@ class LearningViewModel @Inject constructor(
             } else if (question.isFromErrorBook) {
                 errorBookRepository.markCorrect(word)
             }
+            recordAttempt(word, "QUIZ", if (isCorrect) 1.0f else 0.0f)
+            evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1)
         }
     }
 
@@ -556,6 +643,8 @@ class LearningViewModel @Inject constructor(
             } else {
                 errorBookRepository.markCorrect(referenceText)
             }
+            recordAttempt(referenceText, "SPEAKING", pronunciationResult.overallScore / 100f)
+            evaluateObservation(referenceText, pronunciationResult.overallScore, "SPEAKING", attemptCount = 1)
         }
     }
 

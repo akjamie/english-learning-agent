@@ -17,14 +17,20 @@ class LearningRecordRepositoryImpl @Inject constructor(
         learningRecordDao.insertRecord(LearningRecordEntity.fromDomain(record))
     }
 
+    override suspend fun getRecordsSince(timestamp: Long): List<LearningRecord> {
+        return learningRecordDao.getRecordsSince(timestamp).map { it.toDomain() }
+    }
+
     override suspend fun getWeeklyRecords(): List<LearningRecord> {
         val sevenDaysAgo = System.currentTimeMillis() - 7 * 24 * 3600 * 1000L
-        return learningRecordDao.getRecordsSince(sevenDaysAgo).map { it.toDomain() }
+        return learningRecordDao.getRecordsSince(sevenDaysAgo)
+            .filter { it.taskType == "DAILY_PRACTICE" }
+            .map { it.toDomain() }
     }
 
     override suspend fun getMonthlyAccuracy(): Float {
         val thirtyDaysAgo = System.currentTimeMillis() - 30 * 24 * 3600 * 1000L
-        val records = learningRecordDao.getRecordsSince(thirtyDaysAgo)
+        val records = learningRecordDao.getRecordsSince(thirtyDaysAgo).filter { it.taskType == "DAILY_PRACTICE" }
         if (records.isEmpty()) return 0.0f
         return records.map { it.accuracy }.average().toFloat()
     }
