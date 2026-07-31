@@ -6,11 +6,15 @@ This document outlines the architecture, prompts, and sequence flows of the AI a
 
 ## 🤖 Agent System Overview
 
-Lingo English operates four distinct agent roles to support the student's learning lifecycle:
-1. **Weekly Plan Generator**: Analyzes last week's accuracy and vocabulary milestones to output a structured weekly curriculum.
+Lingo English operates six distinct agent roles to support the student's learning lifecycle:
+1. **Weekly Plan Generator**: Analyzes last week's accuracy and vocabulary milestones to output a structured weekly curriculum with per-day rationale.
 2. **Pronunciation Evaluator (ASR-driven)**: Transcribes the child's recorded voice and compares it against standard reference sentences using Levenshtein distance matching.
 3. **Explanation Agent (Error Book Guide)**: Provides friendly, bite-sized contextual explanations for mistakes stored in the Error Book.
 4. **Daily Encourager & Notification Trigger**: Generates personalized push alerts and daily completion badges to boost motivation.
+5. **Observation Agent (Lingo Observes)**: Monitors the child's real-time learning event stream and surfaces cross-time, cross-task insights (e.g., "this word you missed last week — you got it right now!") via non-blocking speech bubbles during Quiz/Game stages. Differs from per-question feedback by performing **longitudinal comparison** against `LearningRecord` history.
+6. **Decision Transparency Layer**: Persists every significant agent judgment (plan generated, difficulty adjusted, observation made, error pattern detected) into an `AgentDecisionLog` table, enabling three user-facing surfaces: (a) Plan page "Why this arrangement?" expandable annotation, (b) Weekly Report "What Lingo adjusted this week" section, (c) AI Growth Notes timeline page. This is not a new AI capability — it exposes the reasoning that was already happening but invisible to users.
+
+> **Design Principle (Sprint 6)**: "Making AI presence visible" ≠ "adding spinning animations pretending to think." True visibility means exposing the judgment process and evidence that was already happening behind the scenes — letting users see not just "the result" but "how the result came to be" and "what the AI noticed that others wouldn't."
 
 ---
 
@@ -112,12 +116,69 @@ sequenceDiagram
     end
 ```
 
+### 5. Lingo Observation Flow (Sprint 6 - AI Presence)
+Triggered during Quiz/Game stages when a meaningful pattern is detected via longitudinal comparison against `LearningRecord` history. Not every question triggers an observation - only specific, personalized patterns to avoid noise.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Child User
+    participant UI as :ui Module (Quiz/Game)
+    participant Engine as ObservationTriggerEngine
+    participant DB as LearningRecordDao
+    participant Log as AgentDecisionLogDao
+
+    User->>UI: Submit quiz/game answer
+    UI->>Engine: checkObservationTrigger(currentAnswer, questionContext)
+    Engine->>DB: getRecordsSince(7 days ago)
+    DB-->>Engine: Return historical LearningRecords
+    
+    Note over Engine: Pattern matching rules:<br/>1. Word was wrong last week, correct now<br/>2. Pronunciation score improved vs same sentence<br/>3. Question type answered faster than average<br/>4. Multiple retries before correct (encouragement)
+    
+    alt Pattern matched (not every question)
+        Engine->>Engine: Select observation template + fill variables
+        Engine->>Log: Persist observation decision
+        Engine-->>UI: Return ObservationMessage(text, expression)
+        UI->>UI: Show non-blocking Lingo speech bubble (3s auto-dismiss)
+        Note over UI: Bubble does NOT block next question<br/>Appears alongside normal feedback
+    else No meaningful pattern
+        Engine-->>UI: Return null (no observation)
+        UI->>UI: Continue normal feedback flow
+    end
+```
+
+**Key distinction from per-question feedback**: Per-question feedback (correct/wrong animation) is already built into Sprint 2. Observations are **cross-time, cross-task** comparisons that only a system with memory of this child's history can produce. They are deliberately sparse (triggered by rules, not every question) to avoid becoming noise.
+
+### 6. Plan Rationale & "Why" Annotation Flow (Sprint 6 - AI Presence)
+When a weekly plan is generated, the LLM now outputs a per-day `rationale` field. This is displayed as an expandable "Why this arrangement?" annotation on each plan day card.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Parent as Parent / Child
+    participant UI as WeeklyPlanScreen
+    participant LLM as LlmRepositoryImpl
+    participant DB as PlanDao + AgentDecisionLogDao
+    
+    Parent->>UI: Tap "Generate Plan"
+    UI->>LLM: complete(planPrompt with rationale constraint)
+    Note over LLM: LLM outputs JSON with per-day<br/>"rationale" field explaining arrangement
+    LLM-->>UI: Return plan JSON (theme, days[], each day has rationale)
+    UI->>DB: Save PlanEntity (snapshotData includes rationale)
+    UI->>DB: Log AgentDecisionLog(PLAN_GENERATED, rationale summary)
+    
+    Parent->>UI: Tap "Why?" icon on a day card
+    UI->>UI: Expand annotation card
+    Note over UI: Display day.rationale:<br/>"Your listening accuracy was 72% last week,<br/>below other areas at 85%+. Added extra<br/>listening practice on Wednesday."
+    UI-->>Parent: Show rationale (collapse on tap away)
+```
+
 ---
 
 ## 📝 Prompt Templates
 
 ### 1. Weekly Plan Generator Prompt (JSON output constraint)
-Used to generate a structured 7-day study plan.
+Used to generate a structured 7-day study plan with per-day rationale.
 
 ```
 You are the curriculum planner for Lingo English. 
@@ -139,7 +200,8 @@ You must output a raw, valid JSON object ONLY. Do not write markdown blocks like
       "focus": "Vocabulary / Grammar / Dialogue",
       "target_words": ["word1", "word2"],
       "reference_sentence": "Standard practice sentence of the day",
-      "duration_minutes": 15
+      "duration_minutes": 15,
+      "rationale": "One sentence explaining WHY this day's content was arranged this way, referencing the student's specific learning history (e.g., 'Your listening accuracy was 72% last week, so today focuses on listening-intensive vocabulary')"
     }
   ]
 }
@@ -185,4 +247,28 @@ Generate a short push notification or banner greeting for a student named {name}
 - Must be less than 40 characters.
 - Use exactly 1 appropriate emoji.
 - Do not mention tasks as "unfinished" or "obligations". Use invitations instead.
+```
+
+### 5. Observation Agent Prompt (Sprint 6 - AI Presence)
+Generates personalized, cross-time insights during Quiz/Game stages. Uses template-first approach with LLM enrichment only for complex patterns.
+
+```
+You are Lingo, a fox tutor who remembers everything about your student {name}.
+The student just answered a question and a meaningful pattern was detected:
+
+--- Pattern Detected ---
+{pattern_description}
+Example: "The word 'classroom' was answered wrong in last week's quiz, but the student just answered it correctly today."
+
+--- Student Context ---
+- Word/Question: {current_word}
+- Previous record: {previous_record}
+- Current performance: {current_performance}
+
+--- Guidelines ---
+1. Acknowledge the improvement or pattern in ONE short sentence (max 20 words).
+2. Be warm and specific - reference the actual word or skill, not generic praise.
+3. Do NOT use phrases like "AI noticed" or "the system detected" - speak as Lingo naturally.
+4. Use child-friendly language with at most 1 emoji.
+5. If the pattern is about struggle (multiple retries), be encouraging, never judgmental.
 ```

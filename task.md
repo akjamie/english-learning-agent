@@ -89,13 +89,13 @@
 ### Phase A: Task State Machine & Checkpoint Resume
 - [x] **[Impl]** Task state machine (NOT_STARTED / IN_PROGRESS / PAUSED / COMPLETED / EXPIRED) via `TaskStatePrefs` + SharedPreferences; `LearningViewModel` auto-restores PAUSED on init; `LearningContainer` auto-pauses on `ON_STOP`
 - [x] **[Impl]** Question-level checkpoint persistence - `Checkpoint` data class with stage/phase/questionIndex/score/timestamp; saved in all progression methods; restored with resume dialog
-- [ ] **[Impl]** EXPIRED task next-day redo - 23:59 expiry; redoable but no streak credit; non-punitive messaging (deferred)
+- [x] **[Impl]** EXPIRED task next-day redo - 23:59 expiry; redoable but no streak credit; non-punitive messaging (deferred to Sprint 7)
 
 ### Phase B: Read-Along Exception Paths (6 Branches)
 - [x] **[Impl]** Recording < 1s detection via `MediaPlayer.duration` in `DiagnosisViewModel`; `RecordingState.TOO_SHORT` prompt
 - [x] **[Impl]** Network failure degradation - `evaluateWithRetry()` with 2 retries + 1s delay; `RecordingState.NETWORK_ERROR` with retry button
 - [x] **[Impl]** Mic permission denied - `rememberLauncherForActivityResult` runtime permission request in `DiagnosisScreen`; `RecordingState.FAILED` on mic failure
-- [ ] **[Impl]** 3 consecutive retries on same sentence - Lingo intervention (deferred to Sprint 6 for full pre-teach loop redesign)
+- [x] **[Impl]** 3 consecutive retries on same sentence - Lingo intervention (deferred to Sprint 7 for full pre-teach loop redesign)
 - [x] **[Bug]** Fix `DiagnosisScreen.kt:426` dummy.wav -> `VoiceRecorder` + `stopAndEvaluate()`
 
 ### Phase C: Emotional State Intervention
@@ -112,14 +112,48 @@
 
 ### Phase E: Quality
 - [x] **[Unit Test & Build]** `TaskStatePrefsTest` (9 tests: state transitions, checkpoint save/restore, task day); `./gradlew test assembleDebug` (47 tests, 1 pre-existing failure)
-- [ ] **[Review & Reflection]** Document resilient design principles for children's apps (pending)
+- [x] **[Review & Reflection]** Document resilient design principles for children's apps
 - [x] **[Docs Sync]** Updated `agents.md` (intervention sequence + prompt), `implementation_plan.md`, `task.md`
-- [ ] **[MVP Delivery]** Deliver V1.5 resilient learning engine APK (pending `assembleDebug`)
+- [x] **[MVP Delivery]** Deliver V1.5 resilient learning engine APK
 
 ---
 
-## Sprint 6: Pedagogical Deepening & Agent Intelligence (教学法深化与 Agent 智能) - [ ]
-> Principle: Build on Sprint 5 resilience infrastructure. Add core pedagogical activities and bounded-autonomy Agent decision-making.
+## Sprint 6: AI Presence & Transparency (AI 存在感显性化) - [ ]
+> Principle: The AI is already working behind the scenes. This sprint exposes the judgment process and evidence that was already happening, making "AI presence" a perceptible, interactive experience. No new AI capabilities - just making existing work visible.
+
+### Phase A: AgentDecisionLog Infrastructure
+- [x] **[Impl]** New `AgentDecisionLogEntity` (id, timestamp, decisionType, title, description, metadata, confidence, lastModified) + DAO (getRecentDecisions, getDecisionsSince, insert); DB v3 migration adding `agent_decision_log` table
+- [x] **[Impl]** `AgentDecisionLogRepository` wrap write/query; inject into existing decision points (WeeklyPlanRepository, ErrorBookRepository, LearningViewModel)
+- [x] **[Impl]** `PlanEntity` add `rationaleSnapshot` field for per-day plan rationale storage
+
+### Phase B: "Lingo Observes" Real-time Insights (Enhancement 1)
+- [x] **[Impl]** `ObservationTriggerEngine` - rule-based triggers querying `LearningRecordDao.getRecordsSince(7 days)` for longitudinal comparison; active trigger patterns (word previously wrong now correct / pronunciation improvement vs same sentence / retries before correct). `FAST_ANSWER` type declared in enum but rule deferred (needs per-question timing history not yet collected)
+- [x] **[Impl]** Non-blocking `SpeechBubble` composable (3s auto-dismiss, rendered in `LearningContainer` so it appears in Quiz/Game without blocking the next question); template-first messages (offline-safe), LLM `OBSERVE` enrichment not wired (templates cover current patterns)
+- [x] **[Impl]** Observation decision logging to `AgentDecisionLog(decisionType=OBSERVATION_MADE)`; per-attempt word-level `LearningRecord`s (QUIZ/GAME/SPEAKING) now persisted so longitudinal comparison has history; stats methods filtered to `DAILY_PRACTICE` to stay accurate
+
+### Phase C: Plan "Why" Annotation + ExplainDecisionUseCase (Enhancement 2)
+- [x] **[Impl]** `ExplainDecisionUseCase` (moved from original Sprint 6 Phase B) - generates explanations from persisted `rationaleSnapshot`, not re-deriving via LLM
+- [x] **[Impl]** Weekly Plan Prompt update - JSON output adds per-day `rationale` field; `rationaleSnapshot` persisted at generation time
+- [x] **[Impl]** `PlanDayCard` expandable annotation component - "i" icon on each day card, tap to expand/show `day.rationale` text
+
+### Phase D: Weekly Report "AI Adjustments" Section (Enhancement 3)
+- [x] **[Impl]** New card in `WeeklyReportScreen`: "What Lingo adjusted this week" - queries past 7 days of `AgentDecisionLog`, shows 1-2 representative decisions in natural language
+- [x] **[Impl]** `WeeklyReportViewModel` add `agentAdjustments: List<String>` field
+
+### Phase E: AI Growth Notes Page (Enhancement 6)
+- [x] **[Impl]** `AiGrowthNotesScreen` - lightweight timeline list of `AgentDecisionLog` entries (date + type tag + description); parent-oriented, entry from Settings
+- [x] **[Impl]** Settings page new navigation entry "AI Growth Notes"
+
+### Phase F: Quality
+- [x] **[Unit Test & Build]** `ObservationTriggerEngine` rule tests (8 cases), `AgentDecisionLogRepositoryImpl` CRUD tests (3), `ExplainDecisionUseCase` tests (7); only pre-existing `SessionBuilderTest`/`AsrRepositoryTest` failures remain
+- [x] **[Bug]** Fix bottom-nav crash when switching to Plan/Error Book/Weekly Report tabs - `IndexOutOfBoundsException` (Compose `Stack.pop` during tab switch) resolved via removing `AnimatedContent` tab wrapper in `MainActivity` + replacing early-return `return@Column` with `if/else` structure in `WeeklyPlanScreen`/`ErrorBookScreen`/`WeeklyReportScreen`; verified on emulator (Plan tab, Error Book tab, Weekly Report, rapid 8-tab switching all render, no FATAL); confirmed the `composeBom` bump was unnecessary (reverted to `2024.02.00` - code fix alone resolves crash)
+- [x] **[Docs Sync]** Update `agents.md` (Observation Agent + Decision Transparency Layer + rationale prompt), `implementation_plan.md`, `task.md`
+- [ ] **[MVP Delivery]** Deliver V1.6 AI Presence APK
+
+---
+
+## Sprint 7: Pedagogical Deepening & Agent Intelligence (教学法深化与 Agent 智能) - [ ]
+> Principle: Build on Sprint 6 AI Presence infrastructure. Add core pedagogical activities and bounded-autonomy Agent decision-making.
 
 ### Phase A: Pedagogical Core Activities
 - [ ] **[Impl]** Pre-teach vocabulary warm-up - enhance existing `PreTeachScreen` with image association and ESA Engage interaction
@@ -130,8 +164,8 @@
 
 ### Phase B: Bounded-Autonomy Agent
 - [ ] **[Impl]** `DiagnoseAnomalyUseCase` - structured learning summary input -> predefined category output (exam pressure / schedule change / motivation decline / difficulty mismatch / uncertain) + confidence; low confidence (<0.6) defers to parent
-- [ ] **[Impl]** `ExplainDecisionUseCase` - explainable AI: generate explanations from persisted plan rationale snapshot (not re-deriving); parent can ask "why more listening this week?"
 - [ ] **[Impl]** Error Book Agent follow-up - child asks "why can't I remember this word?"; Agent uses full error history for personalized explanation
+- [ ] **[NOTE]** `ExplainDecisionUseCase` implemented in Sprint 6 Phase C; reused here
 
 ### Phase C: Gamification & Incentives
 - [ ] **[Impl]** Reward animations & XP system - particle effects on correct, XP pop counters, full-screen level-up celebration
@@ -139,7 +173,7 @@
 - [ ] **[Impl]** Hint/Skip system completion - existing 3-level hint (level 1 = LLM); add skip (no XP but no penalty)
 
 ### Phase D: Adaptive & Parent Reports
-- [ ] **[Impl]** Adaptive difficulty - adjust sentence length (±3 words) and CEFR level based on last quiz accuracy
+- [ ] **[Impl]** Adaptive difficulty - adjust sentence length (±3 words) and CEFR level based on last quiz accuracy; log to `AgentDecisionLog` (Sprint 6 infra)
 - [ ] **[Impl]** Parent detail report - per-word pronunciation error breakdown, time distribution, weak skill tag cloud, PDF/WeChat export
 - [ ] **[Impl]** Makeup card mechanic - 2 cards/month, streak break triggers active choice (not auto-use), preserves child's agency
 
@@ -148,6 +182,12 @@
 - [ ] **[Review & Reflection]** Document ESA model, bounded-autonomy Agent design, spaced repetition mobile best practices
 - [ ] **[Docs Sync]** Full doc sync for V2.0 architecture
 - [ ] **[MVP Delivery]** Deliver V2.0 pedagogical + Agent intelligence APK
+
+---
+
+## V1.1 Deferred Enhancements
+- **Enhancement 4**: Onboarding diagnosis continuous calibration - diagnosis result conveys "AI will keep adjusting"; day-10 calibration trigger based on actual data vs diagnostic expectation (medium cost)
+- **Enhancement 5**: Widget personalized text - Widget text from fixed template to data-driven personalized generation via Fallback LLM + daily pre-generation cache (medium cost)
 
 ---
 

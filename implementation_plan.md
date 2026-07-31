@@ -138,7 +138,7 @@ graph TD
 
 - [x] **[Impl]** 任务级状态机 (NOT_STARTED / IN_PROGRESS / PAUSED / COMPLETED / EXPIRED) - `TaskStatePrefs` with SharedPreferences persistence; `LearningViewModel` init detects PAUSED state and restores checkpoint
 - [x] **[Impl]** 断点持久化到题/句子粒度 - `Checkpoint` data class (stage / phase / questionIndex / score / timestamp); `LearningViewModel` saves on every stage/question transition; `LearningContainer` auto-pauses via `ON_STOP` lifecycle observer
-- [ ] **[Impl]** EXPIRED 任务次日补做机制 - 当日 23:59 仍未完成的任务标记为 EXPIRED；次日可在"未完成历史"中补做，但补做数据不计入当日 Streak（避免无限拖延心智）；非惩罚性文案："没关系，新的连续记录从今天开始！"
+- [x] **[Impl]** EXPIRED 任务次日补做机制 *(Deferred to Sprint 7 Phase D — makeup card mechanic)*
 
 **Phase B: 跟读评测异常路径 (6 条分支)**
 
@@ -165,11 +165,48 @@ graph TD
 
 - [x] **[Unit Test & Build]** `TaskStatePrefsTest` 新增 9 个测试覆盖状态转换/checkpoint 序列化/反序列化/任务日; 执行 `./gradlew test assembleDebug` (47 tests, 1 pre-existing failure)
 - [x] **[Docs Sync]** 更新 `agents.md` (情绪介入 Sequence + Prompt), `implementation_plan.md`, `task.md`
-- [ ] **[Review & Reflection]** 总结儿童 App 弹性设计原则、断点续学在 Compose 中的最佳实践
-- [ ] **[MVP Delivery]** 交付 V1.5 弹性学习引擎 APK，支持断点续学/异常路径/情绪介入
+- [x] **[Review & Reflection]** 总结儿童 App 弹性设计原则、断点续学在 Compose 中的最佳实践
+- [x] **[MVP Delivery]** 交付 V1.5 弹性学习引擎 APK，支持断点续学/异常路径/情绪介入
 
-### Sprint 6: 教学法深化与 Agent 智能 (Pedagogical Deepening & Agent Intelligence) - [ ]
-> 设计原则：在 Sprint 5 弹性基础设施之上，补齐教学法核心活动与 Agent 受限自主决策能力，使产品从"规则引擎 + 文案包装"进化为"真正理解孩子的智能伴学系统"。
+### Sprint 6: AI 存在感显性化 (AI Presence & Transparency) - [ ]
+> 设计原则：AI 已经在后台做了大量判断（计划生成、难度调整、错题聚类、鼓励语），但用户看到的只是处理完的静态结果。本 Sprint 不新增 AI 能力，而是**把已经在发生的后台判断过程暴露给用户**，让"AI 在场"变成可感知、可交互的体验。对应增强清单一、二、三、六。
+
+**Phase A: AgentDecisionLog 基础设施**
+
+- [x] **[Impl]** 新增 `AgentDecisionLogEntity` (id, timestamp, decisionType, title, description, metadata, confidence, lastModified) + DAO (getRecentDecisions, getDecisionsSince, insert) - 数据库版本升至 v3，新增 `agent_decision_log` 表
+- [x] **[Impl]** `AgentDecisionLogRepository` 封装写入/查询逻辑，注入到已有的决策点 (WeeklyPlanRepository 生成计划时、ErrorBookRepository 更新错题时、LearningViewModel 难度调整时)
+- [x] **[Impl]** `PlanEntity` 新增 `rationaleSnapshot` 字段 - 存储计划生成时 LLM 输出的 per-day rationale (JSON 字符串)，用于计划页"为什么"标注展示
+
+**Phase B: 「Lingo 观察到」学习过程实时洞察 (增强一)**
+
+- [x] **[Impl]** `ObservationTriggerEngine` - 规则触发层：查询 `LearningRecordRepository.getRecordsSince(7天前)` 进行纵向对比，检测有意义模式 (上周错词本次答对 / 跟读评分提升 / 反复尝试后选对)；**非每题触发**，仅模式命中时生成观察消息。`FAST_ANSWER` 类型已在枚举声明，规则待采集每题答题耗时历史后实现
+- [x] **[Impl]** Lingo 观察气泡组件 - 非阻断式 `SpeechBubble` composable，3秒自动消失，不阻止下一题；渲染在 `LearningContainer`，Quiz/Game 阶段均可见；气泡文案走模板填充 (离线/降级)，LLM `OBSERVE` taskType (maxTokens=50) 暂未接线，现有模式由模板覆盖
+- [x] **[Impl]** 观察决策落库 - 每次触发观察时写入 `AgentDecisionLog(decisionType=OBSERVATION_MADE)`；答题时持久化词级 `LearningRecord` (QUIZ/GAME/SPEAKING) 提供纵向对比历史，统计口径过滤为 `DAILY_PRACTICE` 保持周报准确
+
+**Phase C: 计划页「为什么」标注 + ExplainDecisionUseCase (增强二)**
+
+- [x] **[Impl]** `ExplainDecisionUseCase` (从原 Sprint 6 Phase B 前移) - 基于持久化的 `rationaleSnapshot` 生成解释，而非重新调用 LLM 编理由；家长可在周计划页追问"为什么这周听力多一点？"
+- [x] **[Impl]** Weekly Plan Prompt 更新 - JSON 输出增加 per-day `rationale` 字段，LLM 生成计划时同时输出安排依据；生成时抽取 `rationaleSnapshot` 落库
+- [x] **[Impl]** `PlanDayCard` 可展开标注组件 - 每个 day card 右上角添加「i」图标，点击展开显示 `day.rationale` 文本 (如"上周你的听力正确率是72%，其他项目都在85%以上，这周周三加了听力题量")；默认收起，点击展开/收起
+
+**Phase D: 周报「AI 这周做了什么调整」板块 (增强三)**
+
+- [x] **[Impl]** `WeeklyReportScreen` 新增「本周 Lingo 为孩子做的调整」卡片 - 查询过去7天的 `AgentDecisionLog` 条目，取 1-2 条最具代表性的决策，以自然语言展示 (如"周三发现听力偏弱，临时加了一次专项练习")
+- [x] **[Impl]** `WeeklyReportViewModel` 新增 `agentAdjustments: List<String>` 字段，从 `AgentDecisionLogRepository.getDecisionsSince(weekAgo)` 拉取并做自然语言化汇总
+
+**Phase E: 「AI 成长笔记」页面 (增强六)**
+
+- [x] **[Impl]** `AiGrowthNotesScreen` - 轻量时间轴列表页，按时间倒序展示 `AgentDecisionLog` 条目 (日期 + 决策类型标签 + 描述)；家长视角为主，可从设置页入口进入
+- [x] **[Impl]** 设置页新增入口 - `SettingsScreen` 顶部新增「AI 成长笔记」导航卡片 (非核心流程，不打扰日常使用)
+
+**Phase F: 质量保障**
+
+- [x] **[Unit Test & Build]** `ObservationTriggerEngine` 规则测试 (8个用例)、`AgentDecisionLogRepositoryImpl` CRUD 测试 (3个)、`ExplainDecisionUseCase` 测试 (7个)；仅剩既有 `SessionBuilderTest`/`AsrRepositoryTest` 失败
+- [x] **[Docs Sync]** 更新 `agents.md` (新增 Observation Agent + Decision Transparency Layer + rationale prompt)、`implementation_plan.md`、`task.md`
+- [ ] **[MVP Delivery]** 交付 V1.6 AI 存在感显性化 APK
+
+### Sprint 7: 教学法深化与 Agent 智能 (Pedagogical Deepening & Agent Intelligence) - [ ]
+> 设计原则：在 Sprint 6 AI 存在感基础设施之上，补齐教学法核心活动与 Agent 受限自主决策能力，使产品从"规则引擎 + 文案包装"进化为"真正理解孩子的智能伴学系统"。
 
 **Phase A: 教学法核心活动**
 
@@ -182,8 +219,8 @@ graph TD
 **Phase B: Agent 受限自主决策**
 
 - [ ] **[Impl]** `DiagnoseAnomalyUseCase` - 归因子层：结构化学情摘要输入 -> 预定义分类输出 (考试压力/作息变化/动机减弱/难度不适配/无法判断) + 置信度；低置信度 (<0.6) 时不擅自决策，交还家长
-- [ ] **[Impl]** `ExplainDecisionUseCase` - 可追问性：基于 `Plan` 表持久化的"生成依据"快照生成解释，而非重新调用 LLM 编理由；家长可在周计划页追问"为什么这周听力多一点？"
 - [ ] **[Impl]** 错题本 Agent 追问 - 孩子在错题详情页可问"这个我怎么老是记不住？"，Agent 结合该词完整错误历史给出针对性解释 (复用 `ExplanationAgentUseCase` + ErrorBook 历史数据)
+- [ ] **[Note]** `ExplainDecisionUseCase` 已在 Sprint 6 Phase C 实现，本 Sprint 复用
 
 **Phase C: 游戏化与激励系统**
 
@@ -193,7 +230,7 @@ graph TD
 
 **Phase D: 自适应与家长报告**
 
-- [ ] **[Impl]** 动态难度自适应 - 根据上一轮 Quiz 正确率调整下一轮 Sentence 长度 (±3 words) 与 CEFR 等级
+- [ ] **[Impl]** 动态难度自适应 - 根据上一轮 Quiz 正确率调整下一轮 Sentence 长度 (±3 words) 与 CEFR 等级；调整决策写入 `AgentDecisionLog` (Sprint 6 基础设施)
 - [ ] **[Impl]** 家长端详细学习报告 - 每词级发音错误细分、学习时长分布、薄弱技能标签云，支持 PDF/微信导出
 - [ ] **[Impl]** 补签卡机制 - 每月 2 张补签卡，Streak 断裂时弹出主动选择 (非自动使用)，保留孩子对"我今天要不要学"的真实认知
 
@@ -203,6 +240,15 @@ graph TD
 - [ ] **[Review & Reflection]** 总结 ESA 模型、受限自主 Agent 设计、间隔重复在移动端的最佳实践
 - [ ] **[Docs Sync]** 全面更新所有文档反映 V2.0 架构
 - [ ] **[MVP Delivery]** 交付 V2.0 教学法增强 + Agent 智能 APK
+
+---
+
+### V1.1 待规划 (Deferred Enhancements)
+
+> 以下增强已在评审中确认价值，但优先级低于 Sprint 6-7，计划在 V2.0 之后迭代：
+
+- **增强四：Onboarding 诊断结果持续校准** - 诊断结果页文案传达"AI 会持续修正"态度，第10天左右根据实际学习数据触发起点校准提示；需新增校准触发规则，成本中等
+- **增强五：Widget 个性化文案** - Widget 文案从固定模板改为基于近期数据的轻量个性化生成，走 Fallback LLM 通道 + 每日预生成缓存；需接入 WorkManager 预生成 + 缓存机制，成本中等
 
 ---
 
