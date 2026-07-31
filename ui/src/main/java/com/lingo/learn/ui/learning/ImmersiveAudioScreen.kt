@@ -344,12 +344,16 @@ private fun NewWordPopupCard(
                     fontWeight = FontWeight.Bold
                 )
                 // The word
-                Text(
-                    text = word,
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2C3E50)
-                )
+                Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    Text(
+                        text = word,
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50),
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
                 // Speak button
                 Button(
                     onClick = onSpeak,

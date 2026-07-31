@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenAiGrowthNotes: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -224,6 +225,40 @@ fun SettingsScreen(
                         fontSize = 12.sp,
                         color = Color(0xFF7F8C8D)
                     )
+                }
+            }
+
+            // AI Growth Notes entry (Sprint 6 - AI Presence)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenAiGrowthNotes() }
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🌱", fontSize = 28.sp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "AI Growth Notes",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF5C6FF2)
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "See what Lingo noticed and adjusted for your child",
+                            fontSize = 13.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                    Text("›", fontSize = 24.sp, color = Color(0xFF7F8C8D))
                 }
             }
 

@@ -2,6 +2,8 @@ package org.akj.lingo.learn.ui.weeklyplan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import org.akj.lingo.learn.domain.model.AgentDecisionLog
+import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +21,7 @@ data class WeeklyReportUiState(
     val totalWordsLearned: Int = 0,
     val weakCategories: List<String> = emptyList(),
     val themeName: String = "",
+    val agentAdjustments: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val shareBitmap: ByteArray? = null
 )
@@ -26,7 +29,8 @@ data class WeeklyReportUiState(
 @HiltViewModel
 class WeeklyReportViewModel @Inject constructor(
     private val learningRecordRepository: LearningRecordRepository,
-    private val weeklyPlanRepository: WeeklyPlanRepository
+    private val weeklyPlanRepository: WeeklyPlanRepository,
+    private val agentDecisionLogRepository: AgentDecisionLogRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyReportUiState())
@@ -43,6 +47,7 @@ class WeeklyReportViewModel @Inject constructor(
                 val streak = learningRecordRepository.getStreakDays()
                 val weakCats = learningRecordRepository.getWeakCategories()
                 val plan = weeklyPlanRepository.getLatestCachedPlan()
+                val adjustments = loadAdjustments()
 
                 val weeklyAccuracy = if (weeklyRecords.isNotEmpty()) {
                     weeklyRecords.map { it.accuracy }.average().toFloat()
@@ -56,11 +61,30 @@ class WeeklyReportViewModel @Inject constructor(
                     totalWordsLearned = (weeklyRecords.size * 3).coerceAtLeast(0),
                     weakCategories = weakCats,
                     themeName = plan?.theme ?: "No active plan",
+                    agentAdjustments = adjustments,
                     isLoading = false
                 )
             } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
+        }
+    }
+
+    /** Pulls the past 7 days of logged agent decisions and renders 1-2 in natural language. */
+    private suspend fun loadAdjustments(): List<String> {
+        val decisions = agentDecisionLogRepository.getDecisionsSince(
+            System.currentTimeMillis() - 7 * 24 * 3600 * 1000L
+        )
+        return decisions.take(2).map { formatDecision(it) }
+    }
+
+    private fun formatDecision(log: AgentDecisionLog): String {
+        return when (log.decisionType) {
+            "OBSERVATION_MADE" -> "🦊 Lingo noticed: ${log.description}"
+            "PLAN_GENERATED" -> "📅 Lingo rearranged the week: ${log.description}"
+            "DIFFICULTY_ADJUSTED" -> "⚖️ Lingo adjusted difficulty: ${log.description}"
+            "ERROR_PATTERN" -> "🎯 Lingo spotted a pattern: ${log.description}"
+            else -> "🦊 Lingo: ${log.description}"
         }
     }
 

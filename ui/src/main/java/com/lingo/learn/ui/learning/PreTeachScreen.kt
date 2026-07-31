@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -89,12 +91,16 @@ fun PreTeachScreen(
                         fontSize = 80.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = currentWord,
-                        fontSize = 40.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF2C3E50)
-                    )
+                    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        Text(
+                            text = currentWord,
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF2C3E50),
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Tap to listen 🔊",
