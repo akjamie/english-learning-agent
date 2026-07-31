@@ -1,8 +1,12 @@
 package org.akj.lingo.learn.ui.weeklyplan
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -68,8 +72,7 @@ fun WeeklyPlanScreen(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color(0xFF5C6FF2))
             }
-            return@Column
-        }
+        } else {
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -182,6 +185,7 @@ fun WeeklyPlanScreen(
                 Spacer(Modifier.height(24.dp))
             }
         }
+        }
     }
 }
 
@@ -193,6 +197,7 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
         animationSpec = tween(600),
         label = "day_progress"
     )
+    var rationaleExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -239,9 +244,29 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
                     }
                 }
 
-                if (isToday) {
-                    Badge(containerColor = Color(0xFF5C6FF2), contentColor = Color.White) {
-                        Text("Today", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isToday) {
+                        Badge(containerColor = Color(0xFF5C6FF2), contentColor = Color.White) {
+                            Text("Today", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    if (dayItem.rationale.isNotBlank()) {
+                        Spacer(Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(if (rationaleExpanded) Color(0xFF5C6FF2) else Color(0xFFF0F4FF))
+                                .clickable { rationaleExpanded = !rationaleExpanded },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "i",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (rationaleExpanded) Color.White else Color(0xFF5C6FF2)
+                            )
+                        }
                     }
                 }
             }
@@ -306,7 +331,7 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
 
             // Progress bar for completed status
             if (dayItem.isCompleted) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFECEFF1))
                 ) {
@@ -315,6 +340,37 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
                             .clip(RoundedCornerShape(2.dp))
                             .background(Color(0xFF52D68A))
                     )
+                }
+            }
+
+            // "Why this arrangement?" expandable annotation (Sprint 6)
+            AnimatedVisibility(
+                visible = rationaleExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFFF0F4FF),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                "💡 Why this arrangement?",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF5C6FF2)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                dayItem.rationale,
+                                fontSize = 13.sp,
+                                color = Color(0xFF2C3E50),
+                                lineHeight = 18.sp
+                            )
+                        }
+                    }
                 }
             }
         }

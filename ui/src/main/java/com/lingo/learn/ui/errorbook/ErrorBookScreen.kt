@@ -67,10 +67,7 @@ fun ErrorBookScreen(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color(0xFF5C6FF2))
             }
-            return@Column
-        }
-
-        if (uiState.totalCount == 0) {
+        } else if (uiState.totalCount == 0) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("🎉", fontSize = 64.sp)
@@ -80,8 +77,7 @@ fun ErrorBookScreen(
                     Text("Great job! All words mastered.", fontSize = 14.sp, color = Color(0xFF7F8C8D))
                 }
             }
-            return@Column
-        }
+        } else {
 
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)
@@ -112,6 +108,7 @@ fun ErrorBookScreen(
                     )
                 }
             }
+        }
         }
     }
     

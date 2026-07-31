@@ -5,7 +5,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -14,7 +13,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
-import androidx.compose.animation.core.tween
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -22,6 +20,7 @@ import androidx.compose.material3.Text
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
 import org.akj.lingo.learn.ui.dashboard.DashboardScreen
+import org.akj.lingo.learn.ui.aigrowthnotes.AiGrowthNotesScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookDetailScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookScreen
 import org.akj.lingo.learn.ui.learning.LearningContainer
@@ -48,7 +47,6 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(base.createConfigurationContext(config))
     }
 
-    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(saved: Bundle?) {
         super.onCreate(saved)
         setContent {
@@ -72,6 +70,7 @@ class MainActivity : ComponentActivity() {
                     var selectedErrorEntry by remember { mutableStateOf<ErrorBookEntry?>(null) }
                     var isWeeklyReportOpen by remember { mutableStateOf(false) }
                     var isRoleplayOpen by remember { mutableStateOf(false) }
+                    var isAiGrowthNotesOpen by remember { mutableStateOf(false) }
 
                     if (!isOnboardingCompleted) {
                         OnboardingContainer(
@@ -105,6 +104,10 @@ class MainActivity : ComponentActivity() {
                         RoleplayScreen(
                             onNavigateBack = { isRoleplayOpen = false }
                         )
+                    } else if (isAiGrowthNotesOpen) {
+                        AiGrowthNotesScreen(
+                            onBack = { isAiGrowthNotesOpen = false }
+                        )
                     } else {
                         // Main Scaffold with Bottom Navigation
                         androidx.compose.material3.Scaffold(
@@ -133,39 +136,32 @@ class MainActivity : ComponentActivity() {
                             }
                         ) { paddingValues ->
                             Box(modifier = Modifier.padding(paddingValues)) {
-                                AnimatedContent(
-                                    targetState = currentTab,
-                                    transitionSpec = {
-                                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-                                    },
-                                    label = "TabNav"
-                                ) { tab ->
-                                    when (tab) {
-                                        MainTab.HOME -> DashboardScreen(
-                                            grade = currentGrade,
-                                            onStartLearning = { isLearning = true },
-                                            onPlanClick = { currentTab = MainTab.PLAN },
-                                            onErrorBookClick = { currentTab = MainTab.ERROR_BOOK },
-                                            onSettingsClick = { currentTab = MainTab.SETTINGS },
-                                            onRoleplayClick = { isRoleplayOpen = true }
-                                        )
-                                        MainTab.PLAN -> WeeklyPlanScreen(
-                                            grade = currentGrade,
-                                            onBack = { currentTab = MainTab.HOME },
-                                            onViewReport = { isWeeklyReportOpen = true },
-                                            onStartLearning = { isLearning = true }
-                                        )
-                                        MainTab.ERROR_BOOK -> ErrorBookScreen(
-                                            onBack = { currentTab = MainTab.HOME },
-                                            onEntryClick = { entry ->
-                                                selectedErrorEntry = entry
-                                                isErrorBookDetailOpen = true
-                                            }
-                                        )
-                                        MainTab.SETTINGS -> org.akj.lingo.learn.ui.settings.SettingsScreen(
-                                            onBack = { currentTab = MainTab.HOME }
-                                        )
-                                    }
+                                when (currentTab) {
+                                    MainTab.HOME -> DashboardScreen(
+                                        grade = currentGrade,
+                                        onStartLearning = { isLearning = true },
+                                        onPlanClick = { currentTab = MainTab.PLAN },
+                                        onErrorBookClick = { currentTab = MainTab.ERROR_BOOK },
+                                        onSettingsClick = { currentTab = MainTab.SETTINGS },
+                                        onRoleplayClick = { isRoleplayOpen = true }
+                                    )
+                                    MainTab.PLAN -> WeeklyPlanScreen(
+                                        grade = currentGrade,
+                                        onBack = { currentTab = MainTab.HOME },
+                                        onViewReport = { isWeeklyReportOpen = true },
+                                        onStartLearning = { isLearning = true }
+                                    )
+                                    MainTab.ERROR_BOOK -> ErrorBookScreen(
+                                        onBack = { currentTab = MainTab.HOME },
+                                        onEntryClick = { entry ->
+                                            selectedErrorEntry = entry
+                                            isErrorBookDetailOpen = true
+                                        }
+                                    )
+                                    MainTab.SETTINGS -> org.akj.lingo.learn.ui.settings.SettingsScreen(
+                                        onBack = { currentTab = MainTab.HOME },
+                                        onOpenAiGrowthNotes = { isAiGrowthNotesOpen = true }
+                                    )
                                 }
                             }
                         }

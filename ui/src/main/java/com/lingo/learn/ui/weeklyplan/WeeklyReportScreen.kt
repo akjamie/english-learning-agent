@@ -79,8 +79,7 @@ fun WeeklyReportScreen(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color(0xFF5C6FF2))
             }
-            return@Column
-        }
+        } else {
 
         Column(
             modifier = Modifier
@@ -187,6 +186,34 @@ fun WeeklyReportScreen(
                 }
             }
 
+            // "What Lingo adjusted this week" section (Sprint 6 - AI Presence)
+            if (uiState.agentAdjustments.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF3E7)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("🦊 What Lingo adjusted this week", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                        Spacer(Modifier.height(12.dp))
+                        uiState.agentAdjustments.forEach { adjustment ->
+                            Text(
+                                adjustment,
+                                fontSize = 14.sp,
+                                color = Color(0xFF2C3E50),
+                                lineHeight = 20.sp
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        Text(
+                            "Based on decisions Lingo logged while teaching you this week.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                }
+            }
+
             // Encouragement message
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -229,6 +256,7 @@ fun WeeklyReportScreen(
             }
 
             Spacer(Modifier.height(20.dp))
+        }
         }
     }
 }
