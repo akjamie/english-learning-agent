@@ -148,7 +148,7 @@
 - [x] **[Unit Test & Build]** `ObservationTriggerEngine` rule tests (8 cases), `AgentDecisionLogRepositoryImpl` CRUD tests (3), `ExplainDecisionUseCase` tests (7); only pre-existing `SessionBuilderTest`/`AsrRepositoryTest` failures remain
 - [x] **[Bug]** Fix bottom-nav crash when switching to Plan/Error Book/Weekly Report tabs - `IndexOutOfBoundsException` (Compose `Stack.pop` during tab switch) resolved via removing `AnimatedContent` tab wrapper in `MainActivity` + replacing early-return `return@Column` with `if/else` structure in `WeeklyPlanScreen`/`ErrorBookScreen`/`WeeklyReportScreen`; verified on emulator (Plan tab, Error Book tab, Weekly Report, rapid 8-tab switching all render, no FATAL); confirmed the `composeBom` bump was unnecessary (reverted to `2024.02.00` - code fix alone resolves crash)
 - [x] **[Docs Sync]** Update `agents.md` (Observation Agent + Decision Transparency Layer + rationale prompt), `implementation_plan.md`, `task.md`
-- [ ] **[MVP Delivery]** Deliver V1.6 AI Presence APK
+- [x] **[MVP Delivery]** Deliver V1.6 AI Presence APK (`app-debug.apk`, verified: Plan/Error Book/Weekly Report tabs + crash fix re-tested on emulator with reverted BOM, all tests green except pre-existing failures)
 
 ---
 
