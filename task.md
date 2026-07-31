@@ -118,7 +118,7 @@
 
 ---
 
-## Sprint 6: AI Presence & Transparency (AI 存在感显性化) - [ ]
+## Sprint 6: AI Presence & Transparency (AI 存在感显性化) - [x] v1.6
 > Principle: The AI is already working behind the scenes. This sprint exposes the judgment process and evidence that was already happening, making "AI presence" a perceptible, interactive experience. No new AI capabilities - just making existing work visible.
 
 ### Phase A: AgentDecisionLog Infrastructure
