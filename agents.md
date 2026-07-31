@@ -272,3 +272,87 @@ Example: "The word 'classroom' was answered wrong in last week's quiz, but the s
 4. Use child-friendly language with at most 1 emoji.
 5. If the pattern is about struggle (multiple retries), be encouraging, never judgmental.
 ```
+
+---
+
+## 🎓 Sprint 7: Pedagogical Deepening & Agent Intelligence
+
+### New Capabilities
+
+Sprint 7 adds bounded-autonomy Agent decision-making and core pedagogical activities on top of the Sprint 6 AI Presence infrastructure:
+
+1. **DiagnoseAnomalyUseCase (Bounded-Autonomy Agent)**: Consumes a structured learning summary (last/previous week accuracy, session counts, avg session minutes, exam period flag, retry rate) and maps it to one of five predefined categories (EXAM_PRESSURE / SCHEDULE_CHANGE / MOTIVATION_DECLINE / DIFFICULTY_MISMATCH / UNCERTAIN) with a confidence score. **Bounded**: when confidence < 0.6 it does NOT act autonomously — it defers the decision to the parent (`defersToParent = true`).
+2. **SpacedRepetitionScheduler**: Ebbinghaus review intervals (1/3/7/14 days). Each error-book word's `nextReviewTimestamp` drives whether it is re-inserted into the daily Quiz. A correct answer advances to the next interval; a repeated mistake resets to day 1.
+3. **PhonicsModule**: For the PRIMARY band, generates CVC build / onset-rime / minimal-pairs blending questions from curated letter-tile banks.
+4. **ProductionTaskScorer**: Deterministic grading for SPELLING (Levenshtein partial credit), DICTATION (word overlap), and SENTENCE_WRITING (target word presence + length).
+5. **AdaptiveDifficultyEngine**: Adjusts sentence length (±3 words, clamped 4..22) and CEFR level from last quiz accuracy; `describeAdjustment()` produces a human-readable string for `AgentDecisionLog` (DIFFICULTY_ADJUSTED).
+6. **XpRewardSystem + DailyGoalTracker + MakeupCardManager**: XP/level progression, daily 3-goal badges, and the 2-per-month makeup card (streak break → active choice, never auto-use).
+
+### Bounded-Autonomy Decision Flow (Phase B)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Parent as Parent
+    participant Agent as DiagnoseAnomalyUseCase
+    participant Log as AgentDecisionLogDao
+
+    Note over Agent: Gather LearningSummaryInput<br/>(accuracy, sessions, effort, exam flag)
+    Agent->>Agent: Rule engine scores 5 categories<br/>EXAM_PRESSURE / SCHEDULE_CHANGE /<br/>MOTIVATION_DECLINE / DIFFICULTY_MISMATCH
+
+    alt best confidence >= 0.6
+        Agent->>Log: Persist decision + reason + confidence
+        Agent-->>Parent: Confident diagnosis (acts autonomously)
+    else confidence < 0.6
+        Agent-->>Parent: defersToParent = true (no autonomous action)
+        Note over Agent: Parent is presented with raw evidence<br/>and makes the call themselves
+    end
+```
+
+### Spaced Repetition in the Daily Quiz (Phase A4)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant VM as LearningViewModel
+    participant Repo as ErrorBookRepositoryImpl
+    participant Sched as SpacedRepetitionScheduler
+
+    VM->>Repo: getReviewQuestionsForQuiz(2) at session start
+    Repo->>Repo: Filter entries where isDue(nextReviewTimestamp, now)
+    Repo-->>VM: Due error-book words as QuizQuestions (prepended)
+    VM->>VM: submitQuizAnswer() on a review word
+    alt Correct
+        VM->>Repo: markCorrect(vocabId)
+        Repo->>Sched: intervalIndexForTimestamp(next, now) + 1
+        Repo->>Sched: nextReviewAfterCorrect(now, nextIndex)
+    else Wrong
+        VM->>Repo: upsertError(...)
+        Repo->>Sched: nextReviewAfterError(now) -> reset to 1 day
+    end
+```
+
+### Phonic Blending Question Generation (Phase A3)
+
+`PhonicsModule.buildPhonicsQuestion(word, questionId)`:
+- Normalizes to lowercase, parses as CVC (consonant-vowel-consonant).
+- Rotates activity type by `questionId % 3` so children see variety:
+  - `0` → **CVC_BUILD** (arrange onset/vowel/coda tiles + 3 distractors into the correct order; answer expressed via `correctOrder`)
+  - `1` → **ONSET_RIME** (pick the rime completing "onset + ? = word" from 4 rime options)
+  - `2` → **MINIMAL_PAIRS** (listen and tap the word among a near-homophone pair)
+- Returns `null` for non-CVC words; `SessionBuilder` injects up to 3 phonics questions into PRIMARY sessions (quota from `defaultPhonicsRatio`).
+
+### Prompt Template: Error Book Follow-up (Phase B2)
+
+```
+You are Lingo, a friendly fox tutor. The child asked about the word "{word}"
+which they keep getting wrong. Here is the full error history for this word:
+{error_history_json}
+
+--- Guidelines ---
+1. Reference the child's actual error history (e.g., "You missed this in listening
+   on Tuesday, then again in the quiz today").
+2. Provide ONE clear pattern they can fix, in kid-friendly language.
+3. Give a quick memory trick or spelling tip.
+4. Keep it under 100 words. Warm and specific, never judgmental.
+```

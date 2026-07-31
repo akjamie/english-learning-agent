@@ -156,26 +156,26 @@
 > Principle: Build on Sprint 6 AI Presence infrastructure. Add core pedagogical activities and bounded-autonomy Agent decision-making.
 
 ### Phase A: Pedagogical Core Activities
-- [ ] **[Impl]** Pre-teach vocabulary warm-up - enhance existing `PreTeachScreen` with image association and ESA Engage interaction
-- [ ] **[Impl]** Listen-Repeat-Compare loop - TTS demo -> record -> playback comparison (play child's recording) -> ASR score -> optional retry
-- [ ] **[Impl]** Phonics blending for PRIMARY band - CVC word building, onset-rime, minimal pairs discrimination
-- [ ] **[Impl]** Spaced repetition in Quiz - auto-insert Error Book words at Ebbinghaus intervals (1/3/7/14 days); reuse `nextReviewTimestamp` field
-- [ ] **[Impl]** Production task scoring - complete SPELLING/DICTATION evaluation logic (enum exists, scoring incomplete); add sentence writing type
+- [x] **[Impl]** Pre-teach vocabulary warm-up - enhance existing `PreTeachScreen` with image association and ESA Engage interaction
+- [x] **[Impl]** Listen-Repeat-Compare loop - TTS demo -> record -> playback comparison (play child's recording) -> ASR score -> optional retry
+- [x] **[Impl]** Phonics blending for PRIMARY band - CVC word building, onset-rime, minimal pairs discrimination
+- [x] **[Impl]** Spaced repetition in Quiz - auto-insert Error Book words at Ebbinghaus intervals (1/3/7/14 days); reuse `nextReviewTimestamp` field
+- [x] **[Impl]** Production task scoring - complete SPELLING/DICTATION evaluation logic (enum exists, scoring incomplete); add sentence writing type
 
 ### Phase B: Bounded-Autonomy Agent
-- [ ] **[Impl]** `DiagnoseAnomalyUseCase` - structured learning summary input -> predefined category output (exam pressure / schedule change / motivation decline / difficulty mismatch / uncertain) + confidence; low confidence (<0.6) defers to parent
-- [ ] **[Impl]** Error Book Agent follow-up - child asks "why can't I remember this word?"; Agent uses full error history for personalized explanation
-- [ ] **[NOTE]** `ExplainDecisionUseCase` implemented in Sprint 6 Phase C; reused here
+- [x] **[Impl]** `DiagnoseAnomalyUseCase` - structured learning summary input -> predefined category output (exam pressure / schedule change / motivation decline / difficulty mismatch / uncertain) + confidence; low confidence (<0.6) defers to parent
+- [x] **[Impl]** Error Book Agent follow-up - child asks "why can't I remember this word?"; Agent uses full error history for personalized explanation
+- [x] **[NOTE]** `ExplainDecisionUseCase` implemented in Sprint 6 Phase C; reused here
 
 ### Phase C: Gamification & Incentives
-- [ ] **[Impl]** Reward animations & XP system - particle effects on correct, XP pop counters, full-screen level-up celebration
-- [ ] **[Impl]** Daily 3-goal system - 1 session / 80%+ accuracy / 5 new words, each tracked with badge rewards
-- [ ] **[Impl]** Hint/Skip system completion - existing 3-level hint (level 1 = LLM); add skip (no XP but no penalty)
+- [x] **[Impl]** Reward animations & XP system - particle effects on correct, XP pop counters, full-screen level-up celebration
+- [x] **[Impl]** Daily 3-goal system - 1 session / 80%+ accuracy / 5 new words, each tracked with badge rewards
+- [x] **[Impl]** Hint/Skip system completion - existing 3-level hint (level 1 = LLM); add skip (no XP but no penalty)
 
 ### Phase D: Adaptive & Parent Reports
-- [ ] **[Impl]** Adaptive difficulty - adjust sentence length (±3 words) and CEFR level based on last quiz accuracy; log to `AgentDecisionLog` (Sprint 6 infra)
-- [ ] **[Impl]** Parent detail report - per-word pronunciation error breakdown, time distribution, weak skill tag cloud, PDF/WeChat export
-- [ ] **[Impl]** Makeup card mechanic - 2 cards/month, streak break triggers active choice (not auto-use), preserves child's agency
+- [x] **[Impl]** Adaptive difficulty - adjust sentence length (±3 words) and CEFR level based on last quiz accuracy; log to `AgentDecisionLog` (Sprint 6 infra)
+- [x] **[Impl]** Parent detail report - per-word pronunciation error breakdown, time distribution, weak skill tag cloud, PDF/WeChat export
+- [x] **[Impl]** Makeup card mechanic - 2 cards/month, streak break triggers active choice (not auto-use), preserves child's agency
 
 ### Phase E: Quality
 - [ ] **[Unit Test & Build]** Spaced repetition algorithm tests, Phonics module tests, attribution agent tests, adaptive difficulty tests; `./gradlew test assembleDebug`
