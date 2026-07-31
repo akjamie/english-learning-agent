@@ -29,13 +29,18 @@ fun PreTeachScreen(
     val targetWords = session.targetNewWords
 
     var currentIndex by remember { mutableIntStateOf(0) }
+    // ESA Engage: whether the child has matched the picture to the word yet.
+    var engaged by remember { mutableStateOf(false) }
 
     val emojiMap = mapOf(
         "apple" to "🍎", "banana" to "🍌", "cat" to "🐱", "dog" to "🐶",
         "school" to "🏫", "teacher" to "👩‍🏫", "book" to "📚", "pen" to "🖊️",
         "weather" to "☀️", "rain" to "🌧️", "shopping" to "🛒", "family" to "👨‍👩‍👧‍👦",
         "hello" to "👋", "goodbye" to "👋", "thank you" to "🙏", "sorry" to "🙇",
-        "classroom" to "🏫", "student" to "🎒", "friend" to "🤝", "play" to "⚽"
+        "classroom" to "🏫", "student" to "🎒", "friend" to "🤝", "play" to "⚽",
+        "cake" to "🎂", "milk" to "🥛", "bread" to "🍞", "egg" to "🥚",
+        "bird" to "🐦", "fish" to "🐟", "tree" to "🌳", "flower" to "🌸",
+        "car" to "🚗", "bus" to "🚌", "house" to "🏠", "park" to "🌳"
     )
 
     Column(
@@ -72,7 +77,7 @@ fun PreTeachScreen(
         ) { index ->
             val currentWord = targetWords[index]
             val emoji = emojiMap[currentWord.lowercase()] ?: "💡"
-            
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -91,14 +96,23 @@ fun PreTeachScreen(
                         fontSize = 80.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    if (engaged) {
+                        // ESA: reveal the word only after the child matches it.
+                        Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                            Text(
+                                text = currentWord,
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF2C3E50),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    } else {
                         Text(
-                            text = currentWord,
+                            text = "❓",
                             fontSize = 40.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF2C3E50),
-                            maxLines = 1,
-                            softWrap = false
+                            color = Color(0xFFBDC3C7)
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -111,12 +125,41 @@ fun PreTeachScreen(
             }
         }
 
+        // ESA Engage: picture-to-word matching choices (tap the correct word).
+        if (!engaged) {
+            Spacer(modifier = Modifier.height(20.dp))
+            val choices = remember(currentWord) {
+                (targetWords.filter { it != currentWord }.take(2) + currentWord).shuffled()
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                choices.forEach { choice ->
+                    val isCorrect = choice == currentWord
+                    OutlinedButton(
+                        onClick = {
+                            if (isCorrect) {
+                                engaged = true
+                                viewModel.speakWord(currentWord)
+                            }
+                        },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text(choice, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
             onClick = {
                 if (currentIndex < targetWords.size - 1) {
                     currentIndex++
+                    engaged = false
                 } else {
                     onProceed()
                 }
@@ -125,7 +168,8 @@ fun PreTeachScreen(
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth(0.8f)
-                .height(56.dp)
+                .height(56.dp),
+            enabled = engaged
         ) {
             Text(
                 text = if (currentIndex < targetWords.size - 1) "Next Word" else "Start Immersion",

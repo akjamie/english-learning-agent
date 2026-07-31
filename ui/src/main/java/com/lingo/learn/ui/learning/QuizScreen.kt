@@ -118,6 +118,7 @@ fun QuizScreen(
                 readAlongState = readAlongState,
                 onPlayAudio = { text -> viewModel.playQuizAudio(text) },
                 onSelectAnswer = { index -> viewModel.submitQuizAnswer(index) },
+                onProductionSubmit = { text -> viewModel.submitProductionAnswer(text) },
                 onStartRecording = { viewModel.startQuizRecording() },
                 onStopRecording = { viewModel.submitQuizReadAloud(currentQuestion.audioText ?: "") }
             )
@@ -185,6 +186,7 @@ private fun QuizQuestionCard(
     readAlongState: ReadAlongState,
     onPlayAudio: (String) -> Unit,
     onSelectAnswer: (Int) -> Unit,
+    onProductionSubmit: (String) -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit
 ) {
@@ -343,11 +345,9 @@ private fun QuizQuestionCard(
                     Spacer(modifier = Modifier.height(12.dp))
                     if (lastAnswerCorrect == null) {
                         Button(
-                            onClick = { 
-                                // Simplified check for dictation/spelling
-                                val isCorrect = question.options.getOrNull(question.correctIndex).equals(textInput.trim(), ignoreCase = true)
-                                // We simulate the option select by creating a correct match if true, else wrong
-                                if (isCorrect) onSelectAnswer(question.correctIndex) else onSelectAnswer(-1)
+                            onClick = {
+                                onSelectAnswer(-1) // fallback; real scoring happens in ViewModel
+                                onProductionSubmit(textInput)
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = theme.primaryColor)
@@ -357,7 +357,125 @@ private fun QuizQuestionCard(
                     }
                 }
 
+                QuizQuestionType.SENTENCE_WRITING -> {
+                    var textInput by remember { mutableStateOf("") }
+                    OutlinedTextField(
+                        value = textInput,
+                        onValueChange = { textInput = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Write a sentence with '${question.audioText ?: ""}'") },
+                        enabled = lastAnswerCorrect == null
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (lastAnswerCorrect == null) {
+                        Button(
+                            onClick = { onProductionSubmit(textInput) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = theme.primaryColor)
+                        ) {
+                            Text("Submit", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
 
+                QuizQuestionType.CVC_BUILD -> {
+                    Text(
+                        text = "Listen: ${question.audioText ?: ""}",
+                        fontSize = 16.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = question.question,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Reuse letter-tile grid; the child taps tiles in the correct order.
+                    var tappedTiles by remember { mutableStateOf(listOf<String>()) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                    ) {
+                        question.options.forEachIndexed { index, tile ->
+                            val isSelected = tappedTiles.contains(tile)
+                            LetterOptionButton(
+                                letter = tile,
+                                isCorrect = false,
+                                answered = false,
+                                onClick = {
+                                    if (lastAnswerCorrect == null && !isSelected) {
+                                        tappedTiles = tappedTiles + tile
+                                        if (tappedTiles.size == question.correctOrder.size) {
+                                            val isCorrect = tappedTiles == question.correctOrder
+                                            onSelectAnswer(if (isCorrect) 0 else -1)
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    if (tappedTiles.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Tapped: ${tappedTiles.joinToString("")}",
+                            fontSize = 14.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                }
+
+                QuizQuestionType.ONSET_RIME -> {
+                    Text(
+                        text = "Listen: ${question.audioText ?: ""}",
+                        fontSize = 16.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = question.question,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OptionGrid(
+                        options = question.options,
+                        correctIndex = question.correctIndex,
+                        answered = lastAnswerCorrect != null,
+                        theme = theme,
+                        onSelect = onSelectAnswer
+                    )
+                }
+
+                QuizQuestionType.MINIMAL_PAIRS -> {
+                    Text(
+                        text = question.question,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { question.audioText?.let { onPlayAudio(it) } },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = theme.primaryColor,
+                            contentColor = theme.buttonContentColor
+                        )
+                    ) {
+                        Text("Listen again", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OptionGrid(
+                        options = question.options,
+                        correctIndex = question.correctIndex,
+                        answered = lastAnswerCorrect != null,
+                        theme = theme,
+                        onSelect = onSelectAnswer
+                    )
+                }
 
                 QuizQuestionType.READ_ALOUD -> {
                     val audioText = question.audioText

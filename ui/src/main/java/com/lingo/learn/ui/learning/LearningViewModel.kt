@@ -7,8 +7,13 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.model.*
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
+import org.akj.lingo.learn.domain.usecase.AdaptiveDifficultyEngine
+import org.akj.lingo.learn.domain.usecase.DailyGoalTracker
+import org.akj.lingo.learn.domain.usecase.MakeupCardManager
 import org.akj.lingo.learn.domain.usecase.Observation
 import org.akj.lingo.learn.domain.usecase.ObservationTriggerEngine
+import org.akj.lingo.learn.domain.usecase.ProductionTaskScorer
+import org.akj.lingo.learn.domain.usecase.XpRewardSystem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -75,6 +80,13 @@ data class QuizState(
  */
 private const val NEGATIVE_THRESHOLD = 3
 
+/** SharedPreferences name for Sprint 7 gamification state. */
+private const val XP_PREFS_NAME = "lingo_xp_prefs"
+private const val KEY_TOTAL_XP = "total_xp"
+private const val KEY_LEVEL_UP_ONCE = "level_up_celebrated"
+private const val KEY_MAKEUP_MONTH = "makeup_month"
+private const val KEY_MAKEUP_USED = "makeup_used"
+
 @HiltViewModel
 class LearningViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -86,7 +98,12 @@ class LearningViewModel @Inject constructor(
     private val errorBookRepository: org.akj.lingo.learn.domain.repository.ErrorBookRepository,
     private val llmRepository: org.akj.lingo.learn.domain.repository.LlmRepository,
     private val observationTriggerEngine: ObservationTriggerEngine,
-    private val agentDecisionLogRepository: AgentDecisionLogRepository
+    private val agentDecisionLogRepository: AgentDecisionLogRepository,
+    private val adaptiveDifficultyEngine: AdaptiveDifficultyEngine,
+    private val xpRewardSystem: XpRewardSystem,
+    private val dailyGoalTracker: DailyGoalTracker,
+    private val makeupCardManager: MakeupCardManager,
+    private val productionTaskScorer: ProductionTaskScorer
 ) : ViewModel() {
 
     private val _stage = MutableStateFlow(LearningStage.PRE_TEACH)
@@ -126,6 +143,27 @@ class LearningViewModel @Inject constructor(
     private val _observation = MutableStateFlow<Observation?>(null)
     val observation: StateFlow<Observation?> = _observation.asStateFlow()
 
+    // Sprint 7: XP / level progression
+    private val _totalXp = MutableStateFlow(0)
+    val totalXp: StateFlow<Int> = _totalXp.asStateFlow()
+
+    private val _levelInfo = MutableStateFlow<XpRewardSystem.LevelInfo>(XpRewardSystem().levelInfo(0))
+    val levelInfo: StateFlow<XpRewardSystem.LevelInfo> = _levelInfo.asStateFlow()
+
+    private val _showLevelUp = MutableStateFlow(false)
+    val showLevelUp: StateFlow<Boolean> = _showLevelUp.asStateFlow()
+
+    // Sprint 7: Daily 3-goal system
+    private val _dailyGoals = MutableStateFlow<DailyGoalTracker.DailyGoals?>(null)
+    val dailyGoals: StateFlow<DailyGoalTracker.DailyGoals?> = _dailyGoals.asStateFlow()
+
+    // Sprint 7: Makeup card mechanic
+    private val _makeupState = MutableStateFlow<MakeupCardManager.MakeupState?>(null)
+    val makeupState: StateFlow<MakeupCardManager.MakeupState?> = _makeupState.asStateFlow()
+
+    private val _showMakeupPrompt = MutableStateFlow(false)
+    val showMakeupPrompt: StateFlow<Boolean> = _showMakeupPrompt.asStateFlow()
+
     private var readAlongAttempts = 0
 
     private var currentGrade: String = "Grade 4"
@@ -136,8 +174,19 @@ class LearningViewModel @Inject constructor(
         currentGrade = grade
         sessionStartTimeMs = System.currentTimeMillis()
         viewModelScope.launch {
+            // Sprint 7: load adaptive difficulty from last quiz accuracy
+            val lastAccuracy = learningRecordRepository.getMonthlyAccuracy() / 100f
+            val adjustment = adaptiveDifficultyEngine.sentenceLengthAdjustment(lastAccuracy)
+            val reviewQuestions = try {
+                errorBookRepository.getReviewQuestionsForQuiz(2)
+            } catch (e: Exception) { emptyList() }
             try {
-                val loadedSession = weeklyPlanRepository.getCachedLearningSession(1, currentGrade)
+                val loadedSession = weeklyPlanRepository.getCachedLearningSession(
+                    dayIndex = 1,
+                    grade = currentGrade,
+                    reviewQuestions = reviewQuestions,
+                    sentenceLengthAdjustment = adjustment
+                )
                 _session.value = loadedSession
                 audioPlayer.loadSubtitles(loadedSession.subtitleLines)
             } catch (e: Exception) {
@@ -261,6 +310,8 @@ class LearningViewModel @Inject constructor(
     //endregion
 
     init {
+        loadXpState()
+        loadMakeupState()
         setGrade(currentGrade)
         // Check for PAUSED checkpoint from previous session
         val savedState = TaskStatePrefs.getTaskState(context)
@@ -507,6 +558,7 @@ class LearningViewModel @Inject constructor(
         )
 
         val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "game_${question.id}"
+        if (isCorrect) addXp("GAME")
         viewModelScope.launch {
             recordAttempt(word, "GAME", if (isCorrect) 1.0f else 0.0f)
             evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1)
@@ -566,6 +618,9 @@ class LearningViewModel @Inject constructor(
                 errorBookRepository.upsertError(word, "QUIZ_WRONG_ANSWER", question.type.name)
             } else if (question.isFromErrorBook) {
                 errorBookRepository.markCorrect(word)
+                addXp(question.type.name)
+            } else {
+                addXp(question.type.name)
             }
             recordAttempt(word, "QUIZ", if (isCorrect) 1.0f else 0.0f)
             evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1)
@@ -608,6 +663,44 @@ class LearningViewModel @Inject constructor(
             lastAnswerCorrect = false // Skip doesn't give a point
         )
         // Note: skip does not trigger errorBook penalty
+    }
+
+    /**
+     * Submits free-text production answers (SPELLING / DICTATION / SENTENCE_WRITING)
+     * using the [ProductionTaskScorer] for graded, deterministic feedback (Sprint 7 A5).
+     */
+    fun submitProductionAnswer(textInput: String) {
+        val current = _quizState.value
+        val question = _session.value.quizQuestions.getOrNull(current.currentIndex) ?: return
+        val expected = question.options.getOrNull(question.correctIndex) ?: question.audioText ?: ""
+
+        val score = when (question.type) {
+            QuizQuestionType.SPELLING -> productionTaskScorer.scoreSpelling(textInput, question.audioText ?: expected)
+            QuizQuestionType.DICTATION -> productionTaskScorer.scoreDictation(textInput, expected)
+            QuizQuestionType.SENTENCE_WRITING -> productionTaskScorer.scoreSentenceWriting(textInput, question.audioText ?: expected)
+            else -> return
+        }
+
+        if (score.isCorrect) resetNegativeSignal() else incrementNegativeSignal()
+        current.selectedAnswers.add(if (score.isCorrect) question.correctIndex else -1)
+        _quizState.value = current.copy(
+            score = current.score + if (score.isCorrect) 1 else 0,
+            lastAnswerCorrect = score.isCorrect
+        )
+
+        val word = question.audioText ?: expected
+        viewModelScope.launch {
+            if (!score.isCorrect) {
+                errorBookRepository.upsertError(word, "PRODUCTION_WRONG", question.type.name)
+            } else if (question.isFromErrorBook) {
+                errorBookRepository.markCorrect(word)
+                addXp(question.type.name)
+            } else {
+                addXp(question.type.name)
+            }
+            recordAttempt(word, "QUIZ", if (score.isCorrect) 1.0f else 0.0f)
+            evaluateObservation(word, if (score.isCorrect) 100 else 0, question.type.name, attemptCount = 1)
+        }
     }
 
     /** Handles the read-aloud quiz question by triggering ASR evaluation. */
@@ -683,6 +776,102 @@ class LearningViewModel @Inject constructor(
 
     //endregion
 
+    //region Sprint 7: Gamification (XP / Level / Daily Goals / Makeup Cards)
+
+    private fun xpPrefs(): android.content.SharedPreferences =
+        context.getSharedPreferences(XP_PREFS_NAME, Context.MODE_PRIVATE)
+
+    private fun loadXpState() {
+        val totalXp = xpPrefs().getInt(KEY_TOTAL_XP, 0)
+        _totalXp.value = totalXp
+        _levelInfo.value = xpRewardSystem.levelInfo(totalXp)
+    }
+
+    private fun addXp(questionType: String?, sessionBonus: Boolean = false) {
+        val gained = if (sessionBonus) xpRewardSystem.xpForSessionCompletion()
+        else xpRewardSystem.xpForCorrect(questionType ?: "")
+        val before = _totalXp.value
+        val after = before + gained
+        _totalXp.value = after
+        _levelInfo.value = xpRewardSystem.levelInfo(after)
+        xpPrefs().edit().putInt(KEY_TOTAL_XP, after).apply()
+
+        if (xpRewardSystem.crossesLevelBoundary(before, after)) {
+            _showLevelUp.value = true
+        }
+    }
+
+    /** Dismisses the full-screen level-up celebration. */
+    fun dismissLevelUp() {
+        _showLevelUp.value = false
+    }
+
+    private fun loadMakeupState() {
+        val now = System.currentTimeMillis()
+        val month = xpPrefs().getString(KEY_MAKEUP_MONTH, null)
+        val used = xpPrefs().getInt(KEY_MAKEUP_USED, 0)
+        val state = makeupCardManager.stateForMonth(now, month, used)
+        xpPrefs().edit().putString(KEY_MAKEUP_MONTH, state.monthKey).putInt(KEY_MAKEUP_USED, state.cardsUsed).apply()
+        _makeupState.value = state
+    }
+
+    /** Shows the streak-break makeup card prompt (called when a streak break is detected). */
+    fun promptMakeupCard() {
+        val state = _makeupState.value ?: return
+        if (makeupCardManager.canUseCard(state)) {
+            _showMakeupPrompt.value = true
+        }
+    }
+
+    /** Child/parent actively chooses to use a makeup card to preserve the streak. */
+    fun useMakeupCard() {
+        val state = _makeupState.value ?: return
+        val updated = makeupCardManager.useCard(state)
+        _makeupState.value = updated
+        xpPrefs().edit().putString(KEY_MAKEUP_MONTH, updated.monthKey).putInt(KEY_MAKEUP_USED, updated.cardsUsed).apply()
+        _showMakeupPrompt.value = false
+    }
+
+    /** Child/parent declines the makeup card — streak breaks naturally. */
+    fun declineMakeupCard() {
+        _showMakeupPrompt.value = false
+    }
+
+    /** Evaluates and stores the daily 3-goal state for the completion screen. */
+    private suspend fun refreshDailyGoals(newWords: Int) {
+        val accuracy = _session.value.quizQuestions.size.takeIf { it > 0 }?.let { _quizState.value.score.toFloat() / it } ?: 0f
+        _dailyGoals.value = dailyGoalTracker.evaluate(
+            sessionCompleted = true,
+            quizAccuracy = accuracy,
+            newWordsLearned = newWords
+        )
+    }
+
+    /** Dismisses the gamification overlay state. */
+    fun dismissGamification() {
+        _showLevelUp.value = false
+        _showMakeupPrompt.value = false
+    }
+
+    /**
+     * Detects a streak break (yesterday was not completed but the child studied today)
+     * and offers the makeup-card active choice rather than silently auto-using one.
+     */
+    private suspend fun refreshMakeupPromptOnStreak() {
+        val streak = learningRecordRepository.getStreakDays()
+        if (streak <= 1) return // first day or still growing — nothing to rescue
+        val todayDone = StreakPrefs.isTodayDone(context)
+        if (!todayDone) return
+        // Streak grew (>=2) meaning consecutive days exist; no break to repair.
+        if (_makeupState.value?.cardsLeft ?: 0 <= 0) return
+        // Only prompt if the previous day was genuinely missed (streak == 1 after a gap).
+        if (streak == 1) {
+            _showMakeupPrompt.value = true
+        }
+    }
+
+    //endregion
+
     //region Completion
 
     private fun computeSummary() {
@@ -711,6 +900,10 @@ class LearningViewModel @Inject constructor(
             TaskStatePrefs.setTaskState(context, TaskState.COMPLETED)
             TaskStatePrefs.clearCheckpoint(context)
             StreakPrefs.saveStreakData(context, currentStreak, todayDone = true)
+
+            addXp(questionType = null, sessionBonus = true)
+            refreshDailyGoals(session.targetNewWords.size)
+            refreshMakeupPromptOnStreak()
 
             _summary.value = SessionSummary(
                 newWordsLearned = session.targetNewWords.size,

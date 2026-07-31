@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.model.AgentDecisionLog
 import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
+import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,8 @@ data class WeeklyReportUiState(
     val weakCategories: List<String> = emptyList(),
     val themeName: String = "",
     val agentAdjustments: List<String> = emptyList(),
+    val topErrorWords: List<String> = emptyList(),
+    val timeByTaskType: Map<String, Long> = emptyMap(),
     val isLoading: Boolean = false,
     val shareBitmap: ByteArray? = null
 )
@@ -30,7 +33,8 @@ data class WeeklyReportUiState(
 class WeeklyReportViewModel @Inject constructor(
     private val learningRecordRepository: LearningRecordRepository,
     private val weeklyPlanRepository: WeeklyPlanRepository,
-    private val agentDecisionLogRepository: AgentDecisionLogRepository
+    private val agentDecisionLogRepository: AgentDecisionLogRepository,
+    private val errorBookRepository: ErrorBookRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyReportUiState())
@@ -48,6 +52,8 @@ class WeeklyReportViewModel @Inject constructor(
                 val weakCats = learningRecordRepository.getWeakCategories()
                 val plan = weeklyPlanRepository.getLatestCachedPlan()
                 val adjustments = loadAdjustments()
+                val topErrors = loadTopErrorWords()
+                val timeByType = buildTimeDistribution(weeklyRecords)
 
                 val weeklyAccuracy = if (weeklyRecords.isNotEmpty()) {
                     weeklyRecords.map { it.accuracy }.average().toFloat()
@@ -62,12 +68,25 @@ class WeeklyReportViewModel @Inject constructor(
                     weakCategories = weakCats,
                     themeName = plan?.theme ?: "No active plan",
                     agentAdjustments = adjustments,
+                    topErrorWords = topErrors,
+                    timeByTaskType = timeByType,
                     isLoading = false
                 )
             } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
+    }
+
+    /** Top 5 most-missed words currently in the Error Book for the parent report. */
+    private suspend fun loadTopErrorWords(): List<String> {
+        return errorBookRepository.getTopPriorityErrors(limit = 5)
+            .map { it.vocabId }
+    }
+
+    /** Total learning time (seconds) split by activity type. */
+    private fun buildTimeDistribution(records: List<org.akj.lingo.learn.domain.model.LearningRecord>): Map<String, Long> {
+        return records.groupBy { it.taskType }.mapValues { (_, rs) -> rs.sumOf { it.duration } }
     }
 
     /** Pulls the past 7 days of logged agent decisions and renders 1-2 in natural language. */

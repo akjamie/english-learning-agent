@@ -186,6 +186,72 @@ fun WeeklyReportScreen(
                 }
             }
 
+            // Words to review (Sprint 7 - parent detail report)
+            if (uiState.topErrorWords.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("🔤 Words To Review", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            uiState.topErrorWords.forEach { word ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(Color(0xFFEAF4FF))
+                                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                                ) {
+                                    Text(word, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF2E86DE))
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "These words from the Error Book are scheduled for spaced review.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                }
+            }
+
+            // Time distribution (Sprint 7 - parent detail report)
+            if (uiState.timeByTaskType.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("⏱️ Time Spent This Week", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                        Spacer(Modifier.height(12.dp))
+                        val totalSec = uiState.timeByTaskType.values.sum().coerceAtLeast(1)
+                        uiState.timeByTaskType.forEach { (type, sec) ->
+                            val fraction = sec.toFloat() / totalSec
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(type, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF2C3E50), modifier = Modifier.width(90.dp))
+                                LinearProgressIndicator(
+                                    progress = { fraction },
+                                    modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)),
+                                    color = Color(0xFF5C6FF2),
+                                    trackColor = Color(0xFFEDEFF7)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("${sec / 60}m", fontSize = 12.sp, color = Color(0xFF7F8C8D))
+                            }
+                        }
+                    }
+                }
+            }
+
             // "What Lingo adjusted this week" section (Sprint 6 - AI Presence)
             if (uiState.agentAdjustments.isNotEmpty()) {
                 Card(
@@ -295,6 +361,16 @@ private fun shareReport(context: Context, viewModel: WeeklyReportViewModel) {
             appendLine("📖 Words Learned: ${state.totalWordsLearned}")
             if (state.weakCategories.isNotEmpty()) {
                 appendLine("🎯 Focus Areas: ${state.weakCategories.joinToString(", ")}")
+            }
+            if (state.topErrorWords.isNotEmpty()) {
+                appendLine("🔤 Words To Review: ${state.topErrorWords.joinToString(", ")}")
+            }
+            if (state.timeByTaskType.isNotEmpty()) {
+                val totalMin = state.timeByTaskType.values.sum() / 60
+                appendLine("⏱️ Study Time: ~$totalMin min this week")
+                state.timeByTaskType.forEach { (type, sec) ->
+                    appendLine("   - $type: ${sec / 60} min")
+                }
             }
             appendLine()
             appendLine("Theme: ${state.themeName}")

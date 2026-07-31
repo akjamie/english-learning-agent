@@ -24,6 +24,7 @@ import androidx.activity.compose.BackHandler
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.window.Dialog
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 import org.akj.lingo.learn.ui.dashboard.getThemeForGrade
 import org.akj.lingo.learn.ui.components.SpeechBubble
@@ -106,6 +107,81 @@ fun LearningContainer(
             dismissButton = {
                 TextButton(onClick = { viewModel.acceptRest() }) {
                     Text("Take a Break")
+                }
+            }
+        )
+    }
+
+    // Sprint 7: Level-up celebration overlay
+    val showLevelUp by viewModel.showLevelUp.collectAsState()
+    val levelInfo by viewModel.levelInfo.collectAsState()
+    if (showLevelUp) {
+        Dialog(
+            onDismissRequest = { viewModel.dismissLevelUp() },
+            properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = true)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Color(0xFFFFF8E1))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("🎉", fontSize = 56.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Level ${levelInfo.level}!",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "You're growing fast! Keep it up!",
+                        fontSize = 16.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { viewModel.dismissLevelUp() },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = theme.primaryColor)
+                    ) {
+                        Text("Awesome!", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+
+    // Sprint 7: Makeup-card active choice dialog (streak break)
+    val showMakeupPrompt by viewModel.showMakeupPrompt.collectAsState()
+    val makeupState by viewModel.makeupState.collectAsState()
+    if (showMakeupPrompt && makeupState != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.declineMakeupCard() },
+            title = { Text("🎟️ Save your streak?") },
+            text = {
+                Column {
+                    Text("Looks like you missed a day. Use a makeup card to keep your streak going?")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Cards left this month: ${makeupState?.cardsLeft ?: 0}",
+                        fontWeight = FontWeight.Bold,
+                        color = theme.primaryColor
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.useMakeupCard() }) {
+                    Text("Use a Card")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.declineMakeupCard() }) {
+                    Text("No thanks")
                 }
             }
         )
