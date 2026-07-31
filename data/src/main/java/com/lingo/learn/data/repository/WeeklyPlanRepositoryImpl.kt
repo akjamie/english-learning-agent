@@ -46,7 +46,8 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
                   "focus": "Vocabulary / Grammar / Dialogue",
                   "target_words": ["word1", "word2"],
                   "reference_sentence": "Standard practice sentence of the day",
-                  "duration_minutes": ${gradeBand.defaultDurationMinutes}
+                  "duration_minutes": ${gradeBand.defaultDurationMinutes},
+                  "rationale": "One sentence explaining WHY this day's content was arranged this way, referencing the student's specific learning history (e.g., 'Your listening accuracy was 72% last week, so today focuses on listening-intensive vocabulary')"
                 }
               ]
             }
@@ -69,6 +70,26 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             "Daily Life & School"
         }
 
+        val rationaleSnapshot = try {
+            val planJson = JSONObject(jsonStr)
+            val daysArray = planJson.optJSONArray("days")
+            if (daysArray != null) {
+                val rationaleJson = JSONObject()
+                val outDays = org.json.JSONArray()
+                for (i in 0 until daysArray.length()) {
+                    val dayObj = daysArray.getJSONObject(i)
+                    val out = JSONObject()
+                    out.put("day", dayObj.optInt("day", i + 1))
+                    out.put("rationale", dayObj.optString("rationale", ""))
+                    outDays.put(out)
+                }
+                rationaleJson.put("days", outDays)
+                rationaleJson.toString()
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+
         val domainPlan = Plan(
             id = UUID.randomUUID().toString(),
             type = "WEEKLY",
@@ -81,6 +102,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             weeklyTarget = "Master 20 key words + 7 daily dialogue patterns",
             snapshotData = jsonStr,
             dialogueOutput = null,
+            rationaleSnapshot = rationaleSnapshot,
             status = "ACTIVE",
             lastModified = now
         )

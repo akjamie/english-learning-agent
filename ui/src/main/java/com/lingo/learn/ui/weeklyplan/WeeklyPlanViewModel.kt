@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.model.Plan
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.ExplainDecisionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +22,7 @@ data class PlanDayItem(
     val targetWords: List<String>,
     val referenceSentence: String,
     val durationMinutes: Int,
+    val rationale: String = "",
     val isCompleted: Boolean = false
 )
 
@@ -35,7 +37,8 @@ data class WeeklyPlanUiState(
 
 @HiltViewModel
 class WeeklyPlanViewModel @Inject constructor(
-    private val weeklyPlanRepository: WeeklyPlanRepository
+    private val weeklyPlanRepository: WeeklyPlanRepository,
+    private val explainDecisionUseCase: ExplainDecisionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyPlanUiState())
@@ -49,10 +52,11 @@ class WeeklyPlanViewModel @Inject constructor(
             try {
                 val plan = weeklyPlanRepository.getLatestCachedPlan()
                 if (plan != null) {
+                    val rationales = explainDecisionUseCase.allDayRationales(plan).toMap()
                     _uiState.value = _uiState.value.copy(
                         theme = plan.theme,
                         difficultyCoefficient = plan.difficultyCoefficient,
-                        days = parsePlanDays(plan.snapshotData),
+                        days = parsePlanDays(plan.snapshotData, rationales),
                         isLoading = false
                     )
                 } else {
@@ -74,10 +78,11 @@ class WeeklyPlanViewModel @Inject constructor(
                 completedMilestones = listOf("First Week Complete")
             )
             result.onSuccess { plan ->
+                val rationales = explainDecisionUseCase.allDayRationales(plan).toMap()
                 _uiState.value = WeeklyPlanUiState(
                     theme = plan.theme,
                     difficultyCoefficient = plan.difficultyCoefficient,
-                    days = parsePlanDays(plan.snapshotData),
+                    days = parsePlanDays(plan.snapshotData, rationales),
                     isGenerating = false
                 )
             }.onFailure { e ->
@@ -89,7 +94,7 @@ class WeeklyPlanViewModel @Inject constructor(
         }
     }
 
-    private fun parsePlanDays(snapshotData: String): List<PlanDayItem> {
+    private fun parsePlanDays(snapshotData: String, rationales: Map<Int, String> = emptyMap()): List<PlanDayItem> {
         return try {
             val json = JSONObject(snapshotData)
             val daysArray = json.optJSONArray("days") ?: return emptyList()
@@ -103,13 +108,15 @@ class WeeklyPlanViewModel @Inject constructor(
                         words.add(wordsArray.getString(j))
                     }
                 }
+                val dayNumber = dayObj.optInt("day", i + 1)
                 PlanDayItem(
-                    day = dayObj.optInt("day", i + 1),
+                    day = dayNumber,
                     focus = dayObj.optString("focus", "Practice"),
                     targetWords = words,
                     referenceSentence = dayObj.optString("reference_sentence", ""),
                     durationMinutes = dayObj.optInt("duration_minutes", 15),
-                    isCompleted = dayObj.optInt("day", i + 1) < today
+                    rationale = rationales[dayNumber] ?: dayObj.optString("rationale", ""),
+                    isCompleted = dayNumber < today
                 )
             }
         } catch (_: Exception) {

@@ -17,6 +17,7 @@ data class PlanEntity(
     val weeklyTarget: String,
     val snapshotData: String,
     val dialogueOutput: String?,
+    val rationaleSnapshot: String? = null,
     val status: String,
     val lastModified: Long
 ) {
@@ -32,6 +33,7 @@ data class PlanEntity(
         weeklyTarget = weeklyTarget,
         snapshotData = snapshotData,
         dialogueOutput = dialogueOutput,
+        rationaleSnapshot = rationaleSnapshot,
         status = status,
         lastModified = lastModified
     )
@@ -49,6 +51,7 @@ data class PlanEntity(
             weeklyTarget = domain.weeklyTarget,
             snapshotData = domain.snapshotData,
             dialogueOutput = domain.dialogueOutput,
+            rationaleSnapshot = domain.rationaleSnapshot,
             status = domain.status,
             lastModified = domain.lastModified
         )
