@@ -14,7 +14,9 @@ import org.json.JSONObject
  * All methods are pure Kotlin with zero Android dependencies, making this class
  * fully unit-testable.
  */
-class SessionBuilder {
+class SessionBuilder(
+    private val phonicsModule: PhonicsModule = PhonicsModule()
+) {
 
     /**
      * Expands the plan JSON for a specific day into a full [LearningSession].
@@ -22,14 +24,18 @@ class SessionBuilder {
      * @param planSnapshotJson The raw JSON string from [Plan.snapshotData].
      * @param gradeBand Determines content complexity, question types, and session duration.
      * @param dayIndex 1-based day index (1-7) within the week.
-     * @param reviewQuestions Error-book recurrence questions to merge into the quiz.
+     * @param reviewQuestions Error-book recurrence questions to merge into the quiz
+     *                        (spaced-repetition due words, Sprint 7).
+     * @param sentenceLengthAdjustment Words added (positive) or removed (negative) from
+     *                                 sentence generation by [AdaptiveDifficultyEngine].
      * @return A fully populated [LearningSession], or null if parsing fails.
      */
     fun expandPlanToSession(
         planSnapshotJson: String,
         gradeBand: GradeBand,
         dayIndex: Int,
-        reviewQuestions: List<QuizQuestion> = emptyList()
+        reviewQuestions: List<QuizQuestion> = emptyList(),
+        sentenceLengthAdjustment: Int = 0
     ): LearningSession? {
         return try {
             val root = JSONObject(planSnapshotJson)
@@ -42,8 +48,11 @@ class SessionBuilder {
             val referenceSentence = dayObj.optString("reference_sentence", "")
             val focus = dayObj.optString("focus", "Vocabulary & Dialogue")
 
-            val subtitles = generateSubtitles(referenceSentence, targetWords, gradeBand)
-            val readAlong = generateReadAlong(referenceSentence, targetWords, gradeBand)
+            val adjustedMaxWords = (gradeBand.maxWordsPerSentence + sentenceLengthAdjustment)
+                .coerceAtLeast(4)
+
+            val subtitles = generateSubtitles(referenceSentence, targetWords, gradeBand, adjustedMaxWords)
+            val readAlong = generateReadAlong(referenceSentence, targetWords, gradeBand, adjustedMaxWords)
             val games = generateGames(targetWords, gradeBand)
             val quiz = generateQuizQuestions(targetWords, theme, gradeBand, dayIdx, reviewQuestions)
 
@@ -65,7 +74,8 @@ class SessionBuilder {
     private fun generateSubtitles(
         referenceSentence: String,
         targetWords: List<String>,
-        gradeBand: GradeBand
+        gradeBand: GradeBand,
+        maxWordsPerSentence: Int
     ): List<SubtitleLine> {
         if (referenceSentence.isBlank()) {
             return targetWords.mapIndexed { index, word ->
@@ -81,7 +91,7 @@ class SessionBuilder {
 
         // Split the reference sentence into multiple lines based on grade band
         val words = referenceSentence.split(" ").filter { it.isNotBlank() }
-        val maxWords = gradeBand.maxWordsPerSentence.coerceAtLeast(4)
+        val maxWords = maxWordsPerSentence.coerceAtLeast(4)
 
         val lines = mutableListOf<SubtitleLine>()
         var lineId = 1
@@ -114,7 +124,8 @@ class SessionBuilder {
     private fun generateReadAlong(
         referenceSentence: String,
         targetWords: List<String>,
-        gradeBand: GradeBand
+        gradeBand: GradeBand,
+        maxWordsPerSentence: Int
     ): List<ReadAlongSentence> {
         val sentences = mutableListOf<ReadAlongSentence>()
 
@@ -130,7 +141,7 @@ class SessionBuilder {
         }
 
         // Additional sentences for each target word
-        targetWords.take(gradeBand.maxWordsPerSentence).forEachIndexed { index, word ->
+        targetWords.take(maxWordsPerSentence).forEachIndexed { index, word ->
             val simpleSentence = when (gradeBand) {
                 GradeBand.PRIMARY -> "I see a $word."
                 GradeBand.JUNIOR -> "Can you find the $word?"
@@ -204,31 +215,60 @@ class SessionBuilder {
     ): List<QuizQuestion> {
         val questions = mutableListOf<QuizQuestion>()
 
-        // Add error-book recurrence questions first (1-2)
+        // Add error-book recurrence questions first (1-2, spaced-repetition due words)
         val reviewQ = reviewQuestions.take(2)
         questions.addAll(reviewQ)
+
+        // Phonics words are used for PRIMARY blending tasks (CVC / onset-rime / minimal pairs)
+        val phonicsWords = targetWords.filter { phonicsModule.isPhonicsWord(it) }
+        var phonicsIndex = 0
+        val phonicsTarget = if (gradeBand == GradeBand.PRIMARY && phonicsWords.isNotEmpty()) {
+            (phonicsWords.size * gradeBand.defaultPhonicsRatio).toInt().coerceIn(1, 3)
+        } else 0
+        val phonicsIds = mutableListOf<Int>()
 
         // Generate fresh questions from target words to reach 10
         var loopCount = 0
         while (questions.size < 10 && targetWords.isNotEmpty() && loopCount < 5) {
             for (word in targetWords) {
                 if (questions.size >= 10) break
-                
+
                 val distractors = SAMPLE_DISTRACTORS.shuffled().take(3)
                 val options = (listOf(word) + distractors).shuffled()
-                
+
+                // Inject a phonics question when the PRIMARY band's phonics quota is unmet
+                if (phonicsIndex < phonicsTarget && phonicsWords.isNotEmpty()) {
+                    val phWord = phonicsWords[phonicsIndex % phonicsWords.size]
+                    val phQuestion = phonicsModule.buildPhonicsQuestion(phWord, 700 + questions.size)
+                    if (phQuestion != null) {
+                        questions.add(phQuestion)
+                        phonicsIds.add(phQuestion.id)
+                    }
+                    phonicsIndex++
+                }
+
+                if (questions.size >= 10) break
+
                 // Mix question types
                 val type = when (questions.size % 4) {
                     0 -> QuizQuestionType.LISTEN_CHOOSE_WORD
                     1 -> QuizQuestionType.IMAGE_CHOOSE_WORD
                     2 -> {
-                        if (gradeBand == GradeBand.JUNIOR) QuizQuestionType.SPELL_FILL_BLANK else QuizQuestionType.LISTEN_CHOOSE_WORD
+                        when (gradeBand) {
+                            GradeBand.JUNIOR -> QuizQuestionType.SPELL_FILL_BLANK
+                            GradeBand.SENIOR -> QuizQuestionType.SPELLING
+                            else -> QuizQuestionType.SPELL_FILL_BLANK
+                        }
                     }
                     else -> {
-                        if (gradeBand == GradeBand.SENIOR) QuizQuestionType.SENTENCE_ORDER else QuizQuestionType.IMAGE_CHOOSE_WORD
+                        when (gradeBand) {
+                            GradeBand.SENIOR -> QuizQuestionType.SENTENCE_ORDER
+                            GradeBand.JUNIOR -> QuizQuestionType.DICTATION
+                            else -> QuizQuestionType.IMAGE_CHOOSE_WORD
+                        }
                     }
                 }
-                
+
                 when (type) {
                     QuizQuestionType.LISTEN_CHOOSE_WORD -> {
                         questions.add(
@@ -277,6 +317,31 @@ class SessionBuilder {
                             )
                         )
                     }
+                    QuizQuestionType.SPELLING -> {
+                        questions.add(
+                            QuizQuestion(
+                                id = 450 + questions.size,
+                                type = type,
+                                question = "Type the spelling of: '$word'",
+                                audioText = word,
+                                options = listOf(word),
+                                correctIndex = 0
+                            )
+                        )
+                    }
+                    QuizQuestionType.DICTATION -> {
+                        val sentence = "I see the $word."
+                        questions.add(
+                            QuizQuestion(
+                                id = 460 + questions.size,
+                                type = type,
+                                question = "Listen and type the sentence:",
+                                audioText = sentence,
+                                options = listOf(sentence),
+                                correctIndex = 0
+                            )
+                        )
+                    }
                     else -> {
                         // fallback for exhaustive when
                         questions.add(
@@ -294,7 +359,11 @@ class SessionBuilder {
             loopCount++
         }
 
-        return questions.take(10).shuffled()
+        val result = questions.take(10).shuffled()
+        // Keep phonics questions in the final shuffled set but never drop the
+        // error-book review questions (they must not be randomly lost).
+        val reviewIds = reviewQ.map { it.id }
+        return result.sortedBy { if (it.id in reviewIds) 0 else if (it.id in phonicsIds) 1 else 2 }
     }
 
     //endregion

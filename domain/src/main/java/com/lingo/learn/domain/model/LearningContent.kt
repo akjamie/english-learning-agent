@@ -62,7 +62,11 @@ enum class QuizQuestionType {
     SENTENCE_ORDER,     // Reorder shuffled words into a correct sentence
     READ_ALOUD,         // Read aloud for pronunciation scoring
     SPELLING,           // Active spelling production
-    DICTATION           // Listen and type the full sentence
+    DICTATION,          // Listen and type the full sentence
+    CVC_BUILD,          // Phonics: build a CVC word from letter tiles
+    ONSET_RIME,         // Phonics: match onset and rime to form a word
+    MINIMAL_PAIRS,      // Phonics: discriminate between minimal-pair words
+    SENTENCE_WRITING    // Production: write a sentence using the target word
 }
 
 /**

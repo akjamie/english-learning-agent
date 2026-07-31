@@ -6,6 +6,7 @@ import org.akj.lingo.learn.domain.model.ErrorBookEntry
 import org.akj.lingo.learn.domain.model.QuizQuestion
 import org.akj.lingo.learn.domain.model.QuizQuestionType
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
+import org.akj.lingo.learn.domain.usecase.SpacedRepetitionScheduler
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,7 +14,8 @@ import kotlin.math.ln
 
 @Singleton
 class ErrorBookRepositoryImpl @Inject constructor(
-    private val errorBookDao: ErrorBookDao
+    private val errorBookDao: ErrorBookDao,
+    private val spacedRepetitionScheduler: SpacedRepetitionScheduler
 ) : ErrorBookRepository {
 
     override suspend fun upsertError(vocabId: String, errorType: String, questionType: String) {
@@ -31,6 +33,7 @@ class ErrorBookRepositoryImpl @Inject constructor(
                 priorityScore = priority,
                 status = "TO_REVIEW",
                 consecutiveCorrectCount = 0,
+                nextReviewTimestamp = spacedRepetitionScheduler.nextReviewAfterError(now),
                 lastModified = now
             )
             errorBookDao.update(updated)
@@ -48,6 +51,7 @@ class ErrorBookRepositoryImpl @Inject constructor(
                 consecutiveCorrectCount = 0,
                 graduationCheckTimestamp = 0L,
                 historyJson = "[]",
+                nextReviewTimestamp = spacedRepetitionScheduler.nextReviewAfterError(now),
                 lastModified = now
             )
             errorBookDao.insertOrUpdate(newEntry)
@@ -64,10 +68,15 @@ class ErrorBookRepositoryImpl @Inject constructor(
             else -> existing.status
         }
 
+        // Ebbinghaus spaced repetition: advance to the next review interval (1/3/7/14 days).
+        val intervalIndex = spacedRepetitionScheduler.intervalIndexForTimestamp(existing.nextReviewTimestamp, now)
+        val nextReview = spacedRepetitionScheduler.nextReviewAfterCorrect(now, intervalIndex + 1)
+
         val updated = existing.copy(
             consecutiveCorrectCount = newCorrectCount,
             status = newStatus,
             graduationCheckTimestamp = if (newStatus == "GRADUATION_OBSERVATION") now else existing.graduationCheckTimestamp,
+            nextReviewTimestamp = nextReview,
             lastModified = now
         )
         errorBookDao.update(updated)
@@ -95,15 +104,19 @@ class ErrorBookRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getReviewQuestionsForQuiz(count: Int): List<QuizQuestion> {
-        val topErrors = getTopPriorityErrors(count)
-        return topErrors.mapIndexed { index, entry ->
+        // Spaced repetition: only words that are due (scheduled timestamp passed) are reviewed.
+        val now = System.currentTimeMillis()
+        val dueEntries = errorBookDao.getTop30Errors()
+            .filter { spacedRepetitionScheduler.isDue(it.nextReviewTimestamp, now) }
+        return dueEntries.take(count).mapIndexed { index, entry ->
+            val shuffledOptions = listOf(entry.vocabId, "apple", "banana", "cat").shuffled()
             QuizQuestion(
                 id = 900 + index,
                 type = QuizQuestionType.LISTEN_CHOOSE_WORD,
                 question = "Review from Error Book: Choose correct word for '${entry.vocabId}':",
                 audioText = entry.vocabId,
-                options = listOf(entry.vocabId, "apple", "banana", "cat").shuffled(),
-                correctIndex = 0,
+                options = shuffledOptions,
+                correctIndex = shuffledOptions.indexOf(entry.vocabId),
                 isFromErrorBook = true
             )
         }

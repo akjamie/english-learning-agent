@@ -115,7 +115,12 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         return planDao.getLatestPlan("WEEKLY")?.toDomain()
     }
 
-    override suspend fun getCachedLearningSession(dayIndex: Int, grade: String): LearningSession {
+    override suspend fun getCachedLearningSession(
+        dayIndex: Int,
+        grade: String,
+        reviewQuestions: List<org.akj.lingo.learn.domain.model.QuizQuestion>,
+        sentenceLengthAdjustment: Int
+    ): LearningSession {
         val gradeBand = GradeBand.fromGrade(grade)
         val dayNumber = dayIndex.coerceIn(1, 7)
 
@@ -125,7 +130,9 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             val expanded = sessionBuilder.expandPlanToSession(
                 planSnapshotJson = cachedPlan.snapshotData,
                 gradeBand = gradeBand,
-                dayIndex = dayNumber
+                dayIndex = dayNumber,
+                reviewQuestions = reviewQuestions,
+                sentenceLengthAdjustment = sentenceLengthAdjustment
             )
             if (expanded != null) return expanded
         }
@@ -135,7 +142,9 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         val expanded = sessionBuilder.expandPlanToSession(
             planSnapshotJson = defaultJson,
             gradeBand = gradeBand,
-            dayIndex = dayNumber
+            dayIndex = dayNumber,
+            reviewQuestions = reviewQuestions,
+            sentenceLengthAdjustment = sentenceLengthAdjustment
         )
         if (expanded != null) return expanded
 

@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.akj.lingo.learn.data.local.dao.ErrorBookDao
 import org.akj.lingo.learn.data.local.entity.ErrorBookEntity
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
+import org.akj.lingo.learn.domain.usecase.SpacedRepetitionScheduler
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,7 +23,7 @@ class ErrorBookPriorityTest {
     @BeforeEach
     fun setup() {
         dao = Mockito.mock(ErrorBookDao::class.java)
-        repository = ErrorBookRepositoryImpl(dao)
+        repository = ErrorBookRepositoryImpl(dao, SpacedRepetitionScheduler())
     }
 
     @Test
