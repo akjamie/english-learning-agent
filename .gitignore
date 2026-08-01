@@ -18,6 +18,11 @@ local.properties
 *.zip
 yes.txt
 
+# Release signing (secrets must never be committed)
+*.keystore
+*.jks
+keystore.properties
+
 # Log & Dump files
 *.log
 *.stackdump
