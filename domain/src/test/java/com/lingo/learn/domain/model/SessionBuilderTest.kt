@@ -141,12 +141,13 @@ class SessionBuilderTest {
     }
 
     @Test
-    fun `expandPlanToSession generates quiz with at most 5 questions`() {
+    fun `expandPlanToSession generates quiz with bounded question count`() {
         val session = builder.expandPlanToSession(validPlanJson, GradeBand.PRIMARY, dayIndex = 1)
 
         session?.let {
-            assertTrue(it.quizQuestions.size <= 5)
             assertTrue(it.quizQuestions.isNotEmpty())
+            // Sprint 7 allows up to 10 mix questions plus prepended error-book review questions.
+            assertTrue(it.quizQuestions.size <= 15)
         }
     }
 
@@ -235,6 +236,59 @@ class SessionBuilderTest {
         assertNotNull(session)
         session?.let {
             assertTrue(it.subtitleLines.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `spell fill blank uses the blanked letter as the correct option`() {
+        val session = builder.expandPlanToSession(validPlanJson, GradeBand.PRIMARY, dayIndex = 1)
+
+        session?.let {
+            val blanks = it.quizQuestions.filter { q -> q.type == QuizQuestionType.SPELL_FILL_BLANK }
+            assertTrue(blanks.isNotEmpty(), "Expected at least one SPELL_FILL_BLANK question")
+            blanks.forEach { q ->
+                // The blanked display is "s_chool" style: first letter + '_' + rest.
+                val display = q.question.removePrefix("Complete the word: ")
+                val blankIndex = display.indexOf('_')
+                assertTrue(blankIndex > 0, "Fill-blank must blank a letter after the first: $display")
+                // correctIndex must point to a valid option
+                assertTrue(q.correctIndex in q.options.indices, "correctIndex out of range: ${q.correctIndex}")
+                assertTrue(q.options.isNotEmpty())
+                // The option that fills the blank must not be the word's first letter
+                val correctOption = q.options[q.correctIndex]
+                assertNotEquals(display.first().toString(), correctOption,
+                    "Correct option must be the blanked letter, not the first letter")
+            }
+        }
+    }
+
+    @Test
+    fun `spell fill blank correct option matches blanked letter`() {
+        // Craft a plan whose only word guarantees a known blank.
+        val json = """
+            {
+                "theme": "School",
+                "difficulty_coefficient": 1.0,
+                "days": [{
+                    "day": 1,
+                    "focus": "Vocab",
+                    "target_words": ["school"],
+                    "reference_sentence": "This is my school.",
+                    "duration_minutes": 15
+                }]
+            }
+        """.trimIndent()
+
+        val session = builder.expandPlanToSession(json, GradeBand.PRIMARY, dayIndex = 1)
+
+        session?.let {
+            val blank = it.quizQuestions.first { q -> q.type == QuizQuestionType.SPELL_FILL_BLANK }
+            val display = blank.question.removePrefix("Complete the word: ")
+            val missingLetter = display.substring(display.indexOf('_') + 1, display.indexOf('_') + 2)
+            assertEquals("s_chool", display, "Blanked display should blank the 2nd letter")
+            val correctOption = blank.options[blank.correctIndex]
+            assertEquals("c", correctOption, "The correct option must be the blanked letter 'c'")
+            assertNotEquals("s", correctOption, "The option must NOT be the first letter")
         }
     }
 }

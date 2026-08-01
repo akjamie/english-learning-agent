@@ -294,15 +294,20 @@ class SessionBuilder(
                         )
                     }
                     QuizQuestionType.SPELL_FILL_BLANK -> {
-                        val letter = word.toCharArray().filter { it.isLetter() }.firstOrNull()?.lowercase() ?: "s"
-                        val spellDistractors = listOf("a", "e", "o", "u").filter { it != letter }.take(3)
+                        val letters = word.toCharArray().filter { it.isLetter() }.map { it.lowercaseChar() }
+                        // Blank the 2nd letter so the word display and the correct
+                        // option always agree (e.g. "s_chool" -> missing 'c').
+                        val missing = if (letters.size > 1) letters[1] else letters.firstOrNull() ?: 's'
+                        val missingStr = missing.toString()
+                        val spellDistractors = listOf("a", "e", "o", "u").filter { it != missingStr }.take(3)
+                        val spellOptions = (listOf(missingStr) + spellDistractors).shuffled()
                         questions.add(
                             QuizQuestion(
                                 id = 300 + questions.size,
                                 type = type,
                                 question = "Complete the word: ${word.first()}_${word.drop(1)}",
-                                options = (listOf(letter) + spellDistractors).shuffled(),
-                                correctIndex = 0
+                                options = spellOptions,
+                                correctIndex = spellOptions.indexOf(missingStr)
                             )
                         )
                     }
