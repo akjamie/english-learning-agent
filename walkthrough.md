@@ -250,3 +250,52 @@ english-learning-agent/
 2. **SessionBuilder**：从 Plan JSON 提取内容，根据 GradeBand 生成年级适配的字幕、跟读、游戏和 Quiz。
 3. **缓存优先**：`getCachedLearningSession()` 优先从 Room 读取并展开缓存计划，失败回退 SampleContent。
 4. **LLM Prompt 增强**：在 `generateAndCacheWeeklyPlan()` 中注入年级段约束（词汇范围、句子长度、Phonics/Grammar 比例）。
+
+---
+
+## 🎓 Sprint 7: 教学法深化与 Agent 智能 (V2.0)
+
+### 新增文件 (New Files)
+
+#### Domain 层 — 教学法 UseCase (纯 Kotlin)
+| 文件 | 作用 |
+|---|---|
+| `domain/usecase/PhonicsModule.kt` | PRIMARY 自然拼读 (CVC 拼词 / onset-rime 组合 / minimal-pairs 辨音)，按 `questionId % 3` 轮换题型 |
+| `domain/usecase/SpacedRepetitionScheduler.kt` | Ebbinghaus 间隔重复 (1/3/7/14 天)，支持迟到补进、重复错误重置 |
+| `domain/usecase/ProductionTaskScorer.kt` | 产出型题目确定性评分 (SPELLING=Levenshtein 部分分 / DICTATION=词重叠 / SENTENCE_WRITING=目标词+长度) |
+| `domain/usecase/AdaptiveDifficultyEngine.kt` | 句长 ±3 词 (clamp 4..22) + CEFR 等级自适应，`describeAdjustment()` 供决策日志 |
+| `domain/usecase/DiagnoseAnomalyUseCase.kt` | 受限自主 Agent：5 类归因 + 置信度，<0.6 时 `defersToParent=true` 交还家长 |
+| `domain/usecase/XpRewardSystem.kt` | XP + 30 级系统，`levelInfo()`/`crossesLevelBoundary()` 纯函数 |
+| `domain/usecase/DailyGoalTracker.kt` | 每日三目标 (1 次学习 / 正确率≥80% / 5 新词) + 徽章 |
+| `domain/usecase/MakeupCardManager.kt` | 每月 2 张补签卡，月度重置，主动选择非自动使用 |
+
+#### Domain/Data 层 — 接线
+| 文件 | 作用 |
+|---|---|
+| `domain/model/LearningContent.kt` | QuizQuestionType 新增 `CVC_BUILD / ONSET_RIME / MINIMAL_PAIRS / SENTENCE_WRITING` |
+| `domain/usecase/SessionBuilder.kt` | 前置错题复习题、PRIMARY Phonics 配额、按学段生产题型、句长自适应贯穿字幕/跟读 |
+| `domain/usecase/ExplanationAgentUseCase.kt` | 新增带完整错误历史的 B2 追问重载 (`errorHistoryJson`) |
+| `data/repository/ErrorBookRepositoryImpl.kt` | 间隔重复调度接入 (正确推进/错误重置)、due 过滤复习题、修复 `correctIndex` 错位 |
+| `data/repository/WeeklyPlanRepositoryImpl.kt` | `getCachedLearningSession()` 透传复习题 + 句长调整 |
+
+#### UI 层
+| 文件 | 作用 |
+|---|---|
+| `ui/learning/LearningViewModel.kt` | XP 奖励、每日目标、补签卡、自适应难度、间隔复习注入、生产题评分、streak 救援检测 |
+| `ui/learning/LearningContainer.kt` | 全屏 Level-Up 庆祝弹层 + 补签卡主动选择对话框 |
+| `ui/learning/QuizScreen.kt` | 4 种新题型渲染器 (CVC 拼图 / rime 选择 / 辨音 / 文本输入生产题) |
+| `ui/learning/PreTeachScreen.kt` | ESA Engage：图片-单词匹配，匹配前词隐藏为 ❓ |
+| `ui/weeklyplan/WeeklyReportScreen.kt` + `ViewModel` | 家长报告：待复习词标签 + 分环节时长分布 + 分享文案增强 |
+
+### 关键架构决策
+1. **受限自主 (Bounded Autonomy)**：Agent 仅在置信度 ≥0.6 时自主行动；否则把原始证据交给家长决策，儿童产品不擅自下结论。
+2. **间隔重复移动端取舍**：1/3/7/14 天是记忆曲线与移动场景的务实平衡；due 词前置插入每日 Quiz（最多 2 个）避免长会话被弃时被跳过；迟到答对通过 `intervalIndexForTimestamp` 跳级补进而非惩罚。
+3. **生产题确定性评分**：拼写/造句无法用 ASR 可靠评估，改用 Levenshtein 部分分、词重叠、目标词+长度等确定性规则，纯函数可单测。
+4. **XP 纯函数化**：等级是累计 XP 的纯函数，持久化仅存一个 `total_xp` 整数，天然可测。
+5. **补签卡主动权**：streak 断裂时弹主动选择（用卡/放弃），绝不自动消耗，保留孩子对"今天要不要学"的认知。
+
+### 🏆 Sprint 7 交付审计结果 (V2.0)
+- **单元测试**：**已通过** (新增 71 项 domain 测试，仅剩既有 SessionBuilderTest/AsrRepositoryTest/LlmRepositoryImplTest)
+- **构建**：`./gradlew assembleDebug` **已通过**
+- **模拟器全流程**：**已通过** (PreTeach ESA Engage 揭词 → Immersion → Practice Listen-Repeat-Compare 离线 ASR 88 分 → Game 2-Combo → Quiz → 结果页，无崩溃)
+- **XP 持久化**：`lingo_xp_prefs.xml` 生成，`total_xp=40`、补签卡 `makeup_month=2026-08, makeup_used=0`

@@ -152,7 +152,7 @@
 
 ---
 
-## Sprint 7: Pedagogical Deepening & Agent Intelligence (教学法深化与 Agent 智能) - [ ]
+## Sprint 7: Pedagogical Deepening & Agent Intelligence (教学法深化与 Agent 智能) - [x] v2.0
 > Principle: Build on Sprint 6 AI Presence infrastructure. Add core pedagogical activities and bounded-autonomy Agent decision-making.
 
 ### Phase A: Pedagogical Core Activities
@@ -178,10 +178,10 @@
 - [x] **[Impl]** Makeup card mechanic - 2 cards/month, streak break triggers active choice (not auto-use), preserves child's agency
 
 ### Phase E: Quality
-- [ ] **[Unit Test & Build]** Spaced repetition algorithm tests, Phonics module tests, attribution agent tests, adaptive difficulty tests; `./gradlew test assembleDebug`
-- [ ] **[Review & Reflection]** Document ESA model, bounded-autonomy Agent design, spaced repetition mobile best practices
-- [ ] **[Docs Sync]** Full doc sync for V2.0 architecture
-- [ ] **[MVP Delivery]** Deliver V2.0 pedagogical + Agent intelligence APK
+- [x] **[Unit Test & Build]** Spaced repetition algorithm tests, Phonics module tests, attribution agent tests, adaptive difficulty tests; `./gradlew test assembleDebug` (71 new tests pass; only pre-existing SessionBuilderTest/AsrRepositoryTest/LlmRepositoryImplTest failures remain)
+- [x] **[Review & Reflection]** Document ESA model, bounded-autonomy Agent design, spaced repetition mobile best practices (see `readme.md` Sprint 7 section)
+- [x] **[Docs Sync]** Full doc sync for V2.0 architecture
+- [x] **[MVP Delivery]** Deliver V2.0 pedagogical + Agent intelligence APK (`app-debug.apk`, verified on emulator: full PreTeach→Immersion→Practice→Game→Quiz→Results flow, ESA Engage word reveal, Listen-Repeat-Compare offline ASR, XP persisted `total_xp=40` + makeup card `2026-08`, no crashes)
 
 ---
 

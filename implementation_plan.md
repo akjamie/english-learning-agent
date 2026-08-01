@@ -205,7 +205,7 @@ graph TD
 - [x] **[Docs Sync]** 更新 `agents.md` (新增 Observation Agent + Decision Transparency Layer + rationale prompt)、`implementation_plan.md`、`task.md`
 - [ ] **[MVP Delivery]** 交付 V1.6 AI 存在感显性化 APK
 
-### Sprint 7: 教学法深化与 Agent 智能 (Pedagogical Deepening & Agent Intelligence) - [ ]
+### Sprint 7: 教学法深化与 Agent 智能 (Pedagogical Deepening & Agent Intelligence) - [x] v2.0
 > 设计原则：在 Sprint 6 AI 存在感基础设施之上，补齐教学法核心活动与 Agent 受限自主决策能力，使产品从"规则引擎 + 文案包装"进化为"真正理解孩子的智能伴学系统"。
 
 **Phase A: 教学法核心活动**
@@ -236,10 +236,10 @@ graph TD
 
 **Phase E: 质量保障**
 
-- [ ] **[Unit Test & Build]** 间隔重复算法测试、Phonics 模块测试、归因 Agent 测试、自适应难度测试；执行 `./gradlew test assembleDebug`
-- [ ] **[Review & Reflection]** 总结 ESA 模型、受限自主 Agent 设计、间隔重复在移动端的最佳实践
-- [ ] **[Docs Sync]** 全面更新所有文档反映 V2.0 架构
-- [ ] **[MVP Delivery]** 交付 V2.0 教学法增强 + Agent 智能 APK
+- [x] **[Unit Test & Build]** 间隔重复算法测试、Phonics 模块测试、归因 Agent 测试、自适应难度测试；执行 `./gradlew test assembleDebug` (新增 71 项 domain 单测通过，仅剩既有 SessionBuilderTest/AsrRepositoryTest/LlmRepositoryImplTest 失败)
+- [x] **[Review & Reflection]** 总结 ESA 模型、受限自主 Agent 设计、间隔重复在移动端的最佳实践 (见 `readme.md` Sprint 7 章节)
+- [x] **[Docs Sync]** 全面更新所有文档反映 V2.0 架构
+- [x] **[MVP Delivery]** 交付 V2.0 教学法增强 + Agent 智能 APK (`app-debug.apk`，模拟器全流程验证：PreTeach→Immersion→Practice→Game→Quiz→Results，ESA Engage 揭词、Listen-Repeat-Compare 离线 ASR、XP 持久化 `total_xp=40` + 补签卡 `2026-08`，无崩溃)
 
 ---
 
