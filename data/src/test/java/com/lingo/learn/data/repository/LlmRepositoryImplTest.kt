@@ -9,7 +9,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import retrofit2.Response
@@ -60,12 +63,24 @@ class LlmRepositoryImplTest {
     }
 
     @Test
-    fun `complete returns failure when group id empty`() {
+    fun `complete proceeds without group id`() = runBlocking {
         whenever(prefs.getGroupId()).thenReturn("")
+        val responseBody = MinimaxChatResponse(
+            choices = listOf(MinimaxChoice(
+                message = MinimaxMessage(role = "assistant", content = "No group needed"),
+                finishReason = "stop"
+            )),
+            content = null,
+            usage = null
+        )
+        whenever(service.chatCompletion(any(), any(), anyOrNull(), any()))
+            .thenReturn(Response.success(responseBody))
 
-        val result = runBlocking { repository.complete("Hello", "PLAN") }
+        val result = repository.complete("Hello", "PING")
 
-        assertTrue(result.isFailure)
+        assertTrue(result.isSuccess)
+        assertEquals("No group needed", result.getOrThrow())
+        verify(service).chatCompletion(eq(fullUrl), eq(apiKey), isNull(), any())
     }
 
     @Test
@@ -75,7 +90,7 @@ class LlmRepositoryImplTest {
         val result = repository.complete("Hello", "PLAN")
 
         assertTrue(result.isSuccess)
-        assertTrue(result.getOrThrow().contains("Well done"))
+        assertTrue(result.getOrThrow().contains("theme"))
     }
 
     @Test
@@ -138,10 +153,24 @@ class LlmRepositoryImplTest {
             .thenReturn(error1)
             .thenReturn(error2)
 
-        val result = repository.complete("Hello", "PING")
+        val result = repository.complete("Hello", "PLAN")
 
         assertTrue(result.isSuccess)
-        assertEquals("OK", result.getOrThrow())
+        assertTrue(result.getOrThrow().contains("theme"))
+    }
+
+    @Test
+    fun `PING returns failure instead of fallback when both models fail`() = runBlocking {
+        val error1: Response<MinimaxChatResponse> = Response.error(401, okhttp3.ResponseBody.create(null, "Unauthorized"))
+        val error2: Response<MinimaxChatResponse> = Response.error(403, okhttp3.ResponseBody.create(null, "Forbidden"))
+        whenever(service.chatCompletion(any(), any(), any(), any()))
+            .thenReturn(error1)
+            .thenReturn(error2)
+
+        val result = repository.complete("Hello", "PING")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("Connection failed") == true)
     }
 
     @Test
@@ -149,10 +178,10 @@ class LlmRepositoryImplTest {
         val responseBody = MinimaxChatResponse(choices = emptyList(), content = null, usage = null)
         stubPrimaryCall("Hello", responseBody)
 
-        val result = repository.complete("Hello", "PING")
+        val result = repository.complete("Hello", "HINT")
 
         assertTrue(result.isSuccess)
-        assertEquals("OK", result.getOrThrow())
+        assertTrue(result.getOrThrow().contains("first letter"))
     }
 
     @Test

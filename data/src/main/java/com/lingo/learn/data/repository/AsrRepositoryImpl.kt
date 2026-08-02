@@ -28,9 +28,10 @@ class AsrRepositoryImpl @Inject constructor(
         val asrModel = prefs.getAsrModel()
 
         // Downgrade to offline fallback if ASR credentials are not configured
-        if (authToken.length < 10 || groupId.isEmpty()) {
+        if (authToken.length < 10) {
             return Result.success(getOfflineFallbackResult(referenceText))
         }
+        val groupIdParam = groupId.takeIf { it.isNotBlank() }
 
         return runCatching {
             // Prepare multipart body
@@ -38,7 +39,7 @@ class AsrRepositoryImpl @Inject constructor(
             val filePart = MultipartBody.Part.createFormData("file", audioFile.name, requestFile)
             val modelPart = asrModel.toRequestBody("text/plain".toMediaTypeOrNull())
 
-            val response = service.audioToText(url, apiKey, groupId, filePart, modelPart)
+            val response = service.audioToText(url, apiKey, groupIdParam, filePart, modelPart)
             if (response.isSuccessful && response.body() != null) {
                 val asrText = response.body()!!.text
 
@@ -95,16 +96,17 @@ class AsrRepositoryImpl @Inject constructor(
         val url = baseUrl.trimEnd('/') + "/v1/audio_to_text"
         val asrModel = prefs.getAsrModel()
 
-        if (authToken.length < 10 || groupId.isEmpty()) {
+        if (authToken.length < 10) {
             return Result.failure(Exception("ASR credentials not configured"))
         }
+        val groupIdParam = groupId.takeIf { it.isNotBlank() }
 
         return runCatching {
             val requestFile = audioFile.asRequestBody("audio/mpeg".toMediaTypeOrNull())
             val filePart = MultipartBody.Part.createFormData("file", audioFile.name, requestFile)
             val modelPart = asrModel.toRequestBody("text/plain".toMediaTypeOrNull())
 
-            val response = service.audioToText(url, apiKey, groupId, filePart, modelPart)
+            val response = service.audioToText(url, apiKey, groupIdParam, filePart, modelPart)
             if (response.isSuccessful && response.body() != null) {
                 return@runCatching response.body()!!.text
             }

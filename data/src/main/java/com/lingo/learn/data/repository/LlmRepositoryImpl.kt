@@ -28,19 +28,24 @@ class LlmRepositoryImpl @Inject constructor(
         val endpoint = prefs.getLlmEndpoint()
         val url = baseUrl.trimEnd('/') + endpoint
 
-        if (authToken.length < 10 || groupId.isEmpty()) {
-            return Result.failure(Exception("Auth Token or Group ID is not configured"))
+        if (authToken.length < 10) {
+            return Result.failure(Exception("Auth Token is not configured"))
         }
 
         // 1. Check token budget
         if (isBudgetExceeded()) {
-            return Result.success(getFallbackTemplate(taskType))
+            return if (taskType == "PING") {
+                Result.failure(Exception("Monthly token budget exceeded"))
+            } else {
+                Result.success(getFallbackTemplate(taskType))
+            }
         }
 
         // 2. Try primary model
         val primaryModel = prefs.getPrimaryModel()
         val minimaxMessages = messages.map { MinimaxMessage(role = it.role, content = it.content) }
-        
+        val groupIdParam = groupId.takeIf { it.isNotBlank() }
+
         val primaryResult = runCatching {
             withTimeout(15000) {
                 val request = MinimaxChatRequest(
@@ -48,7 +53,7 @@ class LlmRepositoryImpl @Inject constructor(
                     messages = minimaxMessages,
                     maxTokens = maxTokens
                 )
-                val response = service.chatCompletion(url, apiKey, groupId, request)
+                val response = service.chatCompletion(url, apiKey, groupIdParam, request)
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     val content = tryParseResponse(body)
@@ -90,7 +95,7 @@ class LlmRepositoryImpl @Inject constructor(
                     messages = minimaxMessages,
                     maxTokens = maxTokens
                 )
-                val response = service.chatCompletion(url, apiKey, groupId, request)
+                val response = service.chatCompletion(url, apiKey, groupIdParam, request)
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     val content = tryParseResponse(body)
@@ -123,7 +128,14 @@ class LlmRepositoryImpl @Inject constructor(
         }
 
         // 4. Fallback model also failed -> Use local template fallback
-        return Result.success(getFallbackTemplate(taskType))
+        return if (taskType == "PING") {
+            val error = fallbackResult.exceptionOrNull()?.message
+                ?: primaryResult.exceptionOrNull()?.message
+                ?: "Connection failed"
+            Result.failure(Exception("Connection failed: $error"))
+        } else {
+            Result.success(getFallbackTemplate(taskType))
+        }
     }
 
     /**

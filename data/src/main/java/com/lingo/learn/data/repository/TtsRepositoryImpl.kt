@@ -47,9 +47,10 @@ class TtsRepositoryImpl @Inject constructor(
         val url = baseUrl.trimEnd('/') + "/v1/t2a_v2"
         val ttsModel = prefs.getTtsModel()
 
-        if (authToken.length < 10 || groupId.isEmpty()) {
-            return@withContext Result.failure(Exception("MiniMax Auth Token or Group ID is not configured"))
+        if (authToken.length < 10) {
+            return@withContext Result.failure(Exception("MiniMax Auth Token is not configured"))
         }
+        val groupIdParam = groupId.takeIf { it.isNotBlank() }
 
         runCatching {
             val request = MinimaxTtsRequest(
@@ -60,7 +61,7 @@ class TtsRepositoryImpl @Inject constructor(
                     speed = speed
                 )
             )
-            val response = service.textToAudio(url, apiKey, groupId, request)
+            val response = service.textToAudio(url, apiKey, groupIdParam, request)
             if (response.isSuccessful && response.body() != null) {
                 val bytes = response.body()!!.bytes()
 
