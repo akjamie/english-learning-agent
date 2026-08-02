@@ -48,7 +48,7 @@ To guarantee that every Sprint yields a runnable, robust MVP release, all featur
 All AI channels (LLM, TTS, ASR) share unified Base URL and Auth Token credentials, configurable at runtime via `SecureConfigPrefs`.
 
 ### Default Volcengine (Ark 火山引擎) Test Config:
-- **Base URL**: `https://ark.cn-beijing.volces.com/api/plan`
+- **Base URL**: `https://ark.cn-beijing.volces.com/api/plan/v3`
 - **Auth Token**: *(Your Ark API Key)*
 - **Primary LLM**: `glm-5.2`
 - **Fallback LLM**: `deepseek-v4-flash`
@@ -106,4 +106,79 @@ Sprint 8 addresses critical UX and architectural feedback: fixing bugs, bridging
 
 ### Build Verification
 - **Full Clean Build**: `./gradlew assembleDebug --rerun-tasks` $\rightarrow$ **BUILD SUCCESSFUL in 2m 15s**!
+
+---
+
+## 🗺️ Sprint 9 (Planned): Provider Abstraction & Connection Diagnostics
+
+### Root Cause (401/400 on Ark)
+1. Default base URL is `https://ark.cn-beijing.volces.com/api/plan` — missing the required `/v3` gateway segment.
+2. Channel suffixes are MiniMax-style (`/v1/chat/completions`, `/v1/t2a_v2`, `/v1/audio_to_text`), which do not exist on the Ark plan gateway. LLM must hit `/chat/completions`; TTS/ASR use Ark audio endpoints.
+
+### Design Decision — Minimal Provider Config Surface
+A provider/agent-plan connection is fully described by **only**:
+
+| Config | Notes |
+| --- | --- |
+| `baseUrl` | Full provider gateway base, e.g. `https://ark.cn-beijing.volces.com/api/plan/v3` |
+| `authToken` | API key / access token |
+| `primaryModel` / `fallbackModel` | LLM models (fallback optional) |
+| `ttsModel` / `asrModel` | Speech models (optional, provider defaults) |
+| `groupId` | Optional (legacy) |
+
+The user-editable `llmEndpoint` field is **removed**; per-channel paths are derived inside a provider adapter:
+- LLM → `{baseUrl}/chat/completions`
+- TTS → `{baseUrl}/audio/tts`
+- ASR → `{baseUrl}/audio/transcriptions`
+
+**Backward compatibility migration**: on read, stored base URL `.../api/plan` (missing `/v3`) is rewritten to `.../api/plan/v3`; any saved `llmEndpoint` value is ignored.
+
+**Also planned**: multi-provider support (Ark plan / OpenAI-compatible / MiniMax) selectable by the same URL+token+models surface.
+
+*(Status: core implemented — see below.)*
+
+### Sprint 9 Implementation (completed)
+
+**Delivered in this sprint:**
+- **`ProviderEndpoints`** (domain provider adapter): derives per-channel paths from a single base URL — LLM `/chat/completions`, TTS `/audio/tts`, ASR `/audio/transcriptions`.
+- **`/v3` migration**: `SecureConfigPrefs.getBaseUrl()` now defaults to `https://ark.cn-beijing.volces.com/api/plan/v3` and rewrites any stored legacy `.../api/plan` (missing `/v3`) on read.
+- **`llmEndpoint` removed** from the config surface (`SecureConfigPrefs`, `ConfigRepository`, `SettingsUiState`, `SettingsViewModel`) — no more MiniMax-style `/v1/chat/completions` suffix. Saved legacy values are ignored.
+- **Connection diagnostics**: Settings "Test Connection" now reports the exact resolved endpoint URL (e.g. `.../api/plan/v3/chat/completions`) in both success and failure messages, so a wrong base URL is immediately visible.
+- **Tests**: 7 new `ProviderEndpointsTest` cases + updated `LlmRepositoryImplTest` URL assertions. All module unit tests green.
+
+---
+
+## 🗺️ Sprint 10-13 Roadmap
+
+Sprint 10-13 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio. Scoped by the tech lead from the product-owner enhancement review (market: ELSA multi-scenario AI role-play, Duolingo persistent XP, Lingokids parent hub, Khan Kids growing path) into four **independently shippable** sprints ordered by dependency/risk:
+
+| Sprint | Theme | Scope | Risk | Status |
+| --- | --- | --- | --- | --- |
+| **10** | Visible Growth (v3.0) | Surface existing gamification: persist XP/level/daily-goals/makeup (`GamificationState` entity + repo), XP bar + level badge + 3-goal badges + makeup balance on Dashboard/TaskComplete | Low | ✅ Done |
+| **11** | Agent Companion (v3.1) | Roleplay 2.0: scenario bank + picker + text-chat fallback + conversation history; enable `FAST_ANSWER` observation trigger | Medium | Planned |
+| **12** | Smooth Interaction & Parent Trust (v3.2) | Wire calibration→re-run diagnosis, grade-change/onboarding re-run, plan-driven Dashboard targets, notification prefs UI, WeeklyReport image share + weekly "Lingo's letter" digest | Low | Planned |
+| **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | Planned |
+
+**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`).
+
+Detailed task breakdowns live in `task.md`. Status is tracked per sprint as they complete.
+
+---
+
+## 🚀 Sprint 10 (v3.0): Visible Growth — 游戏化显性化与持久化
+
+Sprint 10 makes the existing gamification engines **visible and persistent**. Previously XP / level / daily-goal / makeup-card state was computed in the ViewModel and stored ad-hoc in `lingo_xp_prefs`; it was invisible to the child and lost on reinstall.
+
+### New Capabilities
+1. **`GamificationState` persistence**: new domain entity + DAO + repository backed by Room (DB v4). `LearningViewModel` now writes XP, daily-goal snapshots, and makeup-card balances through the repository.
+2. **Persistent XP progress bar + level badge** on Dashboard header and TaskComplete (reuses `XpRewardSystem.levelInfo()`).
+3. **Daily 3-goal badges row** on TaskComplete — previously computed (`_dailyGoals`) but never rendered.
+4. **Makeup-card balance** surfaced on the Dashboard (was only visible in the streak-break dialog).
+5. **Bug fix**: TaskComplete content overflow — result page now scrolls so all surfaces are reachable.
+
+### Verification
+- **Unit tests**: 4 new `GamificationRepositoryImplTest` cases + all module tests green.
+- **Emulator E2E**: full flow (PreTeach → Immersion → Practice → Game → Quiz → Complete) walked; Dashboard shows `Lv 1 / 0-50 XP / 🎟️ 2 Cards`; TaskComplete shows `Today's Goals 🎯Done ⭐Locked 📖Done` + `40→60 XP` persisted; Room DB v4 `gamification_state` row verified via sqlite; no crashes.
+
+
 

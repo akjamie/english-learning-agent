@@ -299,3 +299,30 @@ english-learning-agent/
 - **构建**：`./gradlew assembleDebug` **已通过**
 - **模拟器全流程**：**已通过** (PreTeach ESA Engage 揭词 → Immersion → Practice Listen-Repeat-Compare 离线 ASR 88 分 → Game 2-Combo → Quiz → 结果页，无崩溃)
 - **XP 持久化**：`lingo_xp_prefs.xml` 生成，`total_xp=40`、补签卡 `makeup_month=2026-08, makeup_used=0`
+
+---
+
+## 🧵 Sprint 10 (Completed): 可见成长 (Visible Growth) — v3.0
+
+> 技术负责人基于产品负责人 Sprint 10-13 提案拆分为四个独立可交付 Sprint (完整清单见 `task.md`)。Sprint 10 目标：**游戏化已存在但不可见** —— 只做"展示已存在之物"，不新增 AI 能力。
+
+### 新增文件 (New Files)
+| 文件 | 作用 |
+|---|---|
+| `domain/model/GamificationState.kt` | 持久化游戏化状态 (totalXp / 补签卡余额 / 每日目标快照) |
+| `domain/repository/GamificationRepository.kt` | 游戏化状态仓储接口 |
+| `data/local/entity/GamificationStateEntity.kt` | Room v4 实体 |
+| `data/local/dao/GamificationStateDao.kt` | 单行 upsert / 查询 |
+| `data/repository/GamificationRepositoryImpl.kt` | Room 后端实现 |
+| `data/test/GamificationRepositoryImplTest.kt` | 4 个 CRUD 单元测试 |
+
+### 关键架构决策 (Completed)
+1. **游戏化持久化实体化**：`GamificationState` domain 实体 + DAO + Repository，数据库升至 v4；XP/等级/每日目标/补签卡从 `lingo_xp_prefs` 逻辑层收敛到 Room 持久化层 (可跨重装存活)。
+2. **游戏化 UI 显性化**：Dashboard 持久化 XP 进度条 + 等级徽章 + 补签卡余额；TaskComplete 渲染每日三目标徽章 (复用 `XpRewardSystem.levelInfo()` / `DailyGoalTracker`)。
+3. **溢出修复**：TaskComplete 结果页增加 `verticalScroll`，XP 栏/目标徽章/返回按钮全部可达。
+
+### 交付审计结果 (Completed)
+- **单元测试**：**已通过** (GamificationState CRUD 4 项 + 全部既有测试)
+- **构建**：`./gradlew assembleDebug` **已通过**
+- **模拟器全流程**：**已通过** (PreTeach → Immersion → Practice → Game → Quiz → Complete，无崩溃)
+- **E2E 验证**：Dashboard 显示 `Lv 1 / 0-50 XP / 🎟️ 2 Cards`；TaskComplete 显示 `Today's Goals 🎯Done ⭐Locked 📖Done` + `40→60 XP` 跨会话持久化；Room v4 `gamification_state` 行经 sqlite 校验

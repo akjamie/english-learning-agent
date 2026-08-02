@@ -7,6 +7,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.model.*
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
+import org.akj.lingo.learn.domain.repository.GamificationRepository
 import org.akj.lingo.learn.domain.usecase.AdaptiveDifficultyEngine
 import org.akj.lingo.learn.domain.usecase.DailyGoalTracker
 import org.akj.lingo.learn.domain.usecase.MakeupCardManager
@@ -83,13 +84,6 @@ data class QuizState(
  */
 private const val NEGATIVE_THRESHOLD = 3
 
-/** SharedPreferences name for Sprint 7 gamification state. */
-private const val XP_PREFS_NAME = "lingo_xp_prefs"
-private const val KEY_TOTAL_XP = "total_xp"
-private const val KEY_LEVEL_UP_ONCE = "level_up_celebrated"
-private const val KEY_MAKEUP_MONTH = "makeup_month"
-private const val KEY_MAKEUP_USED = "makeup_used"
-
 @HiltViewModel
 class LearningViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -106,6 +100,7 @@ class LearningViewModel @Inject constructor(
     private val xpRewardSystem: XpRewardSystem,
     private val dailyGoalTracker: DailyGoalTracker,
     private val makeupCardManager: MakeupCardManager,
+    private val gamificationRepository: GamificationRepository,
     private val productionTaskScorer: ProductionTaskScorer
 ) : ViewModel() {
 
@@ -313,8 +308,8 @@ class LearningViewModel @Inject constructor(
     //endregion
 
     init {
-        loadXpState()
-        loadMakeupState()
+        loadGamificationState()
+        refreshMakeupState()
         setGrade(currentGrade)
         // Check for PAUSED checkpoint from previous session
         val savedState = TaskStatePrefs.getTaskState(context)
@@ -787,15 +782,23 @@ class LearningViewModel @Inject constructor(
 
     //endregion
 
-    //region Sprint 7: Gamification (XP / Level / Daily Goals / Makeup Cards)
+    //region Sprint 7 + 10: Gamification (XP / Level / Daily Goals / Makeup Cards)
 
-    private fun xpPrefs(): android.content.SharedPreferences =
-        context.getSharedPreferences(XP_PREFS_NAME, Context.MODE_PRIVATE)
-
-    private fun loadXpState() {
-        val totalXp = xpPrefs().getInt(KEY_TOTAL_XP, 0)
-        _totalXp.value = totalXp
-        _levelInfo.value = xpRewardSystem.levelInfo(totalXp)
+    /**
+     * Loads persisted gamification state (XP, makeup cards, daily-goal snapshot)
+     * into the ViewModel flows.
+     */
+    private fun loadGamificationState() {
+        viewModelScope.launch {
+            val state = gamificationRepository.getState()
+            _totalXp.value = state.totalXp
+            _levelInfo.value = xpRewardSystem.levelInfo(state.totalXp)
+            _makeupState.value = makeupCardManager.stateForMonth(
+                nowMs = System.currentTimeMillis(),
+                storedMonthKey = state.makeupMonthKey,
+                cardsUsedPreviously = state.makeupCardsUsed
+            )
+        }
     }
 
     private fun addXp(questionType: String?, sessionBonus: Boolean = false) {
@@ -805,7 +808,10 @@ class LearningViewModel @Inject constructor(
         val after = before + gained
         _totalXp.value = after
         _levelInfo.value = xpRewardSystem.levelInfo(after)
-        xpPrefs().edit().putInt(KEY_TOTAL_XP, after).apply()
+        viewModelScope.launch {
+            val state = gamificationRepository.getState()
+            gamificationRepository.saveState(state.copy(totalXp = after, lastModified = System.currentTimeMillis()))
+        }
 
         if (xpRewardSystem.crossesLevelBoundary(before, after)) {
             _showLevelUp.value = true
@@ -817,13 +823,21 @@ class LearningViewModel @Inject constructor(
         _showLevelUp.value = false
     }
 
-    private fun loadMakeupState() {
-        val now = System.currentTimeMillis()
-        val month = xpPrefs().getString(KEY_MAKEUP_MONTH, null)
-        val used = xpPrefs().getInt(KEY_MAKEUP_USED, 0)
-        val state = makeupCardManager.stateForMonth(now, month, used)
-        xpPrefs().edit().putString(KEY_MAKEUP_MONTH, state.monthKey).putInt(KEY_MAKEUP_USED, state.cardsUsed).apply()
+    /** Resolves and persists the makeup-card allowance for the current month. */
+    private fun refreshMakeupState() {
+        val state = _makeupState.value
+            ?: makeupCardManager.stateForMonth(System.currentTimeMillis(), null, 0)
         _makeupState.value = state
+        viewModelScope.launch {
+            val current = gamificationRepository.getState()
+            gamificationRepository.saveState(
+                current.copy(
+                    makeupMonthKey = state.monthKey,
+                    makeupCardsUsed = state.cardsUsed,
+                    lastModified = System.currentTimeMillis()
+                )
+            )
+        }
     }
 
     /** Shows the streak-break makeup card prompt (called when a streak break is detected). */
@@ -839,7 +853,16 @@ class LearningViewModel @Inject constructor(
         val state = _makeupState.value ?: return
         val updated = makeupCardManager.useCard(state)
         _makeupState.value = updated
-        xpPrefs().edit().putString(KEY_MAKEUP_MONTH, updated.monthKey).putInt(KEY_MAKEUP_USED, updated.cardsUsed).apply()
+        viewModelScope.launch {
+            val current = gamificationRepository.getState()
+            gamificationRepository.saveState(
+                current.copy(
+                    makeupMonthKey = updated.monthKey,
+                    makeupCardsUsed = updated.cardsUsed,
+                    lastModified = System.currentTimeMillis()
+                )
+            )
+        }
         _showMakeupPrompt.value = false
     }
 
@@ -851,10 +874,25 @@ class LearningViewModel @Inject constructor(
     /** Evaluates and stores the daily 3-goal state for the completion screen. */
     private suspend fun refreshDailyGoals(newWords: Int) {
         val accuracy = _session.value.quizQuestions.size.takeIf { it > 0 }?.let { _quizState.value.score.toFloat() / it } ?: 0f
-        _dailyGoals.value = dailyGoalTracker.evaluate(
+        val goals = dailyGoalTracker.evaluate(
             sessionCompleted = true,
             quizAccuracy = accuracy,
             newWordsLearned = newWords
+        )
+        _dailyGoals.value = goals
+
+        // Sprint 10: persist the daily-goal snapshot so it survives re-installs
+        // and can be surfaced on the Dashboard.
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        val state = gamificationRepository.getState()
+        gamificationRepository.saveState(
+            state.copy(
+                dailyGoalsDate = today,
+                sessionGoalAchieved = goals.goals.getOrNull(0)?.achieved ?: false,
+                accuracyGoalAchieved = goals.goals.getOrNull(1)?.achieved ?: false,
+                wordsGoalAchieved = goals.goals.getOrNull(2)?.achieved ?: false,
+                lastModified = System.currentTimeMillis()
+            )
         )
     }
 

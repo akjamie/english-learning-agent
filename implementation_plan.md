@@ -41,7 +41,7 @@ graph LR
 
 所有 AI 模型服务共享基础配置，支持运行时动态配置：
 
-- **Base URL**: `https://ark.cn-beijing.volces.com/api/plan` (默认)
+- **Base URL**: `https://ark.cn-beijing.volces.com/api/plan/v3` (默认)
 - **Auth Token**: *(用户配置密钥)*
 - **Primary LLM Model**: `glm-5.2`
 - **Fallback LLM Model**: `deepseek-v4-flash`
@@ -240,6 +240,40 @@ graph TD
 - [x] **[Review & Reflection]** 总结 ESA 模型、受限自主 Agent 设计、间隔重复在移动端的最佳实践 (见 `readme.md` Sprint 7 章节)
 - [x] **[Docs Sync]** 全面更新所有文档反映 V2.0 架构
 - [x] **[MVP Delivery]** 交付 V2.0 教学法增强 + Agent 智能 APK (`app-debug.apk`，模拟器全流程验证：PreTeach→Immersion→Practice→Game→Quiz→Results，ESA Engage 揭词、Listen-Repeat-Compare 离线 ASR、XP 持久化 `total_xp=40` + 补签卡 `2026-08`，无崩溃)
+
+---
+
+### Sprint 10: 可见成长 (Visible Growth) - [x] v3.0
+
+> 技术负责人分 Sprint 计划：产品负责人提出覆盖游戏化显性化 / 伴学对话 / 流畅交互 / 真实音频四大主题，技术侧按依赖与风险拆分为 Sprint 10-13（详见 `task.md`）。Sprint 10 只做"展示已存在之物"——游戏化引擎已存在但不可见且无持久化实体。
+
+**Phase A: 游戏化状态持久化 (Gamification Persistence)**
+
+- [x] **[Impl]** 新增 `GamificationState` domain 实体 (totalXp / 每日目标 / 补签卡余额) + DAO + Repository；数据库版本升至 v4 新增 `gamification_state` 表
+- [x] **[Impl]** `LearningViewModel` 的 XP/目标/补签卡写入统一走新 Repository（当前 `lingo_xp_prefs` 逻辑与持久化分离）
+
+**Phase B: 游戏化 UI 显性化 (Visible Growth Surfaces)**
+
+- [x] **[Impl]** Dashboard 头部 + TaskComplete 页新增**持久化 XP 进度条**与等级徽章 (复用 `XpRewardSystem.levelInfo()`)
+- [x] **[Impl]** TaskComplete 渲染每日三目标徽章行 (当前 `_dailyGoals` 为死 UI 状态)
+- [x] **[Impl]** Dashboard 展示补签卡余额
+
+**Phase C: 质量**
+
+- [x] **[Impl]** 修复 TaskComplete 溢出 (结果页 `verticalScroll`)
+- [x] **[Unit Test & Build]** GamificationState Repository CRUD 测试 (4)；`./gradlew test assembleDebug`
+- [x] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md` / `walkthrough.md`
+- [x] **[MVP Delivery]** 交付 V3.0 可见成长 APK (模拟器 E2E：Dashboard XP/等级/补签卡 + TaskComplete 目标徽章 + 跨会话 XP 持久化，无崩溃)
+
+---
+
+### Sprint 11-13 (Planned — Tech Lead Scoping)
+
+> 完整任务清单见 `task.md`；此处记录技术拆分的**依赖与风险决策**。
+
+- **Sprint 11 — 伴学升级 (v3.1)**：场景化 Roleplay 2.0 (场景库 + 选择器 + 文本聊天降级 + 对话历史持久化) 与 `FAST_ANSWER` 观察触发补全。中等风险，独立可交付。
+- **Sprint 12 — 流畅交互与家长信任 (v3.2)**：校准→重跑 Diagnosis 接线、年级修改/Onboarding 重跑入口、Dashboard 目标读取周计划、通知偏好 UI、周报图片分享 + "Lingo 的信"家长摘要。多屏幕小改动，低风险。
+- **Sprint 13 — 真实音频沉浸 (v3.3)**：`ImmersiveAudioScreen` 字幕行真实 TTS 合成 + MediaPlayer 播放，`AudioPlayerController` 支持真实文件 (保留模拟降级)。核心阶段质量基线，风险最高，放最后。
 
 ---
 

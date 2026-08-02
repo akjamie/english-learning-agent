@@ -185,6 +185,84 @@
 
 ---
 
+## Sprint 10: 可见成长 - 游戏化显性化与持久化 (Visible Growth) - [x] v3.0
+> 原则：游戏化引擎 (XP/每日目标/补签卡) 已存在但**对用户不可见**，且无持久化实体。本 Sprint 只做"展示已存在之物"，不新增 AI 能力。技术依赖最小、风险最低、价值最高，独立可交付。
+
+### Phase A: 游戏化状态持久化 (Gamification Persistence)
+- [x] **[Impl]** 新增 `GamificationState` domain 实体 (totalXp / 每日目标 / 补签卡余额) + DAO + Repository；数据库版本升至 v4 新增 `gamification_state` 表
+- [x] **[Impl]** `LearningViewModel` 的 XP/目标/补签卡写入统一走新 Repository（当前 `lingo_xp_prefs` 逻辑与持久化分离）
+
+### Phase B: 游戏化 UI 显性化 (Visible Growth Surfaces)
+- [x] **[Impl]** Dashboard 头部 + TaskComplete 页新增**持久化 XP 进度条**与等级徽章 (复用 `XpRewardSystem.levelInfo()`)
+- [x] **[Impl]** TaskComplete 渲染每日三目标徽章行 (当前 `_dailyGoals` 为死 UI 状态，仅计算未展示)
+- [x] **[Impl]** Dashboard 展示补签卡余额 (当前仅学习中断弹窗时可见)
+
+### Phase C: 质量
+- [x] **[Unit Test & Build]** GamificationState Repository CRUD 测试 (4) + XP/等级 UI 状态映射测试；`./gradlew test assembleDebug`
+- [x] **[Impl]** 修复 TaskComplete 内容溢出 — 结果页增加 `verticalScroll`，确保 XP 栏/目标徽章/返回按钮全部可达
+- [x] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md` / `walkthrough.md`
+- [x] **[MVP Delivery]** 交付 V3.0 可见成长 APK
+
+---
+
+## Sprint 11: 伴学升级 - Lingo 陪伴对话 (Agent Companion) - [ ] v3.1
+> 原则：把单一"冰激凌店"Roleplay 升级为可选的场景化 AI 对话伴学，并补全被声明但未实现的 `FAST_ANSWER` 观察触发。中等风险，独立可交付。
+
+### Phase A: 场景化 Roleplay 2.0
+- [ ] **[Impl]** 场景库 + 场景选择器 (动物园 / 餐厅 / 学校 / 旅行) - 场景脚本由 LLM 生成 (新增 `ROLEPLAY_SCENARIO` prompt / taskType)
+- [ ] **[Impl]** 文本输入聊天模式 (降级/安静场景，当麦克风不可用时仍可对话)
+- [ ] **[Impl]** 对话历史持久化 (Room 新增 `conversation_history` 表，Lingo 能"记得"上次聊了什么)
+
+### Phase B: FAST_ANSWER 观察触发 (补全 Sprint 6 缺口)
+- [ ] **[Impl]** Quiz/Game 每题响应耗时采集 (写入 `LearningRecord` 或新增字段)
+- [ ] **[Impl]** `ObservationTriggerEngine` 实现 `FAST_ANSWER` 规则 (响应时间低于个人均值 → 触发"你答得真快！")
+
+### Phase C: 质量
+- [ ] **[Unit Test & Build]** 场景脚本解析测试 + FAST_ANSWER 观察规则测试 + 对话历史 DAO 测试；`./gradlew test assembleDebug`
+- [ ] **[Docs Sync]** 更新 `agents.md` (Roleplay Agent prompt)、`readme.md`、`implementation_plan.md`、`task.md`
+- [ ] **[MVP Delivery]** 交付 V3.1 伴学升级 APK
+
+---
+
+## Sprint 12: 流畅交互与家长信任 (Smooth Interaction & Parent Trust) - [ ] v3.2
+> 原则：补齐半成品接线 (校准按钮 no-op、Dashboard 硬编码目标、通知无 UI、周报仅文本分享)，并新增每周"Lingo 的信"家长摘要。多屏幕小改动，风险低。
+
+### Phase A: 流畅交互接线
+- [ ] **[Impl]** 校准弹窗 "Update My Level" → 跳转重跑 Diagnosis (当前为 no-op，注释承认未接线)
+- [ ] **[Impl]** Settings 新增年级修改 / 重跑 Onboarding 入口 (当前 `child_name` 默认 "Buddy" 且只读)
+- [ ] **[Impl]** Dashboard 任务目标/时长改为读取已加载周计划 (当前为硬编码 "15 Mins / 5 Words + 2 Speech")
+- [ ] **[Impl]** 通知/提醒偏好 UI (提醒时间窗、开关) - `DailyReminderWorker` 已存在但无配置界面
+
+### Phase B: 家长信任面
+- [ ] **[Impl]** WeeklyReport 图片分享 (复用已构建但未使用的 `shareBitmap`)
+- [ ] **[Impl]** 每周 "Lingo 的信" 家长摘要卡 (Agent 生成本周进步/薄弱点自然语言摘要，写入 AgentDecisionLog)
+
+### Phase C: 质量
+- [ ] **[Unit Test & Build]** 报告摘要格式化测试 + 偏好持久化测试；`./gradlew test assembleDebug`
+- [ ] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
+- [ ] **[MVP Delivery]** 交付 V3.2 流畅交互 APK
+
+---
+
+## Sprint 13: 真实音频沉浸 (Real Audio Immersion) - [ ] v3.3
+> 原则：沉浸式导入阶段当前是**模拟播放** (协程计时器)，无真实音频。本 Sprint 接入真实 TTS 合成 + MediaPlayer 播放，保留字幕高亮与生词弹出。核心阶段质量基线，风险最高，放最后。
+
+### Phase A: 真实 TTS 音频
+- [ ] **[Impl]** `ImmersiveAudioScreen` 字幕行经 `TtsRepository.getSpeech()` 合成真实音频，MediaPlayer 播放
+- [ ] **[Impl]** `AudioPlayerController` 扩展支持真实文件播放 (保留模拟模式作为离线降级)
+- [ ] **[Impl]** 字幕高亮 / 新词弹出与真实播放进度同步
+
+### Phase B: 降级与性能
+- [ ] **[Impl]** 合成失败 → System TTS / 模拟模式降级路径
+- [ ] **[Impl]** 批量预合成缓存 (接入 TtsCache LRU)
+
+### Phase C: 质量
+- [ ] **[Unit Test & Build]** AudioPlayerController 真实文件状态测试 + 降级路径测试；`./gradlew test assembleDebug`
+- [ ] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
+- [ ] **[MVP Delivery]** 交付 V3.3 真实音频 APK
+
+---
+
 ## V1.1 Deferred Enhancements
 - **Enhancement 4**: Onboarding diagnosis continuous calibration - diagnosis result conveys "AI will keep adjusting"; day-10 calibration trigger based on actual data vs diagnostic expectation (medium cost)
 - **Enhancement 5**: Widget personalized text - Widget text from fixed template to data-driven personalized generation via Fallback LLM + daily pre-generation cache (medium cost)

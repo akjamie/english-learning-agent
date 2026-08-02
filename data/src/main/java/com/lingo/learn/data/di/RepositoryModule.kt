@@ -59,4 +59,10 @@ abstract class RepositoryModule {
     abstract fun bindAgentDecisionLogRepository(
         impl: AgentDecisionLogRepositoryImpl
     ): AgentDecisionLogRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGamificationRepository(
+        impl: GamificationRepositoryImpl
+    ): GamificationRepository
 }

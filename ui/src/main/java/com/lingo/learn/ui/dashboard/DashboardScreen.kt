@@ -137,6 +137,96 @@ fun DashboardScreen(
             StreakCounter(streakDays = streakDays)
         }
 
+        // Sprint 10: Visible growth — XP progress bar, level badge & makeup balance
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Level badge
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(gradeTheme.primaryColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Lv ${uiState.level}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = gradeTheme.buttonContentColor
+                        )
+                        Text(
+                            text = "⭐",
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+
+                // XP progress
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            text = "${uiState.xpIntoLevel} / ${uiState.xpForNextLevel} XP",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50)
+                        )
+                        Text(
+                            text = "Total ${uiState.totalXp} XP",
+                            fontSize = 11.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    // Linear XP progress bar
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(Color(0xFFECEFF1))
+                    ) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .fillMaxWidth(uiState.xpProgress.coerceIn(0f, 1f))
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(gradeTheme.primaryColor)
+                        )
+                    }
+                }
+
+                // Makeup card balance
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("🎟️", fontSize = 20.sp)
+                    Text(
+                        text = "${uiState.makeupCardsLeft}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Text(
+                        text = "Cards",
+                        fontSize = 10.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
+                }
+            }
+        }
+
         if (!uiState.greetingMessage.isNullOrEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             Row(

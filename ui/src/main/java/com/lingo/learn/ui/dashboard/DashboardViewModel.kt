@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
+import org.akj.lingo.learn.domain.repository.GamificationRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.DailyEncouragerUseCase
 import org.akj.lingo.learn.domain.usecase.DiagnosticCalibrationUseCase
+import org.akj.lingo.learn.domain.usecase.XpRewardSystem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,14 @@ data class DashboardUiState(
     val greetingMessage: String? = null,
     val isLoading: Boolean = false,
     /** Non-null when DiagnosticCalibrationUseCase recommends a re-diagnosis. */
-    val calibrationPrompt: String? = null
+    val calibrationPrompt: String? = null,
+    // Sprint 10: visible growth — XP / level / makeup balance
+    val totalXp: Int = 0,
+    val level: Int = 1,
+    val xpIntoLevel: Int = 0,
+    val xpForNextLevel: Int = 50,
+    val xpProgress: Float = 0f,
+    val makeupCardsLeft: Int = 2
 )
 
 @HiltViewModel
@@ -36,7 +45,9 @@ class DashboardViewModel @Inject constructor(
     private val errorBookRepository: ErrorBookRepository,
     private val weeklyPlanRepository: WeeklyPlanRepository,
     private val dailyEncouragerUseCase: DailyEncouragerUseCase,
-    private val diagnosticCalibrationUseCase: DiagnosticCalibrationUseCase
+    private val diagnosticCalibrationUseCase: DiagnosticCalibrationUseCase,
+    private val gamificationRepository: GamificationRepository,
+    private val xpRewardSystem: XpRewardSystem
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -53,6 +64,17 @@ class DashboardViewModel @Inject constructor(
 
                 val theme = plan?.theme ?: "School Life"
 
+                // Sprint 10: load persisted gamification state for the visible growth bar.
+                val gamification = gamificationRepository.getState()
+                val levelInfo = xpRewardSystem.levelInfo(gamification.totalXp)
+                val makeupMonth = gamification.makeupMonthKey
+                val makeupUsed = if (makeupMonth != null) gamification.makeupCardsUsed else 0
+                val makeupState = org.akj.lingo.learn.domain.usecase.MakeupCardManager().stateForMonth(
+                    nowMs = System.currentTimeMillis(),
+                    storedMonthKey = makeupMonth,
+                    cardsUsedPreviously = makeupUsed
+                )
+
                 _uiState.value = DashboardUiState(
                     streakDays = streak,
                     todayProgress = progress,
@@ -61,7 +83,13 @@ class DashboardViewModel @Inject constructor(
                     taskDuration = "15 Mins",
                     taskTarget = "5 Words + 2 Speech",
                     greetingMessage = null,
-                    isLoading = false
+                    isLoading = false,
+                    totalXp = gamification.totalXp,
+                    level = levelInfo.level,
+                    xpIntoLevel = levelInfo.xpIntoLevel,
+                    xpForNextLevel = levelInfo.xpForNextLevel,
+                    xpProgress = levelInfo.progressToNextLevel,
+                    makeupCardsLeft = makeupState.cardsLeft
                 )
 
                 // Fetch daily greeting in background

@@ -4,12 +4,15 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import android.content.Intent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +45,10 @@ fun TaskCompleteScreen(
     modifier: Modifier = Modifier
 ) {
     val summary by viewModel.summary.collectAsState()
+    // Sprint 10: visible growth — collect persisted XP + daily goals state
+    val dailyGoals by viewModel.dailyGoals.collectAsState()
+    val levelInfo by viewModel.levelInfo.collectAsState()
+    val totalXp by viewModel.totalXp.collectAsState()
 
     // Animate the new words count from 0 to final
     val animatedWords by animateIntAsState(
@@ -56,7 +63,8 @@ fun TaskCompleteScreen(
                 .fillMaxSize()
                 .background(theme.surfaceColor)
                 .padding(horizontal = 24.dp)
-                .statusBarsPadding(),
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(24.dp))
@@ -128,6 +136,127 @@ fun TaskCompleteScreen(
                     icon = "🔥",
                     modifier = Modifier.weight(1f)
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Sprint 10: Visible growth — XP bar + level badge
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(theme.primaryColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Lv ${levelInfo.level}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = theme.buttonContentColor
+                        )
+                        Text(text = "⭐", fontSize = 12.sp)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            text = "${levelInfo.xpIntoLevel} / ${levelInfo.xpForNextLevel} XP",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50)
+                        )
+                        Text(
+                            text = "Total $totalXp XP",
+                            fontSize = 11.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(Color(0xFFECEFF1))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(levelInfo.progressToNextLevel.coerceIn(0f, 1f))
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(theme.primaryColor)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Sprint 10: Daily 3-goal badges (previously computed but never rendered)
+        dailyGoals?.let { goals ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Today's Goals",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        goals.goals.forEach { goal ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(
+                                            if (goal.achieved) theme.primaryColor.copy(alpha = 0.9f)
+                                            else Color(0xFFECEFF1)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = goal.badge,
+                                        fontSize = 22.sp,
+                                        modifier = Modifier.alpha(if (goal.achieved) 1f else 0.4f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = if (goal.achieved) "Done" else "Locked",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (goal.achieved) Color(0xFF2ECC71) else Color(0xFF95A5A6)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 

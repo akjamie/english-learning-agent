@@ -43,12 +43,31 @@ object DatabaseModule {
             }
         }
 
+        val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `gamification_state` (
+                        `id` INTEGER NOT NULL,
+                        `totalXp` INTEGER NOT NULL,
+                        `makeupMonthKey` TEXT,
+                        `makeupCardsUsed` INTEGER NOT NULL,
+                        `dailyGoalsDate` TEXT,
+                        `sessionGoalAchieved` INTEGER NOT NULL,
+                        `accuracyGoalAchieved` INTEGER NOT NULL,
+                        `wordsGoalAchieved` INTEGER NOT NULL,
+                        `lastModified` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+            }
+        }
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "english_learning_agent_db"
         )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -85,4 +104,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAgentDecisionLogDao(db: AppDatabase): AgentDecisionLogDao = db.agentDecisionLogDao()
+
+    @Provides
+    fun provideGamificationStateDao(db: AppDatabase): GamificationStateDao = db.gamificationStateDao()
 }
