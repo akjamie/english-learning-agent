@@ -3,6 +3,7 @@ package org.akj.lingo.learn.data.repository
 import org.akj.lingo.learn.data.local.dao.PlanDao
 import org.akj.lingo.learn.data.local.entity.PlanEntity
 import org.akj.lingo.learn.domain.model.*
+import org.akj.lingo.learn.domain.repository.DayTaskSummary
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.SessionBuilder
@@ -23,9 +24,15 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         grade: String,
         accuracy: Int,
         weakCategories: List<String>,
-        completedMilestones: List<String>
+        completedMilestones: List<String>,
+        difficultyAdjustment: Float
     ): Result<Plan> {
         val gradeBand = GradeBand.fromGrade(grade)
+        // Sprint 10.5: combine grade band coefficient with diagnostic-level adjustment.
+        // A = -0.2, B = 0, C = +0.2 — so the plan's difficulty matches the selected
+        // grade AND the child's measured level.
+        val baseCoefficient = gradeBand.difficultyCoefficient
+        val coefficient = (baseCoefficient + difficultyAdjustment).coerceIn(0.6f, 2.0f)
         val prompt = """
             You are the curriculum planner for Lingo English. 
             Your task is to generate a personalized 7-day English learning plan for a student in $grade using default textbook.
@@ -39,7 +46,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             You must output a raw, valid JSON object ONLY. Do not write markdown blocks like ```json or any prefix text. The JSON must match the following structure:
             {
               "theme": "Unit theme name",
-              "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+              "difficulty_coefficient": $coefficient,
               "days": [
                 {
                   "day": 1,
@@ -56,13 +63,10 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         val llmResult = llmRepository.complete(prompt, taskType = "PLAN")
         val now = System.currentTimeMillis()
 
-        val jsonStr = llmResult.getOrNull() ?: """
-            {
-              "theme": "Daily Life & School",
-              "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
-              "days": []
-            }
-        """.trimIndent()
+        // Sprint 10.5: when the LLM is unavailable, fall back to the grade-appropriate
+        // offline plan (real day cards) so users can still start learning.
+        // Previously the fallback had "days": [] which rendered an empty, unstartable plan.
+        val jsonStr = llmResult.getOrNull() ?: generateDefaultPlanJson(gradeBand, coefficient)
 
         val themeName = try {
             JSONObject(jsonStr).optString("theme", "Daily Life & School")
@@ -96,7 +100,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             startDate = now,
             endDate = now + 7 * 24 * 3600 * 1000L,
             theme = themeName,
-            difficultyCoefficient = gradeBand.difficultyCoefficient,
+            difficultyCoefficient = coefficient,
             reviewRatio = 0.2f,
             speechTopics = "School Life, Family, Hobbies",
             weeklyTarget = "Master 20 key words + 7 daily dialogue patterns",
@@ -113,6 +117,34 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
 
     override suspend fun getLatestCachedPlan(): Plan? {
         return planDao.getLatestPlan("WEEKLY")?.toDomain()
+    }
+
+    override suspend fun getDayTaskSummary(dayIndex: Int): DayTaskSummary? {
+        val plan = planDao.getLatestPlan("WEEKLY") ?: return null
+        val dayNumber = dayIndex.coerceIn(1, 7)
+        return try {
+            val json = JSONObject(plan.snapshotData)
+            val days = json.optJSONArray("days") ?: return null
+            for (i in 0 until days.length()) {
+                val day = days.getJSONObject(i)
+                if (day.optInt("day", i + 1) == dayNumber) {
+                    val words = mutableListOf<String>()
+                    val wordsArr = day.optJSONArray("target_words")
+                    if (wordsArr != null) {
+                        for (j in 0 until wordsArr.length()) words.add(wordsArr.getString(j))
+                    }
+                    return DayTaskSummary(
+                        day = dayNumber,
+                        theme = plan.theme,
+                        durationMinutes = day.optInt("duration_minutes", 15),
+                        targetWords = words
+                    )
+                }
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
     }
 
     override suspend fun getCachedLearningSession(
@@ -164,8 +196,10 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
      * Generates grade-appropriate default plan JSON so that SessionBuilder can
      * produce adaptive content even without a cached LLM-generated plan.
      * This makes Sprint 3 features (grade-adaptive content) visible immediately.
+     *
+     * @param difficultyCoefficient overrides the band default when diagnostic tuning applies.
      */
-    private fun generateDefaultPlanJson(gradeBand: GradeBand): String {
+    private fun generateDefaultPlanJson(gradeBand: GradeBand, difficultyCoefficient: Float = gradeBand.difficultyCoefficient): String {
         val theme = when (gradeBand) {
             GradeBand.PRIMARY -> "Daily Life"
             GradeBand.JUNIOR -> "School & Community"
@@ -177,7 +211,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             GradeBand.PRIMARY -> """
             {
                 "theme": "$theme",
-                "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+                "difficulty_coefficient": $difficultyCoefficient,
                 "days": [{
                     "day": 1,
                     "focus": "Vocabulary & Dialogue",
@@ -190,6 +224,12 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
                     "target_words": ["pencil", "desk", "chair", "bag", "ruler"],
                     "reference_sentence": "I have a pencil on my desk. My bag is on the chair.",
                     "duration_minutes": $duration
+                },{
+                    "day": 3,
+                    "focus": "Daily Routines",
+                    "target_words": ["morning", "breakfast", "class", "homework", "bed"],
+                    "reference_sentence": "In the morning I eat breakfast before my class.",
+                    "duration_minutes": $duration
                 }]
             }
             """.trimIndent()
@@ -197,7 +237,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             GradeBand.JUNIOR -> """
             {
                 "theme": "$theme",
-                "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+                "difficulty_coefficient": $difficultyCoefficient,
                 "days": [{
                     "day": 1,
                     "focus": "Grammar & Sentence Structure",
@@ -210,6 +250,12 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
                     "target_words": ["volunteer", "community", "project", "research", "presentation"],
                     "reference_sentence": "Our class volunteer project requires research and a final presentation.",
                     "duration_minutes": $duration
+                },{
+                    "day": 3,
+                    "focus": "Comparatives & Opinions",
+                    "target_words": ["better", "difficult", "opinion", "agree", "argue"],
+                    "reference_sentence": "I think reading is more interesting than watching TV.",
+                    "duration_minutes": $duration
                 }]
             }
             """.trimIndent()
@@ -217,7 +263,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             GradeBand.SENIOR -> """
             {
                 "theme": "$theme",
-                "difficulty_coefficient": ${gradeBand.difficultyCoefficient},
+                "difficulty_coefficient": $difficultyCoefficient,
                 "days": [{
                     "day": 1,
                     "focus": "Academic Vocabulary & Critical Thinking",
@@ -229,6 +275,12 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
                     "focus": "Debate & Persuasive Writing",
                     "target_words": ["argument", "persuade", "counterpoint", "rhetoric", "stance"],
                     "reference_sentence": "The speaker used strong rhetoric to persuade the audience of their stance.",
+                    "duration_minutes": $duration
+                },{
+                    "day": 3,
+                    "focus": "Academic Writing & Citations",
+                    "target_words": ["citation", "reference", "plagiarism", "summarize", "thesis"],
+                    "reference_sentence": "Every academic essay must cite its references to avoid plagiarism.",
                     "duration_minutes": $duration
                 }]
             }

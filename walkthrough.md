@@ -302,6 +302,32 @@ english-learning-agent/
 
 ---
 
+## 🧵 Sprint 10.5 (Completed): 发布加固 (Release Hardening) — v3.0.1
+
+> 触发：v3.0.0 实测 5 个反馈问题。技术负责人逐一代码定位根因，编排为单一阻断性修复 Sprint (先于 Sprint 11)。只修体验与可用性，不新增 AI 能力。
+
+### 新增文件 (New Files)
+| 文件 | 作用 |
+|---|---|
+| `domain/usecase/CapabilityMatrix.kt` | 离线/在线能力矩阵 (离线安全 vs 仅在线) |
+| `domain/usecase/LingoError.kt` | 统一错误分类 `classifyError` + 用户文案 `userFacingError` |
+| `domain/test/.../CapabilityMatrixTest.kt` | 6 个能力矩阵测试 |
+| `domain/test/.../LingoErrorTest.kt` | 6 个错误分类测试 |
+
+### 修复内容 (Completed)
+1. **计划→开始链路**：`PlanDayCard` 今日/已完成均显示 Start/Review；dayIndex 透传至 `LearningViewModel.setGrade(grade, dayIndex)`；Dashboard 读取 `getDayTaskSummary()`；离线兜底改用真实 day 卡片 (原 `days:[]` 无法开始)。
+2. **评测音频**：`speakWithTts()` 云端 TTS → 系统 TTS 降级，覆盖沉浸/跟读/游戏/Quiz。
+3. **难度匹配**：持久化 `diagnostic_level`，计划生成注入级别调整 (A=-0.2/B=0/C=+0.2)。
+4. **离线/在线**：`CapabilityMatrix` + Dashboard/Learning 离线横幅。
+5. **异常统一**：计划/诊断错误经 `LingoError` 分类映射为可读文案。
+
+### 交付审计结果 (Completed)
+- **单元测试**：**已通过** (CapabilityMatrix 6 + LingoError 6 + 既有全绿)
+- **构建**：`./gradlew assembleDebug` **已通过**
+- **模拟器 E2E**：**已通过** (fresh onboarding → Dashboard 离线横幅 → Plan 生成离线真实 day 卡片 → Review/Start 进入学习 → 学习内离线横幅，无崩溃)
+
+---
+
 ## 🧵 Sprint 10 (Completed): 可见成长 (Visible Growth) — v3.0
 
 > 技术负责人基于产品负责人 Sprint 10-13 提案拆分为四个独立可交付 Sprint (完整清单见 `task.md`)。Sprint 10 目标：**游戏化已存在但不可见** —— 只做"展示已存在之物"，不新增 AI 能力。

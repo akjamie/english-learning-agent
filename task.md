@@ -205,6 +205,38 @@
 
 ---
 
+## Sprint 10.5: 发布加固 - 阻断性缺陷修复与离线可用性 (Release Hardening) - [x] v3.0.1
+> 触发：v3.0.0 实测反馈 5 个问题。技术负责人逐一代码定位根因后，将其编排为单个阻断性修复 Sprint（先于 Sprint 11），全部走 5 步质量工作流。不新增 AI 能力，只修复体验与可用性。
+
+### Phase A: 计划→开始学习链路 (Blocker, Issue 2)
+- [x] **[Impl]** 修复 `PlanDayCard` 无"Start"按钮：今日/已完成卡片均显示 Start/Review 按钮（原条件 `!isCompleted && !isToday` 导致今日无法开始）
+- [x] **[Impl]** `onStartLearning(dayIndex)` 透传：MainActivity 接收 dayIndex 并传入 `LearningContainer` → `LearningViewModel.setGrade(grade, dayIndex)`，按计划日加载会话
+- [x] **[Impl]** Dashboard 今日任务卡从已加载周计划读取 (主题/时长/目标)，替换硬编码 "15 Mins / 5 Words + 2 Speech"；新增 `WeeklyPlanRepository.getDayTaskSummary()`
+- [x] **[Impl]** 修复计划生成离线兜底：LLM 失败时回退 `generateDefaultPlanJson(gradeBand)`（真实 day 卡片），原兜底 `days:[]` 导致"生成了计划却无法开始"
+
+### Phase B: 评测音频与模型配置门槛 (Issue 1)
+- [x] **[Impl]** 学习流程接入配置化 TTS (`TtsRepository.getSpeech` + MediaPlayer)，`SystemTtsHelper` 作为离线降级；`speakWithTts()` 统一入口覆盖沉浸字幕/跟读/游戏/Quiz
+- [x] **[Impl]** 模型配置缺失检测：`isOfflineMode` 状态 + 学习流程内离线横幅 "⚠️ Offline mode"
+
+### Phase C: 难度匹配年级 (Issue 3)
+- [x] **[Impl]** Onboarding 持久化 `diagnostic_level` (A/B/C) 到 `lingo_app_prefs`（MainActivity 原丢弃级别）
+- [x] **[Impl]** 诊断级别驱动难度精调：计划生成按级别注入 `difficultyAdjustment`（A=-0.2 / B=0 / C=+0.2），与 GradeBand 系数合成
+- [x] **[Impl]** `WeeklyPlanViewModel.generateNewPlan(grade, diagnosticLevel)` 读取真实级别，替换硬编码难度
+
+### Phase D: 离线/在线能力矩阵 (Issue 4)
+- [x] **[Impl]** `CapabilityMatrix` (domain 纯函数)：离线可用 (缓存计划/会话、系统 TTS、离线 ASR、模板 LLM) vs 仅在线 (LLM 生成、云端 TTS/ASR)
+- [x] **[Impl]** Dashboard + Learning 离线横幅："Offline mode — AI features need a model configured in Settings"
+
+### Phase E: 统一异常处理 (Issue 5)
+- [x] **[Impl]** `LingoError.kt` 错误分类 (NETWORK/CONFIG/AUTH/TIMEOUT/PARSE/UNKNOWN) + `userFacingError()` 用户文案
+- [x] **[Impl]** `WeeklyPlanViewModel`/`DiagnosisViewModel` 错误统一经分类映射为可读文案
+
+### Phase F: 质量
+- [x] **[Unit Test & Build]** `CapabilityMatrixTest` (6) + `LingoErrorTest` (6) + 既有测试全绿；`./gradlew test assembleDebug`
+- [x] **[MVP Delivery]** 模拟器 E2E 复测：Plan 生成 (离线兜底真实 day 卡片) → Review/Start 进入学习 → 离线横幅 (Dashboard + Learning)，无崩溃
+
+---
+
 ## Sprint 11: 伴学升级 - Lingo 陪伴对话 (Agent Companion) - [ ] v3.1
 > 原则：把单一"冰激凌店"Roleplay 升级为可选的场景化 AI 对话伴学，并补全被声明但未实现的 `FAST_ANSWER` 观察触发。中等风险，独立可交付。
 

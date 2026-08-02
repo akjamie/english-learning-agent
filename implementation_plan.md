@@ -267,6 +267,26 @@ graph TD
 
 ---
 
+### Sprint 10.5: 发布加固 - 阻断性缺陷修复与离线可用性 (Release Hardening) - [x] v3.0.1
+
+> 触发：v3.0.0 实测反馈 5 个问题。技术负责人代码定位根因后编排为单一阻断性修复 Sprint，先于 Sprint 11。**只修体验与可用性，不新增 AI 能力。**
+
+**根因摘要 (代码定位)**
+1. **计划无法开始 (Issue 2)**：`WeeklyPlanScreen.PlanDayCard` 的 Start 条件为 `!isCompleted && !isToday` —— 今日卡片无 Start；`onStartLearning(dayIndex)` 在 MainActivity 被忽略；Dashboard 今日任务卡硬编码 "15 Mins / 5 Words + 2 Speech"，未读取周计划；LLM 失败时离线兜底 `days:[]` 导致无法开始。
+2. **评估无音频 (Issue 1)**：学习流程仅用 `SystemTtsHelper` (Android 系统 TTS)，配置化 Ark TTS (`TtsRepository`) 只接入 Roleplay；配置缺失时 ASR 静默降级离线 85 分，无门槛提示。
+3. **难度不匹配年级 (Issue 3)**：`GradeBand.fromGrade` 已按年级分带，但 onboarding 诊断级别 (A/B/C) 被 MainActivity 丢弃，未参与带内难度精调；计划生成硬编码 "Grade 4"/accuracy=75。
+4. **离线/在线能力无区分 (Issue 4)**：缓存计划/会话可离线工作，但 LLM 生成/云端 TTS-ASR 静默失败或静默降级，无能力状态可见性。
+5. **异常处理不一致 (Issue 5)**：多处 `catch (_: Exception)` 静默吞异常，错误展示形式不统一。
+
+**Phase A-E 任务清单见 `task.md` (Start 链路 / 音频与门槛 / 难度匹配 / 能力矩阵 / 统一异常)。**
+
+**关键架构决策 (Completed)**
+1. **`CapabilityMatrix`**：domain 层纯函数，输入配置状态 → 输出各能力可用性 (OFFLINE_OK / ONLINE_ONLY / NOT_CONFIGURED)，供 UI 横幅与入口禁用复用。
+2. **统一错误通道**：所有 ViewModel 经 `Result` 解析为用户可读错误 (NETWORK/CONFIG/AUTH/TIMEOUT/PARSE)，页面级用 ErrorBanner、瞬时操作用 Snackbar。
+3. **诊断级别闭环**：`diagnostic_level` (A/B/C) 持久化并注入计划生成，实现"年级定带、诊断定级"的双层难度。
+
+---
+
 ### Sprint 11-13 (Planned — Tech Lead Scoping)
 
 > 完整任务清单见 `task.md`；此处记录技术拆分的**依赖与风险决策**。

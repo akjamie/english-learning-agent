@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.qualifiers.ApplicationContext
+import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.GamificationRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
@@ -35,7 +36,10 @@ data class DashboardUiState(
     val xpIntoLevel: Int = 0,
     val xpForNextLevel: Int = 50,
     val xpProgress: Float = 0f,
-    val makeupCardsLeft: Int = 2
+    val makeupCardsLeft: Int = 2,
+    // Sprint 10.5: offline-mode status for the Dashboard banner
+    val isOfflineMode: Boolean = false,
+    val hasPlan: Boolean = false
 )
 
 @HiltViewModel
@@ -47,6 +51,7 @@ class DashboardViewModel @Inject constructor(
     private val dailyEncouragerUseCase: DailyEncouragerUseCase,
     private val diagnosticCalibrationUseCase: DiagnosticCalibrationUseCase,
     private val gamificationRepository: GamificationRepository,
+    private val configRepository: ConfigRepository,
     private val xpRewardSystem: XpRewardSystem
 ) : ViewModel() {
 
@@ -64,6 +69,20 @@ class DashboardViewModel @Inject constructor(
 
                 val theme = plan?.theme ?: "School Life"
 
+                // Sprint 10.5: derive today's task target/duration from the cached plan
+                // (falling back to sensible defaults when no plan exists yet).
+                val todayDay = java.util.Calendar.getInstance().let { cal ->
+                    var d = cal.get(java.util.Calendar.DAY_OF_WEEK) - 1
+                    if (d == 0) d = 7
+                    d
+                }
+                val dayTask = try {
+                    weeklyPlanRepository.getDayTaskSummary(todayDay)
+                } catch (_: Exception) { null }
+                val taskDuration = dayTask?.durationMinutes?.let { "$it Mins" } ?: "15 Mins"
+                val taskTarget = dayTask?.targetWords?.takeIf { it.isNotEmpty() }
+                    ?.let { "${it.size} Words + 2 Speech" } ?: "5 Words + 2 Speech"
+
                 // Sprint 10: load persisted gamification state for the visible growth bar.
                 val gamification = gamificationRepository.getState()
                 val levelInfo = xpRewardSystem.levelInfo(gamification.totalXp)
@@ -80,8 +99,8 @@ class DashboardViewModel @Inject constructor(
                     todayProgress = progress,
                     errorCount = errors,
                     themeName = theme,
-                    taskDuration = "15 Mins",
-                    taskTarget = "5 Words + 2 Speech",
+                    taskDuration = taskDuration,
+                    taskTarget = taskTarget,
                     greetingMessage = null,
                     isLoading = false,
                     totalXp = gamification.totalXp,
@@ -89,7 +108,9 @@ class DashboardViewModel @Inject constructor(
                     xpIntoLevel = levelInfo.xpIntoLevel,
                     xpForNextLevel = levelInfo.xpForNextLevel,
                     xpProgress = levelInfo.progressToNextLevel,
-                    makeupCardsLeft = makeupState.cardsLeft
+                    makeupCardsLeft = makeupState.cardsLeft,
+                    isOfflineMode = configRepository.getAuthToken().length < 10,
+                    hasPlan = plan != null
                 )
 
                 // Fetch daily greeting in background

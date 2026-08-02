@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.model.Plan
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.ExplainDecisionUseCase
+import org.akj.lingo.learn.domain.usecase.classifyError
+import org.akj.lingo.learn.domain.usecase.userFacingError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,14 +70,22 @@ class WeeklyPlanViewModel @Inject constructor(
         }
     }
 
-    fun generateNewPlan(grade: String = "Grade 4") {
+    fun generateNewPlan(grade: String = "Grade 4", diagnosticLevel: String = "B") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isGenerating = true, generateError = null)
+            // Sprint 10.5: diagnostic level tunes difficulty within the grade band.
+            // A (beginner) lowers, C (advanced) raises the plan's difficulty coefficient.
+            val difficultyAdjustment = when (diagnosticLevel.uppercase()) {
+                "A" -> -0.2f
+                "C" -> 0.2f
+                else -> 0f
+            }
             val result = weeklyPlanRepository.generateAndCacheWeeklyPlan(
                 grade = grade,
                 accuracy = 75,
                 weakCategories = listOf("Vocabulary", "Pronunciation"),
-                completedMilestones = listOf("First Week Complete")
+                completedMilestones = listOf("First Week Complete"),
+                difficultyAdjustment = difficultyAdjustment
             )
             result.onSuccess { plan ->
                 val rationales = explainDecisionUseCase.allDayRationales(plan).toMap()
@@ -88,7 +98,7 @@ class WeeklyPlanViewModel @Inject constructor(
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     isGenerating = false,
-                    generateError = e.message ?: "Failed to generate plan"
+                    generateError = userFacingError(classifyError(e))
                 )
             }
         }

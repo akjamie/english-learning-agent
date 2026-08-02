@@ -12,7 +12,8 @@ interface WeeklyPlanRepository {
         grade: String,
         accuracy: Int,
         weakCategories: List<String>,
-        completedMilestones: List<String>
+        completedMilestones: List<String>,
+        difficultyAdjustment: Float = 0f
     ): Result<Plan>
 
     suspend fun getLatestCachedPlan(): Plan?
@@ -23,4 +24,20 @@ interface WeeklyPlanRepository {
         reviewQuestions: List<QuizQuestion> = emptyList(),
         sentenceLengthAdjustment: Int = 0
     ): LearningSession
+
+    /**
+     * Returns the task summary for a given plan day (today by default), so the
+     * Dashboard can show real plan-derived targets instead of hardcoded values.
+     */
+    suspend fun getDayTaskSummary(dayIndex: Int): DayTaskSummary?
 }
+
+/**
+ * Lightweight summary of a single plan day for the Dashboard task card.
+ */
+data class DayTaskSummary(
+    val day: Int,
+    val theme: String,
+    val durationMinutes: Int,
+    val targetWords: List<String>
+)

@@ -15,6 +15,8 @@ import org.akj.lingo.learn.domain.model.GradeBand
 import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.usecase.classifyError
+import org.akj.lingo.learn.domain.usecase.userFacingError
 import org.akj.lingo.learn.ui.learning.VoiceRecorder
 import org.json.JSONArray
 import java.io.File
@@ -133,7 +135,7 @@ class DiagnosisViewModel @Inject constructor(
                         evaluateWithRetry(file, referenceText, retriesLeft - 1)
                     } else if (isNetworkError(it)) {
                         _recordingState.value = RecordingState.NETWORK_ERROR
-                        _networkError.tryEmit("Network issue. Check connection and try again.")
+                        _networkError.tryEmit(userFacingError(classifyError(it)))
                     } else {
                         val fallback = asrRepository.getOfflineFallbackResult(referenceText)
                         _recordingState.value = RecordingState.COMPLETED(fallback)
@@ -145,7 +147,7 @@ class DiagnosisViewModel @Inject constructor(
                     evaluateWithRetry(file, referenceText, retriesLeft - 1)
                 } else if (isNetworkError(e)) {
                     _recordingState.value = RecordingState.NETWORK_ERROR
-                    _networkError.tryEmit("Network issue. Check connection and try again.")
+                    _networkError.tryEmit(userFacingError(classifyError(e)))
                 } else {
                     val fallback = asrRepository.getOfflineFallbackResult(referenceText)
                     _recordingState.value = RecordingState.COMPLETED(fallback)

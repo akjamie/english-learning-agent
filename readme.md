@@ -155,6 +155,7 @@ Sprint 10-13 turn Lingo from a "task-checker" into a **visible-growth companion*
 | Sprint | Theme | Scope | Risk | Status |
 | --- | --- | --- | --- | --- |
 | **10** | Visible Growth (v3.0) | Surface existing gamification: persist XP/level/daily-goals/makeup (`GamificationState` entity + repo), XP bar + level badge + 3-goal badges + makeup balance on Dashboard/TaskComplete | Low | ✅ Done |
+| **10.5** | Release Hardening (v3.0.1) | Blocker fixes from v3.0.0 testing: plan→Start flow, evaluation audio + config gating, grade↔difficulty matching, offline/online capability matrix, unified exception handling | Medium | ✅ Done |
 | **11** | Agent Companion (v3.1) | Roleplay 2.0: scenario bank + picker + text-chat fallback + conversation history; enable `FAST_ANSWER` observation trigger | Medium | Planned |
 | **12** | Smooth Interaction & Parent Trust (v3.2) | Wire calibration→re-run diagnosis, grade-change/onboarding re-run, plan-driven Dashboard targets, notification prefs UI, WeeklyReport image share + weekly "Lingo's letter" digest | Low | Planned |
 | **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | Planned |
@@ -179,6 +180,25 @@ Sprint 10 makes the existing gamification engines **visible and persistent**. Pr
 ### Verification
 - **Unit tests**: 4 new `GamificationRepositoryImplTest` cases + all module tests green.
 - **Emulator E2E**: full flow (PreTeach → Immersion → Practice → Game → Quiz → Complete) walked; Dashboard shows `Lv 1 / 0-50 XP / 🎟️ 2 Cards`; TaskComplete shows `Today's Goals 🎯Done ⭐Locked 📖Done` + `40→60 XP` persisted; Room DB v4 `gamification_state` row verified via sqlite; no crashes.
+
+---
+
+## 🚀 Sprint 10.5 (v3.0.1): Release Hardening — 阻断性缺陷修复与离线可用性
+
+Triggered by v3.0.0 testing feedback (5 issues). Tech lead root-caused each in code and delivered a single blocker-fix sprint before Sprint 11. **No new AI capability — only UX & availability fixes.**
+
+### What was fixed (root cause → fix)
+| Issue | Root cause | Fix |
+| --- | --- | --- |
+| **Can't start a plan / plan not on home** | `PlanDayCard` Start hidden for today/completed; `dayIndex` dropped in MainActivity; Dashboard targets hardcoded; offline plan fallback had `days: []` | Start/Review button on all day cards; dayIndex passthrough to `LearningViewModel.setGrade(grade, dayIndex)`; `getDayTaskSummary()` drives Dashboard; offline fallback now uses grade-appropriate real day cards |
+| **No sound during evaluation** | Learning flow only used system TTS; cloud TTS only wired into Roleplay | `speakWithTts()` tries cloud TTS → system TTS fallback across immersion/read-along/game/quiz |
+| **Difficulty not matched to grade** | Onboarding diagnostic level (A/B/C) discarded | Persist `diagnostic_level`; plan generation applies level adjustment (A=-0.2/B=0/C=+0.2) on top of `GradeBand` coefficient |
+| **Offline vs online unclear** | Cloud features silently failed/degraded | `CapabilityMatrix` (offline-safe vs online-only) + offline-mode banner on Dashboard & learning flow |
+| **Inconsistent exception handling** | `catch (_: Exception)` swallowed everywhere | `LingoError` taxonomy (`classifyError`/`userFacingError`) wired into plan & diagnosis error surfaces |
+
+### Verification
+- **Unit tests**: 12 new (`CapabilityMatrixTest` 6 + `LingoErrorTest` 6) + all module tests green.
+- **Emulator E2E**: fresh onboarding → Dashboard offline banner ✓ → Plan generate (offline fallback renders real Day 1-3 cards) ✓ → Review/Start enters learning ✓ → offline banner inside learning flow ✓; no crashes.
 
 
 

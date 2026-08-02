@@ -38,14 +38,15 @@ fun LearningContainer(
     grade: String,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    dayIndex: Int = 1,
     viewModel: LearningViewModel = hiltViewModel()
 ) {
     val stage by viewModel.stage.collectAsState()
     val theme = remember(grade) { getThemeForGrade(grade) }
     val restoredFromCheckpoint by viewModel.restoredFromCheckpoint.collectAsState()
 
-    // Pass grade to ViewModel for grade-adaptive content generation
-    LaunchedEffect(grade) { viewModel.setGrade(grade) }
+    // Pass grade + selected plan day to ViewModel for grade-adaptive content generation
+    LaunchedEffect(grade, dayIndex) { viewModel.setGrade(grade, dayIndex) }
 
     // Auto-pause when app goes to background
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -205,6 +206,23 @@ fun LearningContainer(
             theme = theme,
             onClose = onExit
         )
+
+        // Sprint 10.5: offline-mode banner (cloud AI channels not configured)
+        val isOfflineMode by viewModel.isOfflineMode.collectAsState()
+        if (isOfflineMode) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFFFFF3E0),
+                shape = RoundedCornerShape(0.dp)
+            ) {
+                Text(
+                    text = "⚠️ Offline mode: using device voice & local scoring. Configure an AI model in Settings for full features.",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    fontSize = 12.sp,
+                    color = Color(0xFFE67E22)
+                )
+            }
+        }
 
         // Lingo Observation bubble (Sprint 6) — non-blocking, auto-dismisses
         val observation by viewModel.observation.collectAsState()

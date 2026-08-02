@@ -227,6 +227,26 @@ fun DashboardScreen(
             }
         }
 
+        // Sprint 10.5: offline-mode banner (cloud AI not configured)
+        if (uiState.isOfflineMode) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Text(
+                    text = "⚠️ Offline mode — AI features need a model configured in Settings. Cached plan & practice still work.",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    fontSize = 12.sp,
+                    color = Color(0xFFE67E22),
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
         if (!uiState.greetingMessage.isNullOrEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             Row(

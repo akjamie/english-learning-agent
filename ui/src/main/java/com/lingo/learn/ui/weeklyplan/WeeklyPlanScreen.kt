@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +40,12 @@ fun WeeklyPlanScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val today = viewModel.getDayOfWeek()
+
+    // Sprint 10.5: read the child's diagnostic level so plan generation can match difficulty
+    // to the selected grade AND the measured level (A/B/C).
+    val diagnosticLevel = LocalContext.current
+        .getSharedPreferences("lingo_app_prefs", android.content.Context.MODE_PRIVATE)
+        .getString("diagnostic_level", "B") ?: "B"
 
     Column(
         modifier = modifier
@@ -142,7 +149,9 @@ fun WeeklyPlanScreen(
             item {
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = { viewModel.generateNewPlan(grade) },
+                    onClick = {
+                        viewModel.generateNewPlan(grade, diagnosticLevel)
+                    },
                     enabled = !uiState.isGenerating,
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = RoundedCornerShape(16.dp),
@@ -318,14 +327,18 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
                     Spacer(Modifier.width(4.dp))
                     Text("${dayItem.durationMinutes} min", fontSize = 13.sp, color = Color(0xFF7F8C8D))
                 }
-                if (!dayItem.isCompleted && !isToday) {
-                    OutlinedButton(
-                        onClick = { onStart(dayItem.day) },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Start", fontSize = 12.sp, color = Color(0xFF5C6FF2))
-                    }
+                // Sprint 10.5: Start is available for today AND any future/past day.
+                // Previously gated to !isCompleted && !isToday, which hid today's card.
+                OutlinedButton(
+                    onClick = { onStart(dayItem.day) },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        if (dayItem.isCompleted) "Review" else if (isToday) "Start Today" else "Start",
+                        fontSize = 12.sp,
+                        color = Color(0xFF5C6FF2)
+                    )
                 }
             }
 

@@ -7,7 +7,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.model.*
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
+import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.GamificationRepository
+import org.akj.lingo.learn.domain.repository.TtsRepository
 import org.akj.lingo.learn.domain.usecase.AdaptiveDifficultyEngine
 import org.akj.lingo.learn.domain.usecase.DailyGoalTracker
 import org.akj.lingo.learn.domain.usecase.MakeupCardManager
@@ -90,6 +92,8 @@ class LearningViewModel @Inject constructor(
     private val asrRepository: AsrRepository,
     private val voiceRecorder: VoiceRecorder,
     private val systemTtsHelper: SystemTtsHelper,
+    private val ttsRepository: TtsRepository,
+    private val configRepository: ConfigRepository,
     private val weeklyPlanRepository: org.akj.lingo.learn.domain.repository.WeeklyPlanRepository,
     private val learningRecordRepository: org.akj.lingo.learn.domain.repository.LearningRecordRepository,
     private val errorBookRepository: org.akj.lingo.learn.domain.repository.ErrorBookRepository,
@@ -126,6 +130,10 @@ class LearningViewModel @Inject constructor(
 
     private val _summary = MutableStateFlow<SessionSummary?>(null)
     val summary: StateFlow<SessionSummary?> = _summary.asStateFlow()
+
+    // Sprint 10.5: true when cloud AI channels are unavailable (offline mode banner)
+    private val _isOfflineMode = MutableStateFlow(false)
+    val isOfflineMode: StateFlow<Boolean> = _isOfflineMode.asStateFlow()
 
     private val _restoredFromCheckpoint = MutableStateFlow(false)
     val restoredFromCheckpoint: StateFlow<Boolean> = _restoredFromCheckpoint.asStateFlow()
@@ -168,9 +176,10 @@ class LearningViewModel @Inject constructor(
     private var sessionStartTimeMs: Long = System.currentTimeMillis()
     private var taskDayIndex: Int = 1
 
-    fun setGrade(grade: String) {
+    fun setGrade(grade: String, dayIndex: Int = 1) {
         currentGrade = grade
         sessionStartTimeMs = System.currentTimeMillis()
+        taskDayIndex = dayIndex.coerceIn(1, 7)
         viewModelScope.launch {
             // Sprint 7: load adaptive difficulty from last quiz accuracy
             val lastAccuracy = learningRecordRepository.getMonthlyAccuracy() / 100f
@@ -180,7 +189,7 @@ class LearningViewModel @Inject constructor(
             } catch (e: Exception) { emptyList() }
             try {
                 val loadedSession = weeklyPlanRepository.getCachedLearningSession(
-                    dayIndex = 1,
+                    dayIndex = dayIndex.coerceIn(1, 7),
                     grade = currentGrade,
                     reviewQuestions = reviewQuestions,
                     sentenceLengthAdjustment = adjustment
@@ -310,6 +319,7 @@ class LearningViewModel @Inject constructor(
     init {
         loadGamificationState()
         refreshMakeupState()
+        refreshOfflineMode()
         setGrade(currentGrade)
         // Check for PAUSED checkpoint from previous session
         val savedState = TaskStatePrefs.getTaskState(context)
@@ -337,7 +347,7 @@ class LearningViewModel @Inject constructor(
                         val line = _session.value.subtitleLines.getOrNull(index)
                         if (line != null) {
                             val speed = audioPlayer.state.value.speed
-                            systemTtsHelper.speak(line.text, speed * 0.85f)
+                            speakWithTts(line.text, speed * 0.85f)
                         }
                     }
                 }
@@ -370,7 +380,52 @@ class LearningViewModel @Inject constructor(
 
     /** Speaks a word using system TTS (for new-word popup card pronunciation). */
     fun speakWord(word: String) {
-        systemTtsHelper.speak(word, 0.85f)
+        speakWithTts(word)
+    }
+
+    /**
+     * Sprint 10.5: speaks text using cloud TTS when configured, falling back to
+     * Android system TTS otherwise. This fixes "no sound" when no TTS model is
+     * configured or the device has no TTS engine data.
+     */
+    fun speakWithTts(text: String, rate: Float = 0.85f) {
+        val token = configRepository.getAuthToken()
+        if (token.length < 10) {
+            // Not configured — use offline system TTS.
+            systemTtsHelper.speak(text, rate)
+            return
+        }
+        viewModelScope.launch {
+            val result = ttsRepository.getSpeech(text)
+            if (result.isSuccess) {
+                val file = result.getOrNull()
+                if (file != null && file.exists()) {
+                    playAudioFile(file)
+                    return@launch
+                }
+            }
+            // Cloud TTS failed / unavailable — degrade gracefully to system TTS.
+            systemTtsHelper.speak(text, rate)
+        }
+    }
+
+    /** Plays a TTS audio file via MediaPlayer (fire-and-forget). */
+    private fun playAudioFile(file: java.io.File) {
+        try {
+            val player = android.media.MediaPlayer()
+            player.setDataSource(file.absolutePath)
+            player.setOnPreparedListener { it.start() }
+            player.setOnCompletionListener { it.release() }
+            player.prepareAsync()
+        } catch (_: Exception) {
+            // Ignore playback errors; caller already degraded to system TTS on failure.
+        }
+    }
+
+    /** Sprint 10.5: refreshes the offline-mode flag from current config. */
+    private fun refreshOfflineMode() {
+        val token = configRepository.getAuthToken()
+        _isOfflineMode.value = token.length < 10
     }
 
     /** Advances from Stage 0 (pre-teach) to Stage 1 (immersion). */
@@ -478,12 +533,12 @@ class LearningViewModel @Inject constructor(
         val sentence = _session.value.readAlongSentences[_readAlongState.value.currentIndex]
         sentence.audioPath?.let {
             _readAlongState.value = _readAlongState.value.copy(isPlayingDemo = true)
-            // Ideally trigger AudioPlayerController or MediaPlayer to play the TTS file
-            systemTtsHelper.speak(sentence.text, 0.9f)
+            // Sprint 10.5: use cloud TTS when configured, system TTS otherwise
+            speakWithTts(sentence.text, 0.9f)
             // Reset state after a delay or on completion callback (mocked here)
             _readAlongState.value = _readAlongState.value.copy(isPlayingDemo = false)
         } ?: run {
-            systemTtsHelper.speak(sentence.text, 0.9f)
+            speakWithTts(sentence.text, 0.9f)
         }
     }
 
@@ -587,7 +642,7 @@ class LearningViewModel @Inject constructor(
 
     /** Plays the audio for a listen-choose-image game question via system TTS. */
     fun playGameAudio(text: String) {
-        systemTtsHelper.speak(text, 0.85f)
+        speakWithTts(text, 0.85f)
     }
 
     //endregion
@@ -777,7 +832,7 @@ class LearningViewModel @Inject constructor(
 
     /** Plays audio for a listening quiz question via system TTS. */
     fun playQuizAudio(text: String) {
-        systemTtsHelper.speak(text, 0.85f)
+        speakWithTts(text, 0.85f)
     }
 
     //endregion

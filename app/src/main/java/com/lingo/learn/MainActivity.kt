@@ -61,6 +61,8 @@ class MainActivity : ComponentActivity() {
                     var isOnboardingCompleted by remember { mutableStateOf(appPrefs.getBoolean("onboarding_completed", false)) }
                     var currentGrade by remember { mutableStateOf(appPrefs.getString("grade", "Grade 4") ?: "Grade 4") }
                     var isLearning by remember { mutableStateOf(false) }
+                    // Sprint 10.5: which plan day to load when starting learning (1-7, default = today)
+                    var learningDayIndex by remember { mutableStateOf(1) }
 
                     // Navigation States
                     var currentTab by remember { mutableStateOf(MainTab.HOME) }
@@ -82,6 +84,9 @@ class MainActivity : ComponentActivity() {
                                     .putBoolean("onboarding_completed", true)
                                     .putString("grade", grade)
                                     .putString("textbook", textbook)
+                                    // Sprint 10.5: persist diagnostic level so it can drive
+                                    // within-band difficulty tuning (A=beginner, C=advanced)
+                                    .putString("diagnostic_level", level)
                                     .apply()
                             },
                             onOpenSettings = { currentTab = MainTab.SETTINGS }
@@ -89,6 +94,7 @@ class MainActivity : ComponentActivity() {
                     } else if (isLearning) {
                         LearningContainer(
                             grade = currentGrade,
+                            dayIndex = learningDayIndex,
                             onExit = { isLearning = false }
                         )
                     } else if (isErrorBookDetailOpen && selectedErrorEntry != null) {
@@ -139,7 +145,10 @@ class MainActivity : ComponentActivity() {
                                 when (currentTab) {
                                     MainTab.HOME -> DashboardScreen(
                                         grade = currentGrade,
-                                        onStartLearning = { isLearning = true },
+                                        onStartLearning = {
+                                            learningDayIndex = 1
+                                            isLearning = true
+                                        },
                                         onPlanClick = { currentTab = MainTab.PLAN },
                                         onErrorBookClick = { currentTab = MainTab.ERROR_BOOK },
                                         onSettingsClick = { currentTab = MainTab.SETTINGS },
@@ -149,7 +158,10 @@ class MainActivity : ComponentActivity() {
                                         grade = currentGrade,
                                         onBack = { currentTab = MainTab.HOME },
                                         onViewReport = { isWeeklyReportOpen = true },
-                                        onStartLearning = { isLearning = true }
+                                        onStartLearning = { dayIndex ->
+                                            learningDayIndex = dayIndex.coerceIn(1, 7)
+                                            isLearning = true
+                                        }
                                     )
                                     MainTab.ERROR_BOOK -> ErrorBookScreen(
                                         onBack = { currentTab = MainTab.HOME },
