@@ -67,6 +67,29 @@ fun DashboardScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+
+    // Sprint 8: Diagnostic Calibration prompt dialog
+    uiState.calibrationPrompt?.let { reason ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissCalibrationPrompt() },
+            title = { Text("📊 Level Check-In", fontWeight = FontWeight.Bold) },
+            text = { Text(reason, lineHeight = 22.sp) },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.dismissCalibrationPrompt()
+                    onStartLearning() // Start a diagnostic flow — in a full impl this navigates to DiagnosisScreen
+                }) {
+                    Text("Update My Level")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissCalibrationPrompt() }) {
+                    Text("Maybe Later")
+                }
+            }
+        )
+    }
+
     val streakDays = uiState.streakDays
     val todayProgress = uiState.todayProgress
     val errorCount = uiState.errorCount
@@ -111,13 +134,7 @@ fun DashboardScreen(
                 )
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StreakCounter(streakDays = streakDays)
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onSettingsClick) {
-                    Text("⚙️", fontSize = 22.sp)
-                }
-            }
+            StreakCounter(streakDays = streakDays)
         }
 
         if (!uiState.greetingMessage.isNullOrEmpty()) {

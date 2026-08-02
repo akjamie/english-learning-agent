@@ -13,6 +13,7 @@ import org.akj.lingo.learn.domain.usecase.MakeupCardManager
 import org.akj.lingo.learn.domain.usecase.Observation
 import org.akj.lingo.learn.domain.usecase.ObservationTriggerEngine
 import org.akj.lingo.learn.domain.usecase.ProductionTaskScorer
+import org.akj.lingo.learn.domain.usecase.PhonemeHintEngine
 import org.akj.lingo.learn.domain.usecase.XpRewardSystem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -45,7 +46,9 @@ data class ReadAlongState(
     val result: PronunciationResult? = null,
     val completedCount: Int = 0,
     val cumulativeScore: Int = 0,
-    val evaluationsCount: Int = 0
+    val evaluationsCount: Int = 0,
+    /** Phoneme hints aggregated across read-along evaluations for the Parent Companion Card. */
+    val phonemeHints: List<PhonemeHintEngine.PhonemeHint> = emptyList()
 )
 
 data class GameState(
@@ -460,12 +463,16 @@ class LearningViewModel @Inject constructor(
             readAlongAttempts++
             if (pronunciationResult.overallScore < 60) incrementNegativeSignal()
             else resetNegativeSignal()
+            val aggregatedHints = (_readAlongState.value.phonemeHints + pronunciationResult.phonemeHints)
+                .distinctBy { it.phonemeLabel }
+                .take(2)
             _readAlongState.value = _readAlongState.value.copy(
                 isEvaluating = false,
                 result = pronunciationResult,
                 completedCount = _readAlongState.value.completedCount + 1,
                 cumulativeScore = _readAlongState.value.cumulativeScore + pronunciationResult.overallScore,
-                evaluationsCount = _readAlongState.value.evaluationsCount + 1
+                evaluationsCount = _readAlongState.value.evaluationsCount + 1,
+                phonemeHints = aggregatedHints
             )
             recordAttempt(referenceText, "SPEAKING", pronunciationResult.overallScore / 100f)
             evaluateObservation(referenceText, pronunciationResult.overallScore, "SPEAKING", readAlongAttempts)
@@ -724,11 +731,15 @@ class LearningViewModel @Inject constructor(
                 score = current.score + if (isCorrect) 1 else 0,
                 lastAnswerCorrect = isCorrect
             )
+            val aggregatedHints = (_readAlongState.value.phonemeHints + pronunciationResult.phonemeHints)
+                .distinctBy { it.phonemeLabel }
+                .take(2)
             _readAlongState.value = _readAlongState.value.copy(
                 isEvaluating = false,
                 result = pronunciationResult,
                 cumulativeScore = _readAlongState.value.cumulativeScore + pronunciationResult.overallScore,
-                evaluationsCount = _readAlongState.value.evaluationsCount + 1
+                evaluationsCount = _readAlongState.value.evaluationsCount + 1,
+                phonemeHints = aggregatedHints
             )
 
             if (!isCorrect) {
@@ -913,7 +924,8 @@ class LearningViewModel @Inject constructor(
                 weeklyTotalDays = 7,
                 quizScore = quizScore,
                 quizTotal = quizTotal,
-                pronunciationScore = pronunciationScore
+                pronunciationScore = pronunciationScore,
+                phonemeHints = readState.phonemeHints
             )
         }
     }

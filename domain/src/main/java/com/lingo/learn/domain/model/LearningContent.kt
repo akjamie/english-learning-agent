@@ -117,7 +117,9 @@ data class SessionSummary(
     val weeklyTotalDays: Int,
     val quizScore: Int,
     val quizTotal: Int,
-    val pronunciationScore: Int
+    val pronunciationScore: Int,
+    /** Phoneme hints collected during the session for Parent Companion Card. */
+    val phonemeHints: List<org.akj.lingo.learn.domain.usecase.PhonemeHintEngine.PhonemeHint> = emptyList()
 )
 
 //endregion

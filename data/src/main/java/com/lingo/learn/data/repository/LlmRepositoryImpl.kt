@@ -86,7 +86,14 @@ class LlmRepositoryImpl @Inject constructor(
             return Result.success(primaryResult.getOrThrow())
         }
 
-        // 3. Primary model failed -> Try fallback model
+        // For PING/connection-test requests, don't attempt fallback.
+        // Surface the primary error immediately so the user knows exactly which
+        // model/endpoint is failing, rather than getting a misleading
+        // "Fallback model request failed" error that hides the real cause.
+        if (taskType == "PING") {
+            val primaryError = primaryResult.exceptionOrNull()?.message ?: "Primary model request failed"
+            return Result.failure(Exception(primaryError))
+        }
         val fallbackModel = prefs.getFallbackModel()
         val fallbackResult = runCatching {
             withTimeout(15000) {

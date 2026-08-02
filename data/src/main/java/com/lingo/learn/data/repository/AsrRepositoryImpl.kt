@@ -5,6 +5,7 @@ import org.akj.lingo.learn.data.remote.minimax.MinimaxService
 import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.model.WordScore
 import org.akj.lingo.learn.domain.repository.AsrRepository
+import org.akj.lingo.learn.domain.usecase.PhonemeHintEngine
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -18,6 +19,8 @@ class AsrRepositoryImpl @Inject constructor(
     private val service: MinimaxService,
     private val prefs: SecureConfigPrefs
 ) : AsrRepository {
+
+    private val phonemeHintEngine = PhonemeHintEngine()
 
     override suspend fun evaluatePronunciation(audioFile: File, referenceText: String): Result<PronunciationResult> {
         val authToken = prefs.getAuthToken()
@@ -75,11 +78,17 @@ class AsrRepositoryImpl @Inject constructor(
                     "Good try! Pay attention to the clarity of each word and try again."
                 }
 
+                // Run phoneme hint detection on top of ASR result.
+                // This catches common Chinese-learner substitutions that ASR may have
+                // silently normalised (e.g. child says "sink" → ASR returns "think").
+                val phonemeHints = phonemeHintEngine.detectHints(referenceText, asrText)
+
                 return@runCatching PronunciationResult(
                     overallScore = finalScore,
                     wordScores = wordScores,
                     feedback = feedback,
-                    isFromFallback = false
+                    isFromFallback = false,
+                    phonemeHints = phonemeHints
                 )
             }
             throw Exception("MiniMax ASR failed: ${response.code()}")
@@ -118,7 +127,7 @@ class AsrRepositoryImpl @Inject constructor(
         val words = referenceText.split("\\s+".toRegex()).filter { it.isNotEmpty() }
         var totalScore = 0
         val wordScores = words.map { word ->
-            val score = kotlin.random.Random.nextInt(75, 99)
+            val score = 85
             totalScore += score
             WordScore(word = word.replace("[^a-zA-Z]".toRegex(), ""), score = score)
         }

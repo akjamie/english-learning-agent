@@ -2,6 +2,7 @@ package org.akj.lingo.learn.ui.learning
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -202,9 +203,69 @@ fun TaskCompleteScreen(
             StreakCounter(streakDays = s.streakDays)
         }
 
+        // 6. Parent Companion Card (Sprint 8)
+        // Shown when the session has phoneme hints OR accuracy < 70%.
+        // Addresses parents in Chinese so they can support without knowing English.
+        summary?.let { s ->
+            val accuracy = if (s.quizTotal > 0) s.quizScore.toFloat() / s.quizTotal else 1f
+            val hasPhonemeHints = s.phonemeHints.isNotEmpty()
+            if (hasPhonemeHints || accuracy < 0.7f) {
+                Spacer(modifier = Modifier.height(12.dp))
+                var isParentCardExpanded by remember { mutableStateOf(false) }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isParentCardExpanded = !isParentCardExpanded },
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📩", fontSize = 20.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "给爸爸妈妈的话",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE67E22),
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = if (isParentCardExpanded) "▲" else "▼",
+                                color = Color(0xFFE67E22),
+                                fontSize = 12.sp
+                            )
+                        }
+                        if (isParentCardExpanded) {
+                            Spacer(Modifier.height(12.dp))
+                            if (hasPhonemeHints) {
+                                s.phonemeHints.forEach { hint ->
+                                    Text(
+                                        text = "${hint.emoji} ${hint.tipChinese}",
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF5D4037),
+                                        lineHeight = 20.sp
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                            } else {
+                                Text(
+                                    text = "🦊 今天小朋友学习很努力！如果正确率低于70%，可以在睡前一起回顾今天的单词，用慢速TTS重听一遍效果会更好哦！",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF5D4037),
+                                    lineHeight = 20.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
-        // 6. Share to parent (lightweight text link)
+        // 7. Share to parent (lightweight text link)
         val context = LocalContext.current
         TextButton(onClick = {
             val s = summary ?: return@TextButton

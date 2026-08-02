@@ -90,4 +90,20 @@ Sprint 7 turns Lingo from a "rule engine with copywriting" into a product that g
 - **Spaced repetition on mobile**: Ebbinghaus 1/3/7/14 day intervals are a pragmatic mobile fit — long enough to exercise memory, short enough to stay relevant. Due words are injected at the **front** of the daily Quiz (max 2) so they are not skipped when a child abandons a long session. A repeated mistake resets to day 1; `intervalIndexForTimestamp` lets a late-correct word skip ahead (catch-up) instead of punishing it.
 - **Deterministic production scoring**: ASR cannot grade spelling or sentence writing reliably, so free-text production tasks use Levenshtein partial credit (spelling), word overlap (dictation), and target-word presence + length (sentence writing) — deterministic and unit-testable.
 - **On-device verification (V2.0)**: Full flow walked on emulator — PreTeach Engage (word reveal on correct match), Immersion, Practice Listen-Repeat-Compare (offline ASR fallback scored 88), Game (2-combo), Quiz (fill-blank / listen-choose), emotional-intervention dialog, and Results summary with Sprint 7 XP summary running without crash. `lingo_xp_prefs.xml` persisted (`total_xp=40`, makeup month `2026-08`).
-- **Test status**: 71 new unit tests across the 8 Sprint 7 domain modules; only pre-existing failures remain (`SessionBuilderTest` quiz-size bound, `AsrRepositoryTest` offline-fallback scoring, `LlmRepositoryImplTest` network-dependent) — all confirmed identical on pristine HEAD.
+- **Test status**: 71 domain unit tests + 12 new Sprint 8 unit tests (`PhonemeHintEngineTest`, `DiagnosticCalibrationUseCaseTest`) pass cleanly via `./gradlew :domain:test`.
+
+---
+
+## 🚀 Sprint 8: Phoneme Hint Engine, Parent Companion & Diagnostic Calibration
+
+Sprint 8 addresses critical UX and architectural feedback: fixing bugs, bridging ASR phoneme limitations, empowering non-English-speaking parents, and adding longitudinal level calibration.
+
+### New Capabilities
+1. **Phoneme Hint Engine**: Zero-cost bridge layer detecting Chinese-learner phoneme errors (`th/s`, `ð/d`, `v/w`, `r/l`, short/long vowels) from ASR outputs before normalisation masks them.
+2. **Parent Companion Card**: Expandable Chinese coaching tips in `TaskCompleteScreen` after low-accuracy or phoneme-error sessions. Parents support without needing English.
+3. **Diagnostic Calibration Engine**: 14-day active study check comparing accuracy drift ($\ge 10\%$) against baseline to suggest level recalibration on the Dashboard.
+4. **Bug Fixes**: Removed clipped duplicate gear icon on Dashboard header; fixed `PING` Test Connection to surface primary model failure reasons directly.
+
+### Build Verification
+- **Full Clean Build**: `./gradlew assembleDebug --rerun-tasks` $\rightarrow$ **BUILD SUCCESSFUL in 2m 15s**!
+

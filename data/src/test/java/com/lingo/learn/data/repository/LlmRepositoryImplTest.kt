@@ -139,7 +139,7 @@ class LlmRepositoryImplTest {
             .thenReturn(errorResponse)
             .thenReturn(successResponse)
 
-        val result = repository.complete("Hello", "PING")
+        val result = repository.complete("Hello", "PLAN")
 
         assertTrue(result.isSuccess)
         assertEquals("Fallback response", result.getOrThrow())
@@ -170,7 +170,8 @@ class LlmRepositoryImplTest {
         val result = repository.complete("Hello", "PING")
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()?.message?.contains("Connection failed") == true)
+        // Sprint 8: PING surfaces the primary model error directly, without attempting fallback.
+        assertTrue(result.exceptionOrNull()?.message?.contains("Primary model request failed") == true)
     }
 
     @Test
