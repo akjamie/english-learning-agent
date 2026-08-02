@@ -25,8 +25,7 @@ class LlmRepositoryImplTest {
     private lateinit var repository: LlmRepositoryImpl
 
     private val baseUrl = "https://ark.cn-beijing.volces.com"
-    private val llmEndpoint = "/v1/chat/completions"
-    private val fullUrl = "$baseUrl$llmEndpoint"
+    private val fullUrl = "$baseUrl/chat/completions"
     private val authToken = "valid-token-12345"
     private val apiKey = "Bearer $authToken"
     private val groupId = "group-123"
@@ -41,7 +40,6 @@ class LlmRepositoryImplTest {
         repository = LlmRepositoryImpl(service, prefs, tokenUsageLogDao)
 
         whenever(prefs.getBaseUrl()).thenReturn(baseUrl)
-        whenever(prefs.getLlmEndpoint()).thenReturn(llmEndpoint)
         whenever(prefs.getAuthToken()).thenReturn(authToken)
         whenever(prefs.getGroupId()).thenReturn(groupId)
         whenever(prefs.getPrimaryModel()).thenReturn(primaryModel)

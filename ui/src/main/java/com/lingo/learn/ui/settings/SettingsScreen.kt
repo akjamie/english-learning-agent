@@ -92,7 +92,7 @@ fun SettingsScreen(
                         value = uiState.baseUrl,
                         onValueChange = { viewModel.updateBaseUrl(it) },
                         label = { Text("Base URL") },
-                        placeholder = { Text("https://ark.cn-beijing.volces.com/api/plan") },
+                        placeholder = { Text("https://ark.cn-beijing.volces.com/api/plan/v3") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true

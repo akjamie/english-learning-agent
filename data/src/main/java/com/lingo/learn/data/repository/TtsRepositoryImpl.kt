@@ -5,6 +5,7 @@ import org.akj.lingo.learn.data.local.dao.TtsCacheDao
 import org.akj.lingo.learn.data.local.entity.TtsCacheEntity
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.data.remote.minimax.*
+import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.TtsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,7 @@ class TtsRepositoryImpl @Inject constructor(
         val apiKey = "Bearer $authToken"
         val groupId = prefs.getGroupId()
         val baseUrl = prefs.getBaseUrl()
-        val url = baseUrl.trimEnd('/') + "/v1/t2a_v2"
+        val url = ProviderEndpoints.ttsUrl(baseUrl)
         val ttsModel = prefs.getTtsModel()
 
         if (authToken.length < 10) {

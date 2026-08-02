@@ -4,6 +4,7 @@ import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.data.remote.minimax.MinimaxService
 import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.model.WordScore
+import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.usecase.PhonemeHintEngine
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -27,7 +28,7 @@ class AsrRepositoryImpl @Inject constructor(
         val apiKey = "Bearer $authToken"
         val groupId = prefs.getGroupId()
         val baseUrl = prefs.getBaseUrl()
-        val url = baseUrl.trimEnd('/') + "/v1/audio_to_text"
+        val url = ProviderEndpoints.asrUrl(baseUrl)
         val asrModel = prefs.getAsrModel()
 
         // Downgrade to offline fallback if ASR credentials are not configured
@@ -102,7 +103,7 @@ class AsrRepositoryImpl @Inject constructor(
         val apiKey = "Bearer $authToken"
         val groupId = prefs.getGroupId()
         val baseUrl = prefs.getBaseUrl()
-        val url = baseUrl.trimEnd('/') + "/v1/audio_to_text"
+        val url = ProviderEndpoints.asrUrl(baseUrl)
         val asrModel = prefs.getAsrModel()
 
         if (authToken.length < 10) {

@@ -31,9 +31,6 @@ class ConfigRepositoryImpl @Inject constructor(
     override fun getAsrModel(): String = prefs.getAsrModel()
     override fun setAsrModel(value: String) = prefs.setAsrModel(value)
 
-    override fun getLlmEndpoint(): String = prefs.getLlmEndpoint()
-    override fun setLlmEndpoint(value: String) = prefs.setLlmEndpoint(value)
-
     override fun getAsrScoreThreshold(): Int = prefs.getAsrScoreThreshold()
     override fun setAsrScoreThreshold(value: Int) = prefs.setAsrScoreThreshold(value)
 

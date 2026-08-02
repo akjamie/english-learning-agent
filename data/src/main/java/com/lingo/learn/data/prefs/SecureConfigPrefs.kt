@@ -1,5 +1,6 @@
 package org.akj.lingo.learn.data.prefs
 
+import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -25,8 +26,16 @@ class SecureConfigPrefs @Inject constructor(
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    fun getBaseUrl(): String = prefs.getString(KEY_BASE_URL, "https://ark.cn-beijing.volces.com/api/plan") ?: "https://ark.cn-beijing.volces.com/api/plan"
-    fun setBaseUrl(value: String) = prefs.edit().putString(KEY_BASE_URL, value).apply()
+    fun getBaseUrl(): String {
+        val saved = prefs.getString(KEY_BASE_URL, "") ?: ""
+        // Sprint 9: migrate a legacy value that missed the /v3 gateway segment.
+        val normalized = ProviderEndpoints.normalizeBaseUrl(saved)
+        if (normalized != saved.trim()) {
+            prefs.edit().putString(KEY_BASE_URL, normalized).apply()
+        }
+        return normalized
+    }
+    fun setBaseUrl(value: String) = prefs.edit().putString(KEY_BASE_URL, value.trim()).apply()
 
     fun getAuthToken(): String {
         val saved = prefs.getString(KEY_AUTH_TOKEN, "") ?: ""
@@ -48,9 +57,6 @@ class SecureConfigPrefs @Inject constructor(
 
     fun getAsrModel(): String = prefs.getString(KEY_ASR_MODEL, "volc.seedasr.sauc.duration") ?: "volc.seedasr.sauc.duration"
     fun setAsrModel(value: String) = prefs.edit().putString(KEY_ASR_MODEL, value).apply()
-
-    fun getLlmEndpoint(): String = prefs.getString(KEY_LLM_ENDPOINT, "/v1/chat/completions") ?: "/v1/chat/completions"
-    fun setLlmEndpoint(value: String) = prefs.edit().putString(KEY_LLM_ENDPOINT, value).apply()
 
     fun getTtsSpeedNormal(): Float = prefs.getFloat(KEY_TTS_SPEED_NORMAL, 1.0f)
     fun setTtsSpeedNormal(value: Float) = prefs.edit().putFloat(KEY_TTS_SPEED_NORMAL, value).apply()
@@ -80,7 +86,6 @@ class SecureConfigPrefs @Inject constructor(
         private const val KEY_FALLBACK_MODEL = "fallback_model"
         private const val KEY_TTS_MODEL = "tts_model"
         private const val KEY_ASR_MODEL = "asr_model"
-        private const val KEY_LLM_ENDPOINT = "llm_endpoint"
         private const val KEY_TTS_SPEED_NORMAL = "tts_speed_normal"
         private const val KEY_TTS_SPEED_SLOW = "tts_speed_slow"
         private const val KEY_ASR_SCORE_THRESHOLD = "asr_score_threshold"

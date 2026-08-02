@@ -5,6 +5,7 @@ import org.akj.lingo.learn.data.local.entity.TokenUsageLogEntity
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.data.remote.minimax.*
 import org.akj.lingo.learn.domain.model.ChatMessage
+import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
@@ -25,8 +26,7 @@ class LlmRepositoryImpl @Inject constructor(
         val apiKey = "Bearer $authToken"
         val groupId = prefs.getGroupId()
         val baseUrl = prefs.getBaseUrl()
-        val endpoint = prefs.getLlmEndpoint()
-        val url = baseUrl.trimEnd('/') + endpoint
+        val url = ProviderEndpoints.chatUrl(baseUrl)
 
         if (authToken.length < 10) {
             return Result.failure(Exception("Auth Token is not configured"))

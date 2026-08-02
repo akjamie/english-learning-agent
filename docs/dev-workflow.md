@@ -19,7 +19,7 @@ graph TD
 ### 1. 代码实现 (Implementation - `[Impl]`)
 - **Clean Architecture 架构遵循**：按 `:domain`（纯业务/实体）、`:data`（数据源/网络/DB）、`:ui`（Compose 视图/组件）、`:app`（应用入口与 Hilt DI）分层。
 - **英文代码注释**：根据基础编码规范，所有代码中的注释（类说明、方法 docstring、行内逻辑）**必须使用英文**。
-- **AI 三通道统一配置**：LLM、TTS、ASR 服务共享 `SecureConfigPrefs` 中的 Base URL (`https://ark.cn-beijing.volces.com/api/plan`) 与 Auth Token，不硬编码第三方 SDK 依赖。
+- **AI 三通道统一配置**：LLM、TTS、ASR 服务共享 `SecureConfigPrefs` 中的 Base URL (`https://ark.cn-beijing.volces.com/api/plan/v3`) 与 Auth Token，不硬编码第三方 SDK 依赖。
 
 ### 2. 自动化测试与编译自检 (Unit Test & Build - `[Unit Test & Build]`)
 - **单元测试**：针对 Repository、ViewModel、规则引擎（如 Levenshtein 匹配算法、错题优先级计算）编写 JUnit 单元测试。

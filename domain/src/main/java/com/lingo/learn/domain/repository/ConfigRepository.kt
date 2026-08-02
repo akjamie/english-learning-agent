@@ -25,9 +25,6 @@ interface ConfigRepository {
     fun getAsrModel(): String
     fun setAsrModel(value: String)
 
-    fun getLlmEndpoint(): String
-    fun setLlmEndpoint(value: String)
-
     fun getAsrScoreThreshold(): Int
     fun setAsrScoreThreshold(value: Int)
 

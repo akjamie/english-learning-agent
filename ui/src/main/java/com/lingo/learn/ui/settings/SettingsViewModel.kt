@@ -2,6 +2,7 @@ package org.akj.lingo.learn.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +21,6 @@ data class SettingsUiState(
     val fallbackModel: String = "",
     val ttsModel: String = "",
     val asrModel: String = "",
-    val llmEndpoint: String = "/v1/chat/completions",
     val asrScoreThreshold: Int = 60,
     val monthlyTokenLimit: Int = 50000,
     val language: String = "en",
@@ -56,7 +56,6 @@ class SettingsViewModel @Inject constructor(
                 fallbackModel = configRepository.getFallbackModel(),
                 ttsModel = configRepository.getTtsModel(),
                 asrModel = configRepository.getAsrModel(),
-                llmEndpoint = configRepository.getLlmEndpoint(),
                 asrScoreThreshold = configRepository.getAsrScoreThreshold(),
                 monthlyTokenLimit = configRepository.getMonthlyTokenLimit(),
                 language = configRepository.getLanguage(),
@@ -93,10 +92,6 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(asrModel = value, isSaved = false) }
     }
 
-    fun updateLlmEndpoint(value: String) {
-        _uiState.update { it.copy(llmEndpoint = value, isSaved = false) }
-    }
-
     fun updateAsrScoreThreshold(value: Int) {
         _uiState.update { it.copy(asrScoreThreshold = value, isSaved = false) }
     }
@@ -129,6 +124,10 @@ class SettingsViewModel @Inject constructor(
         saveSettings()
         _uiState.update { it.copy(isTestingConnection = true, connectionTestResult = null, connectionTestSuccess = null) }
 
+        // Sprint 9: show which resolved endpoint is being tested so a wrong
+        // base URL (e.g. missing /v3) is immediately obvious to the user.
+        val resolvedUrl = ProviderEndpoints.chatUrl(_uiState.value.baseUrl)
+
         viewModelScope.launch {
             try {
                 val result = llmRepository.complete(
@@ -140,7 +139,7 @@ class SettingsViewModel @Inject constructor(
                         it.copy(
                             isTestingConnection = false,
                             connectionTestSuccess = true,
-                            connectionTestResult = "Connection Successful! Model responded: ${result.getOrNull()?.take(50)}"
+                            connectionTestResult = "Connection Successful! Endpoint: $resolvedUrl\nModel responded: ${result.getOrNull()?.take(50)}"
                         )
                     }
                 } else {
@@ -148,7 +147,7 @@ class SettingsViewModel @Inject constructor(
                         it.copy(
                             isTestingConnection = false,
                             connectionTestSuccess = false,
-                            connectionTestResult = "Connection Failed: ${result.exceptionOrNull()?.message ?: "Unknown Error"}"
+                            connectionTestResult = "Connection Failed at $resolvedUrl: ${result.exceptionOrNull()?.message ?: "Unknown Error"}"
                         )
                     }
                 }
@@ -157,7 +156,7 @@ class SettingsViewModel @Inject constructor(
                     it.copy(
                         isTestingConnection = false,
                         connectionTestSuccess = false,
-                        connectionTestResult = "Connection Error: ${e.localizedMessage}"
+                        connectionTestResult = "Connection Error at $resolvedUrl: ${e.localizedMessage}"
                     )
                 }
             }
