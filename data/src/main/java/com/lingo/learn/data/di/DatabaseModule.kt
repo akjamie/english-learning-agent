@@ -62,12 +62,31 @@ object DatabaseModule {
             }
         }
 
+        val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `conversation_history` (
+                        `id` TEXT NOT NULL,
+                        `scenarioId` TEXT NOT NULL,
+                        `role` TEXT NOT NULL,
+                        `content` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_conversation_history_scenarioId_timestamp` " +
+                        "ON `conversation_history` (`scenarioId`, `timestamp`)"
+                )
+            }
+        }
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "english_learning_agent_db"
         )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -107,4 +126,7 @@ object DatabaseModule {
 
     @Provides
     fun provideGamificationStateDao(db: AppDatabase): GamificationStateDao = db.gamificationStateDao()
+
+    @Provides
+    fun provideConversationHistoryDao(db: AppDatabase): ConversationHistoryDao = db.conversationHistoryDao()
 }

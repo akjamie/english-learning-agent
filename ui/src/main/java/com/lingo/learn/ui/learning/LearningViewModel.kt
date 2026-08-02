@@ -59,7 +59,9 @@ data class GameState(
     val score: Int = 0,
     val combo: Int = 0,
     val lastAnswerCorrect: Boolean? = null,
-    val showComboEffect: Boolean = false
+    val showComboEffect: Boolean = false,
+    // Sprint 11: question-start timestamp for FAST_ANSWER observation
+    val questionStartMs: Long = 0L
 )
 
 data class QuizState(
@@ -70,7 +72,9 @@ data class QuizState(
     val lastAnswerCorrect: Boolean? = null,
     val hintLevel: Int = 0,
     val dynamicHint: String? = null,
-    val isGeneratingHint: Boolean = false
+    val isGeneratingHint: Boolean = false,
+    // Sprint 11: question-start timestamp for FAST_ANSWER observation
+    val questionStartMs: Long = 0L
 )
 
 /**
@@ -287,7 +291,8 @@ class LearningViewModel @Inject constructor(
         word: String,
         score: Int?,
         questionType: String?,
-        attemptCount: Int
+        attemptCount: Int,
+        responseTimeMs: Long? = null
     ) {
         if (_observation.value != null) return
         val recentRecords = learningRecordRepository.getRecordsSince(
@@ -298,7 +303,8 @@ class LearningViewModel @Inject constructor(
             currentScore = score,
             questionType = questionType,
             attemptCount = attemptCount,
-            recentRecords = recentRecords
+            recentRecords = recentRecords,
+            responseTimeMs = responseTimeMs
         ) ?: return
 
         _observation.value = matched
@@ -477,6 +483,7 @@ class LearningViewModel @Inject constructor(
         audioPlayer.pause()
         _stage.value = LearningStage.PRACTICE
         _practicePhase.value = PracticePhase.READ_ALONG
+        _gameState.value = _gameState.value.copy(questionStartMs = System.currentTimeMillis())
         resetNegativeSignal()
         saveCheckpoint()
     }
@@ -616,9 +623,10 @@ class LearningViewModel @Inject constructor(
 
         val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "game_${question.id}"
         if (isCorrect) addXp("GAME")
+        val responseMs = System.currentTimeMillis() - _gameState.value.questionStartMs
         viewModelScope.launch {
             recordAttempt(word, "GAME", if (isCorrect) 1.0f else 0.0f)
-            evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1)
+            evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1, responseTimeMs = responseMs)
         }
     }
 
@@ -630,13 +638,15 @@ class LearningViewModel @Inject constructor(
         _gameState.value = current.copy(
             currentIndex = current.currentIndex + 1,
             lastAnswerCorrect = null,
-            showComboEffect = false
+            showComboEffect = false,
+            questionStartMs = System.currentTimeMillis()
         )
 
         saveCheckpoint()
         if (current.currentIndex >= total - 1) {
             // All game questions completed; move to quiz
             _stage.value = LearningStage.QUIZ
+            _quizState.value = _quizState.value.copy(questionStartMs = System.currentTimeMillis())
         }
     }
 
@@ -670,6 +680,7 @@ class LearningViewModel @Inject constructor(
         )
 
         val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "vocab_${question.id}"
+        val responseMs = System.currentTimeMillis() - _quizState.value.questionStartMs
         viewModelScope.launch {
             if (!isCorrect) {
                 errorBookRepository.upsertError(word, "QUIZ_WRONG_ANSWER", question.type.name)
@@ -680,7 +691,7 @@ class LearningViewModel @Inject constructor(
                 addXp(question.type.name)
             }
             recordAttempt(word, "QUIZ", if (isCorrect) 1.0f else 0.0f)
-            evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1)
+            evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1, responseTimeMs = responseMs)
         }
     }
 
@@ -820,7 +831,8 @@ class LearningViewModel @Inject constructor(
                 lastAnswerCorrect = null,
                 hintLevel = 0,
                 dynamicHint = null,
-                isGeneratingHint = false
+                isGeneratingHint = false,
+                questionStartMs = System.currentTimeMillis()
             )
             saveCheckpoint()
         } else {

@@ -237,22 +237,22 @@
 
 ---
 
-## Sprint 11: 伴学升级 - Lingo 陪伴对话 (Agent Companion) - [ ] v3.1
+## Sprint 11: 伴学升级 - Lingo 陪伴对话 (Agent Companion) - [x] v3.1
 > 原则：把单一"冰激凌店"Roleplay 升级为可选的场景化 AI 对话伴学，并补全被声明但未实现的 `FAST_ANSWER` 观察触发。中等风险，独立可交付。
 
 ### Phase A: 场景化 Roleplay 2.0
-- [ ] **[Impl]** 场景库 + 场景选择器 (动物园 / 餐厅 / 学校 / 旅行) - 场景脚本由 LLM 生成 (新增 `ROLEPLAY_SCENARIO` prompt / taskType)
-- [ ] **[Impl]** 文本输入聊天模式 (降级/安静场景，当麦克风不可用时仍可对话)
-- [ ] **[Impl]** 对话历史持久化 (Room 新增 `conversation_history` 表，Lingo 能"记得"上次聊了什么)
+- [x] **[Impl]** `RoleplayScenarioBank` 场景库 (动物园/餐厅/学校/旅行) + `RoleplayScenario` 模型，各场景内置离线安全脚本 (system prompt + opening line + 目标词汇)；`ROLEPLAY_SCENARIO` LLM 增强 (离线失败时保留策展脚本)
+- [x] **[Impl]** RoleplayScreen 场景选择器 (FilterChip 横滚行) + 文本输入聊天模式 (麦克风不可用时仍可对话) + Reset 重开对话
+- [x] **[Impl]** 对话历史持久化：Room v5 `conversation_history` 表 + `ConversationRepository`；进入场景恢复最近 12 条历史，Lingo 能"记得"上次聊了什么
 
 ### Phase B: FAST_ANSWER 观察触发 (补全 Sprint 6 缺口)
-- [ ] **[Impl]** Quiz/Game 每题响应耗时采集 (写入 `LearningRecord` 或新增字段)
-- [ ] **[Impl]** `ObservationTriggerEngine` 实现 `FAST_ANSWER` 规则 (响应时间低于个人均值 → 触发"你答得真快！")
+- [x] **[Impl]** Quiz/Game 状态新增 `questionStartMs`，答题时计算 `responseTimeMs` 传入 `evaluateObservation`
+- [x] **[Impl]** `ObservationTriggerEngine` 实现 `FAST_ANSWER` 规则 (响应时间 < 个人均值×0.5，无历史用 10s 基线)
 
 ### Phase C: 质量
-- [ ] **[Unit Test & Build]** 场景脚本解析测试 + FAST_ANSWER 观察规则测试 + 对话历史 DAO 测试；`./gradlew test assembleDebug`
-- [ ] **[Docs Sync]** 更新 `agents.md` (Roleplay Agent prompt)、`readme.md`、`implementation_plan.md`、`task.md`
-- [ ] **[MVP Delivery]** 交付 V3.1 伴学升级 APK
+- [x] **[Unit Test & Build]** `RoleplayScenarioBankTest` (5) + `FastAnswerObservationTest` (5) + `ConversationRepositoryImplTest` (3)；`./gradlew test assembleDebug`
+- [x] **[Docs Sync]** 更新 `agents.md` (Roleplay Agent prompt)、`readme.md`、`implementation_plan.md`、`task.md`
+- [x] **[MVP Delivery]** 交付 V3.1 伴学升级 APK (模拟器 E2E：场景选择器 + 文本输入 + 历史持久化 + 离线兜底回复，无崩溃)
 
 ---
 

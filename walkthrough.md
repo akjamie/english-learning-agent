@@ -302,6 +302,33 @@ english-learning-agent/
 
 ---
 
+## 🧵 Sprint 11 (Completed): 伴学升级 (Agent Companion) — v3.1
+
+> 把单一"冰激凌店"Roleplay 升级为场景化 AI 对话伴学，并补全 `FAST_ANSWER` 观察触发 (Sprint 6 缺口)。
+
+### 新增文件 (New Files)
+| 文件 | 作用 |
+|---|---|
+| `domain/model/RoleplayScenario.kt` | 场景模型 (id/title/emoji/systemPrompt/openingLine/targetWords) |
+| `domain/usecase/RoleplayScenarioBank.kt` | 4 个离线安全策展场景 + LLM 增强 (`ROLEPLAY_SCENARIO`) |
+| `domain/model/ConversationMessage.kt` + `ConversationRepository` | 对话历史领域模型/仓储 |
+| `data/local/entity/ConversationHistoryEntity.kt` + DAO + `ConversationRepositoryImpl` | Room v5 对话历史持久化 |
+| `domain/test/.../RoleplayScenarioBankTest.kt` (5) + `FastAnswerObservationTest.kt` (5) | 场景库/FAST_ANSWER 测试 |
+| `data/test/.../ConversationRepositoryImplTest.kt` (3) | 历史 DAO 测试 |
+
+### 关键架构决策 (Completed)
+1. **离线安全场景库**：策展脚本始终可用；LLM 增强失败/离线时保留策展脚本，Roleplay 不依赖模型。
+2. **文本输入降级**：语音 (ASR) 与文本双通道，安静/无麦场景仍可对话。
+3. **对话记忆**：Room v5 `conversation_history`，按场景恢复最近 12 条。
+4. **FAST_ANSWER**：每题 `questionStartMs` 采集，响应 < 个人均值×0.5 触发"你答得真快！"。
+
+### 交付审计结果 (Completed)
+- **单元测试**：**已通过** (13 项新增 + 既有全绿)
+- **构建**：`./gradlew assembleDebug` **已通过**
+- **模拟器 E2E**：**已通过** (Roleplay 场景选择器 Zoo/Restaurant/School → 文本输入发送 → sqlite 验证 user+assistant 历史 → 离线兜底回复，无崩溃)
+
+---
+
 ## 🧵 Sprint 10.5 (Completed): 发布加固 (Release Hardening) — v3.0.1
 
 > 触发：v3.0.0 实测 5 个反馈问题。技术负责人逐一代码定位根因，编排为单一阻断性修复 Sprint (先于 Sprint 11)。只修体验与可用性，不新增 AI 能力。

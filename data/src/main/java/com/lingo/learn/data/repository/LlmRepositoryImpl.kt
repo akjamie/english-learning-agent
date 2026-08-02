@@ -177,6 +177,7 @@ class LlmRepositoryImpl @Inject constructor(
             "HINT" -> "Think about the first letter of the word, or look closely at the picture!"
             "REPORT" -> "Weekly learning successfully completed. All performance metrics met expectations. Suggest focused listening practice next week."
             "PING" -> "OK"
+            "ROLEPLAY_SCENARIO" -> """{"system_prompt":"You are Lingo Fox, a friendly tutor. Keep answers short and simple.","opening_line":"Hi there! Let's talk!"}"""
             "PLAN" -> """{
               "theme": "School Life",
               "difficulty_coefficient": 1.0,

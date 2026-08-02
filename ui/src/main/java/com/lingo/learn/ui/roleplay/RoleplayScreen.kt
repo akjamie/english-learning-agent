@@ -5,10 +5,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,10 +40,13 @@ fun RoleplayScreen(
     viewModel: RoleplayViewModel = hiltViewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
+    val scenarios by viewModel.scenarios.collectAsState()
+    val scenario by viewModel.scenario.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
     val isThinking by viewModel.isThinking.collectAsState()
     val isSpeaking by viewModel.isSpeaking.collectAsState()
     val audioToPlay by viewModel.audioToPlay.collectAsState()
+    var textInput by remember { mutableStateOf("") }
 
     val listState = rememberLazyListState()
 
@@ -73,10 +78,26 @@ fun RoleplayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Weekend Roleplay") },
+                title = {
+                    Column {
+                        Text(
+                            if (scenario != null) "${scenario!!.emoji} ${scenario!!.title}" else "Roleplay"
+                        )
+                        Text(
+                            "Practice speaking with Lingo Fox",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { viewModel.resetConversation() }) {
+                        Text("Reset")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -92,6 +113,24 @@ fun RoleplayScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Sprint 11: scenario picker row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                scenarios.forEach { s ->
+                    val selected = scenario?.id == s.id
+                    FilterChip(
+                        selected = selected,
+                        onClick = { viewModel.selectScenario(s.id) },
+                        label = { Text("${s.emoji} ${s.title}") }
+                    )
+                }
+            }
+
             // Header Avatar
             Box(
                 modifier = Modifier
@@ -124,7 +163,7 @@ fun RoleplayScreen(
                 items(messages.filter { it.role != "system" }) { message ->
                     ChatBubble(message = message)
                 }
-                
+
                 if (isThinking) {
                     item {
                         TypingIndicatorBubble()
@@ -132,11 +171,40 @@ fun RoleplayScreen(
                 }
             }
 
+            // Sprint 11: text-input row + record button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = textInput,
+                    onValueChange = { textInput = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Type a message…") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp)
+                )
+                FilledIconButton(
+                    onClick = {
+                        if (textInput.isNotBlank()) {
+                            viewModel.sendUserMessage(textInput)
+                            textInput = ""
+                        }
+                    },
+                    enabled = textInput.isNotBlank() && !isThinking
+                ) {
+                    Text("➤", fontSize = 16.sp)
+                }
+            }
+
             // Record Button Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 RecordButton(

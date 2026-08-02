@@ -156,7 +156,7 @@ Sprint 10-13 turn Lingo from a "task-checker" into a **visible-growth companion*
 | --- | --- | --- | --- | --- |
 | **10** | Visible Growth (v3.0) | Surface existing gamification: persist XP/level/daily-goals/makeup (`GamificationState` entity + repo), XP bar + level badge + 3-goal badges + makeup balance on Dashboard/TaskComplete | Low | ✅ Done |
 | **10.5** | Release Hardening (v3.0.1) | Blocker fixes from v3.0.0 testing: plan→Start flow, evaluation audio + config gating, grade↔difficulty matching, offline/online capability matrix, unified exception handling | Medium | ✅ Done |
-| **11** | Agent Companion (v3.1) | Roleplay 2.0: scenario bank + picker + text-chat fallback + conversation history; enable `FAST_ANSWER` observation trigger | Medium | Planned |
+| **11** | Agent Companion (v3.1) | Roleplay 2.0: scenario bank + picker + text-chat fallback + conversation history; enable `FAST_ANSWER` observation trigger | Medium | ✅ Done |
 | **12** | Smooth Interaction & Parent Trust (v3.2) | Wire calibration→re-run diagnosis, grade-change/onboarding re-run, plan-driven Dashboard targets, notification prefs UI, WeeklyReport image share + weekly "Lingo's letter" digest | Low | Planned |
 | **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | Planned |
 
@@ -199,6 +199,22 @@ Triggered by v3.0.0 testing feedback (5 issues). Tech lead root-caused each in c
 ### Verification
 - **Unit tests**: 12 new (`CapabilityMatrixTest` 6 + `LingoErrorTest` 6) + all module tests green.
 - **Emulator E2E**: fresh onboarding → Dashboard offline banner ✓ → Plan generate (offline fallback renders real Day 1-3 cards) ✓ → Review/Start enters learning ✓ → offline banner inside learning flow ✓; no crashes.
+
+---
+
+## 🚀 Sprint 11 (v3.1): Agent Companion — Lingo 陪伴对话
+
+Sprint 11 turns the single hardcoded "ice-cream shop" Roleplay into a **scenario-based AI conversation companion**, and completes the Sprint 6 `FAST_ANSWER` observation gap.
+
+### New Capabilities
+1. **Roleplay 2.0 — scenario bank + picker**: four curated offline-safe scenarios (🦁 Zoo / 🍔 Restaurant / 🏫 School / ✈️ Travel), each with its own system prompt, opening line, and target vocabulary. The `RoleplayScenarioBank` optionally enriches scripts via LLM (`ROLEPLAY_SCENARIO` taskType), always falling back to curated scripts when offline.
+2. **Text-input chat mode**: type a message instead of (or in addition to) the mic — works without a microphone or in quiet settings. Plus a Reset action to start a fresh conversation.
+3. **Conversation history persistence**: Room DB v5 `conversation_history` table + `ConversationRepository`; Lingo restores the last ~12 messages per scenario so it "remembers" prior chats.
+4. **`FAST_ANSWER` observation (Sprint 6 gap closed)**: Quiz/Game now record per-question response time (`questionStartMs`), and `ObservationTriggerEngine` fires a "Wow, that was fast!" insight when a correct answer comes well under the child's average (baseline 10s, factor 0.5).
+
+### Verification
+- **Unit tests**: 13 new (`RoleplayScenarioBankTest` 5 + `FastAnswerObservationTest` 5 + `ConversationRepositoryImplTest` 3) + all module tests green.
+- **Emulator E2E**: Roleplay opened → scenario picker (Zoo/Restaurant/School) rendered ✓ → typed message sent ✓ → conversation persisted to `conversation_history` (sqlite-verified user + assistant reply) ✓ → offline LLM fallback reply generated ✓; no crashes.
 
 
 

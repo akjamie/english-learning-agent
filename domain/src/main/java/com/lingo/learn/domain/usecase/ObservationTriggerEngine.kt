@@ -23,9 +23,25 @@ class ObservationTriggerEngine @Inject constructor() {
         currentScore: Int?,
         questionType: String?,
         attemptCount: Int,
-        recentRecords: List<LearningRecord>
+        recentRecords: List<LearningRecord>,
+        responseTimeMs: Long? = null
     ): Observation? {
         val wordLower = currentWord.lowercase()
+
+        // Sprint 11: FAST_ANSWER — a correct answer given well under the average
+        // response time (5s vs a 10s default baseline) shows quick mastery.
+        if (currentScore != null && currentScore >= 60) {
+            val avg = averageResponseTimeMs(recentRecords) ?: DEFAULT_AVG_RESPONSE_MS
+            if (responseTimeMs != null && responseTimeMs > 0 &&
+                responseTimeMs < avg * FAST_ANSWER_FACTOR
+            ) {
+                return Observation(
+                    type = ObservationType.FAST_ANSWER,
+                    word = currentWord,
+                    message = "Wow, that was fast! You really know \"$currentWord\"!"
+                )
+            }
+        }
 
         val wordRecords = recentRecords.filter { record ->
             record.taskType == "QUIZ" || record.taskType == "GAME" || record.taskType == "SPEAKING"
@@ -68,5 +84,29 @@ class ObservationTriggerEngine @Inject constructor() {
         }
 
         return null
+    }
+
+    /**
+     * Derives the child's average response time from historical records.
+     * LearningRecords persist `duration` (seconds) per session; as a lightweight
+     * baseline we average those (clamped to a sane range). Falls back to null when
+     * there is no history so the default baseline is used.
+     */
+    private fun averageResponseTimeMs(recentRecords: List<LearningRecord>): Long? {
+        val durations = recentRecords
+            .asSequence()
+            .map { it.duration }
+            .filter { it in 1..60 }
+            .toList()
+        if (durations.isEmpty()) return null
+        return (durations.average() * 1000).toLong()
+    }
+
+    companion object {
+        /** Fallback baseline when no history exists (10 seconds). */
+        const val DEFAULT_AVG_RESPONSE_MS = 10_000L
+
+        /** A fast answer is one below this fraction of the average. */
+        const val FAST_ANSWER_FACTOR = 0.5f
     }
 }

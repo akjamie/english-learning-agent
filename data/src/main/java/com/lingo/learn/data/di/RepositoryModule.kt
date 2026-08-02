@@ -65,4 +65,10 @@ abstract class RepositoryModule {
     abstract fun bindGamificationRepository(
         impl: GamificationRepositoryImpl
     ): GamificationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindConversationRepository(
+        impl: ConversationRepositoryImpl
+    ): ConversationRepository
 }

@@ -359,11 +359,13 @@ which they keep getting wrong. Here is the full error history for this word:
 
 ---
 
-## 🗺️ Sprint 11-12 Agent Extensions (Planned)
+## 🗺️ Sprint 11-12 Agent Extensions
 
 > Tech-lead scoping adds two agent roles on top of the Sprint 10-13 roadmap (see `task.md`). Prompts below are design targets; they are wired in the sprint where the corresponding feature ships.
 
-### 7. Roleplay Scenario Agent (Sprint 11 - Agent Companion)
+### 7. Roleplay Scenario Agent (Sprint 11 - Agent Companion) — ✅ Implemented (v3.1)
+
+Generates the scenario script (system prompt + opening line + target vocabulary) for the Roleplay 2.0 scenario bank. Replaces the single hardcoded ice-cream scenario with four curated real-world scenes (zoo / restaurant / school / travel). Offline-safe: `RoleplayScenarioBank` ships curated scripts, and LLM enrichment via `ROLEPLAY_SCENARIO` is optional (curated script is kept on any failure).
 
 Generates the scenario script (shopkeeper dialogue tree, vocabulary, follow-up questions) for the Roleplay 2.0 scenario bank. Replaces the single hardcoded ice-cream scenario with optional real-world scenes.
 
