@@ -302,6 +302,24 @@ english-learning-agent/
 
 ---
 
+## 🧵 Sprint 12 (Completed): 流畅交互与家长信任 (Smooth Interaction & Parent Trust) — v3.2
+
+> 补齐半成品接线 (校准 no-op、通知无 UI、周报仅文本分享) + 每周"Lingo 的信"家长摘要。
+
+### 关键架构决策 (Completed)
+1. **校准闭环**：Dashboard "Update My Level" → `isRediagnosing` → `DiagnosisScreen` → 更新 `diagnostic_level`。
+2. **重跑 Onboarding**：Settings 入口重置 `onboarding_completed` → Welcome；`MainActivity` 状态驱动。
+3. **通知偏好**：`SecureConfigPrefs` 新增 `reminder_enabled`/`reminder_hour`，`DailyReminderWorker` 读镜像 plain prefs (WorkManager 无 crypto 依赖)。
+4. **周报图片分享**：`buildReportImageUri` 画 PNG + FileProvider (新增 `file_paths.xml`)。
+5. **Lingo 的信**：`WeeklyReportViewModel` LLM 生成 + `LingoLetterFallback` 离线模板 (纯函数可测)。
+
+### 交付审计结果 (Completed)
+- **单元测试**：**已通过** (LingoLetterFallbackTest 4 项 + 既有全绿)
+- **构建**：`./gradlew assembleDebug` **已通过**
+- **模拟器 E2E**：**已通过** (Settings 提醒卡 + Change Grade → Welcome 重进 onboarding + 校准接线，无崩溃)
+
+---
+
 ## 🧵 Sprint 11 (Completed): 伴学升级 (Agent Companion) — v3.1
 
 > 把单一"冰激凌店"Roleplay 升级为场景化 AI 对话伴学，并补全 `FAST_ANSWER` 观察触发 (Sprint 6 缺口)。

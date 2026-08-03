@@ -78,6 +78,19 @@ class SecureConfigPrefs @Inject constructor(
             .edit().putString("app_language", value).apply()
     }
 
+    // Sprint 12: daily reminder preferences (used by DailyReminderWorker)
+    fun isReminderEnabled(): Boolean = prefs.getBoolean(KEY_REMINDER_ENABLED, true)
+    fun setReminderEnabled(value: Boolean) {
+        prefs.edit().putBoolean(KEY_REMINDER_ENABLED, value).apply()
+        // Mirror to plain prefs so WorkManager (non-Hilt) can read it without the crypto dependency.
+        appContext.getSharedPreferences("lingo_reminder_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("reminder_enabled", value).apply()
+    }
+
+    /** Hour of day (0-23) for the daily reminder. Default 18:00. */
+    fun getReminderHour(): Int = prefs.getInt(KEY_REMINDER_HOUR, 18)
+    fun setReminderHour(value: Int) = prefs.edit().putInt(KEY_REMINDER_HOUR, value.coerceIn(0, 23)).apply()
+
     companion object {
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_AUTH_TOKEN = "auth_token"
@@ -91,5 +104,7 @@ class SecureConfigPrefs @Inject constructor(
         private const val KEY_ASR_SCORE_THRESHOLD = "asr_score_threshold"
         private const val KEY_MONTHLY_TOKEN_LIMIT = "monthly_token_limit"
         private const val KEY_LANGUAGE = "app_language"
+        private const val KEY_REMINDER_ENABLED = "reminder_enabled"
+        private const val KEY_REMINDER_HOUR = "reminder_hour"
     }
 }

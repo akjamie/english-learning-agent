@@ -39,4 +39,10 @@ class ConfigRepositoryImpl @Inject constructor(
 
     override fun getLanguage(): String = prefs.getLanguage()
     override fun setLanguage(value: String) = prefs.setLanguage(value)
+
+    override fun isReminderEnabled(): Boolean = prefs.isReminderEnabled()
+    override fun setReminderEnabled(value: Boolean) = prefs.setReminderEnabled(value)
+
+    override fun getReminderHour(): Int = prefs.getReminderHour()
+    override fun setReminderHour(value: Int) = prefs.setReminderHour(value)
 }

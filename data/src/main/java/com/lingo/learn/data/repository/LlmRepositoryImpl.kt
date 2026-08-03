@@ -178,6 +178,7 @@ class LlmRepositoryImpl @Inject constructor(
             "REPORT" -> "Weekly learning successfully completed. All performance metrics met expectations. Suggest focused listening practice next week."
             "PING" -> "OK"
             "ROLEPLAY_SCENARIO" -> """{"system_prompt":"You are Lingo Fox, a friendly tutor. Keep answers short and simple.","opening_line":"Hi there! Let's talk!"}"""
+            "LINGO_LETTER" -> "Great week! Your child made steady progress and kept the habit alive. One gentle focus: review the words from the error book together."
             "PLAN" -> """{
               "theme": "School Life",
               "difficulty_coefficient": 1.0,

@@ -256,23 +256,23 @@
 
 ---
 
-## Sprint 12: 流畅交互与家长信任 (Smooth Interaction & Parent Trust) - [ ] v3.2
-> 原则：补齐半成品接线 (校准按钮 no-op、Dashboard 硬编码目标、通知无 UI、周报仅文本分享)，并新增每周"Lingo 的信"家长摘要。多屏幕小改动，风险低。
+## Sprint 12: 流畅交互与家长信任 (Smooth Interaction & Parent Trust) - [x] v3.2
+> 原则：补齐半成品接线 (校准按钮 no-op、通知无 UI、周报仅文本分享)，并新增每周"Lingo 的信"家长摘要。多屏幕小改动，风险低。
 
 ### Phase A: 流畅交互接线
-- [ ] **[Impl]** 校准弹窗 "Update My Level" → 跳转重跑 Diagnosis (当前为 no-op，注释承认未接线)
-- [ ] **[Impl]** Settings 新增年级修改 / 重跑 Onboarding 入口 (当前 `child_name` 默认 "Buddy" 且只读)
-- [ ] **[Impl]** Dashboard 任务目标/时长改为读取已加载周计划 (当前为硬编码 "15 Mins / 5 Words + 2 Speech")
-- [ ] **[Impl]** 通知/提醒偏好 UI (提醒时间窗、开关) - `DailyReminderWorker` 已存在但无配置界面
+- [x] **[Impl]** 校准弹窗 "Update My Level" → 跳转重跑 Diagnosis (原为 no-op)，完成后更新 `diagnostic_level`
+- [x] **[Impl]** Settings 新增 "Change Grade / Re-run Onboarding" 入口，重置 `onboarding_completed` 并回到 Welcome
+- [x] **[Impl]** Settings 新增 "Daily Reminder" 偏好卡 (开关 + 时间滑杆)，`DailyReminderWorker` 读取 `reminder_enabled` 决定是否通知 (镜像 plain prefs 供 WorkManager 读取)
+- [x] **[Impl]** Dashboard 任务目标/时长读取周计划 (Sprint 10.5 已完成，保持)
 
 ### Phase B: 家长信任面
-- [ ] **[Impl]** WeeklyReport 图片分享 (复用已构建但未使用的 `shareBitmap`)
-- [ ] **[Impl]** 每周 "Lingo 的信" 家长摘要卡 (Agent 生成本周进步/薄弱点自然语言摘要，写入 AgentDecisionLog)
+- [x] **[Impl]** WeeklyReport 图片分享：`buildReportImageUri` 渲染周报摘要 PNG + FileProvider 分享 (manifest + file_paths.xml)
+- [x] **[Impl]** 每周 "Lingo 的信" 家长摘要卡：LLM 生成 (taskType `LINGO_LETTER`) + `LingoLetterFallback` 离线模板
 
 ### Phase C: 质量
-- [ ] **[Unit Test & Build]** 报告摘要格式化测试 + 偏好持久化测试；`./gradlew test assembleDebug`
-- [ ] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
-- [ ] **[MVP Delivery]** 交付 V3.2 流畅交互 APK
+- [x] **[Unit Test & Build]** `LingoLetterFallbackTest` (4)；`./gradlew test assembleDebug`
+- [x] **[Docs Sync]** 更新 `agents.md` (Weekly Lingo Letter Agent prompt)、`readme.md`、`implementation_plan.md`、`task.md`
+- [x] **[MVP Delivery]** 交付 V3.2 流畅交互 APK (模拟器 E2E：Settings 提醒卡 + 重跑 Onboarding → Welcome + 校准接线，无崩溃)
 
 ---
 

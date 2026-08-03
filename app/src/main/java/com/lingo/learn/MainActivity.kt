@@ -24,6 +24,7 @@ import org.akj.lingo.learn.ui.aigrowthnotes.AiGrowthNotesScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookDetailScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookScreen
 import org.akj.lingo.learn.ui.learning.LearningContainer
+import org.akj.lingo.learn.ui.onboarding.DiagnosisScreen
 import org.akj.lingo.learn.ui.onboarding.OnboardingContainer
 import org.akj.lingo.learn.ui.roleplay.RoleplayScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyPlanScreen
@@ -63,6 +64,8 @@ class MainActivity : ComponentActivity() {
                     var isLearning by remember { mutableStateOf(false) }
                     // Sprint 10.5: which plan day to load when starting learning (1-7, default = today)
                     var learningDayIndex by remember { mutableStateOf(1) }
+                    // Sprint 12: re-run the diagnostic to recalibrate level
+                    var isRediagnosing by remember { mutableStateOf(false) }
 
                     // Navigation States
                     var currentTab by remember { mutableStateOf(MainTab.HOME) }
@@ -90,6 +93,15 @@ class MainActivity : ComponentActivity() {
                                     .apply()
                             },
                             onOpenSettings = { currentTab = MainTab.SETTINGS }
+                        )
+                    } else if (isRediagnosing) {
+                        // Sprint 12: recalibrate the child's level by re-running the diagnosis.
+                        DiagnosisScreen(
+                            grade = currentGrade,
+                            onDiagnosisFinished = { level ->
+                                appPrefs.edit().putString("diagnostic_level", level).apply()
+                                isRediagnosing = false
+                            }
                         )
                     } else if (isLearning) {
                         LearningContainer(
@@ -152,7 +164,8 @@ class MainActivity : ComponentActivity() {
                                         onPlanClick = { currentTab = MainTab.PLAN },
                                         onErrorBookClick = { currentTab = MainTab.ERROR_BOOK },
                                         onSettingsClick = { currentTab = MainTab.SETTINGS },
-                                        onRoleplayClick = { isRoleplayOpen = true }
+                                        onRoleplayClick = { isRoleplayOpen = true },
+                                        onUpdateLevel = { isRediagnosing = true }
                                     )
                                     MainTab.PLAN -> WeeklyPlanScreen(
                                         grade = currentGrade,
@@ -172,7 +185,13 @@ class MainActivity : ComponentActivity() {
                                     )
                                     MainTab.SETTINGS -> org.akj.lingo.learn.ui.settings.SettingsScreen(
                                         onBack = { currentTab = MainTab.HOME },
-                                        onOpenAiGrowthNotes = { isAiGrowthNotesOpen = true }
+                                        onOpenAiGrowthNotes = { isAiGrowthNotesOpen = true },
+                                        onRerunOnboarding = {
+                                            appPrefs.edit().putBoolean("onboarding_completed", false).apply()
+                                            isOnboardingCompleted = false
+                                            currentGrade = "Grade 4"
+                                            currentTab = MainTab.HOME
+                                        }
                                     )
                                 }
                             }

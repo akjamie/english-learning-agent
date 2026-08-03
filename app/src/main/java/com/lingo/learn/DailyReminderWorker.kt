@@ -21,6 +21,13 @@ class DailyReminderWorker(
 
     override suspend fun doWork(): Result {
         createNotificationChannel()
+
+        // Sprint 12: respect the user's reminder preferences (mirrored plain prefs).
+        val reminderEnabled = applicationContext
+            .getSharedPreferences("lingo_reminder_prefs", Context.MODE_PRIVATE)
+            .getBoolean("reminder_enabled", true)
+        if (!reminderEnabled) return Result.success()
+
         showNotification()
         return Result.success()
     }

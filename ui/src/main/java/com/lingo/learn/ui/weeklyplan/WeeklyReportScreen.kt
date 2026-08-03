@@ -280,6 +280,30 @@ fun WeeklyReportScreen(
                 }
             }
 
+            // Sprint 12: "Lingo's letter" weekly parent digest
+            uiState.lingoLetter?.let { letter ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F8F0)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🦊", fontSize = 28.sp)
+                            Spacer(Modifier.width(10.dp))
+                            Text("Lingo's Letter to You", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            letter,
+                            fontSize = 14.sp,
+                            color = Color(0xFF2C3E50),
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+            }
+
             // Encouragement message
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -347,37 +371,115 @@ private fun StatCard(emoji: String, value: String, modifier: Modifier = Modifier
 }
 
 private fun shareReport(context: Context, viewModel: WeeklyReportViewModel) {
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        val state = viewModel.uiState.value
-        val message = buildString {
-            appendLine("📊 Lingo English Weekly Report")
-            appendLine()
-            appendLine("Grade: ${viewModel.getGradeMessage(state.weeklyAccuracy)}")
-            appendLine("Weekly Accuracy: ${(state.weeklyAccuracy * 100).toInt()}%")
-            appendLine("Monthly Accuracy: ${(state.monthlyAccuracy * 100).toInt()}%")
-            appendLine("🔥 Streak: ${state.streakDays} days")
-            appendLine("📚 Sessions: ${state.totalSessions}")
-            appendLine("📖 Words Learned: ${state.totalWordsLearned}")
-            if (state.weakCategories.isNotEmpty()) {
-                appendLine("🎯 Focus Areas: ${state.weakCategories.joinToString(", ")}")
-            }
-            if (state.topErrorWords.isNotEmpty()) {
-                appendLine("🔤 Words To Review: ${state.topErrorWords.joinToString(", ")}")
-            }
-            if (state.timeByTaskType.isNotEmpty()) {
-                val totalMin = state.timeByTaskType.values.sum() / 60
-                appendLine("⏱️ Study Time: ~$totalMin min this week")
-                state.timeByTaskType.forEach { (type, sec) ->
-                    appendLine("   - $type: ${sec / 60} min")
-                }
-            }
-            appendLine()
-            appendLine("Theme: ${state.themeName}")
-            appendLine()
-            appendLine("Keep practicing with Lingo English! 🦊")
+    val state = viewModel.uiState.value
+    val message = buildString {
+        appendLine("📊 Lingo English Weekly Report")
+        appendLine()
+        appendLine("Grade: ${viewModel.getGradeMessage(state.weeklyAccuracy)}")
+        appendLine("Weekly Accuracy: ${(state.weeklyAccuracy * 100).toInt()}%")
+        appendLine("Monthly Accuracy: ${(state.monthlyAccuracy * 100).toInt()}%")
+        appendLine("🔥 Streak: ${state.streakDays} days")
+        appendLine("📚 Sessions: ${state.totalSessions}")
+        appendLine("📖 Words Learned: ${state.totalWordsLearned}")
+        if (state.weakCategories.isNotEmpty()) {
+            appendLine("🎯 Focus Areas: ${state.weakCategories.joinToString(", ")}")
         }
+        if (state.topErrorWords.isNotEmpty()) {
+            appendLine("🔤 Words To Review: ${state.topErrorWords.joinToString(", ")}")
+        }
+        if (state.timeByTaskType.isNotEmpty()) {
+            val totalMin = state.timeByTaskType.values.sum() / 60
+            appendLine("⏱️ Study Time: ~$totalMin min this week")
+            state.timeByTaskType.forEach { (type, sec) ->
+                appendLine("   - $type: ${sec / 60} min")
+            }
+        }
+        appendLine()
+        appendLine("Theme: ${state.themeName}")
+        appendLine()
+        appendLine("Keep practicing with Lingo English! 🦊")
+    }
+
+    // Sprint 12: also share an image card for a richer parent experience.
+    val imageUri = buildReportImageUri(context, state, viewModel)
+
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = if (imageUri != null) "image/*" else "text/plain"
         putExtra(Intent.EXTRA_TEXT, message)
+        if (imageUri != null) {
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
     }
     context.startActivity(Intent.createChooser(intent, "Share Report"))
+}
+
+/** Renders a compact report summary card as a PNG and returns its FileProvider URI. */
+private fun buildReportImageUri(
+    context: Context,
+    state: WeeklyReportUiState,
+    viewModel: WeeklyReportViewModel
+): android.net.Uri? {
+    return try {
+        val width = 1080
+        val height = 1350
+        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+
+        // Background
+        canvas.drawColor(0xFFFFFDF5.toInt())
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+        // Header bar
+        val headerPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF5C6FF2.toInt()
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), 240f, headerPaint)
+
+        paint.color = android.graphics.Color.WHITE
+        paint.textSize = 56f
+        paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        canvas.drawText("Lingo English — Weekly Report", 60f, 130f, paint)
+        paint.textSize = 34f
+        paint.typeface = android.graphics.Typeface.DEFAULT
+        canvas.drawText("Theme: ${state.themeName}", 60f, 190f, paint)
+
+        // Stats
+        var y = 320f
+        paint.textSize = 40f
+        paint.color = 0xFF2C3E50.toInt()
+        paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        canvas.drawText("${viewModel.getGradeMessage(state.weeklyAccuracy)}", 60f, y, paint)
+        y += 90f
+        paint.textSize = 36f
+        paint.typeface = android.graphics.Typeface.DEFAULT
+        val lines = listOf(
+            "Weekly Accuracy: ${(state.weeklyAccuracy * 100).toInt()}%",
+            "Monthly Accuracy: ${(state.monthlyAccuracy * 100).toInt()}%",
+            "🔥 Streak: ${state.streakDays} days",
+            "📚 Sessions: ${state.totalSessions}",
+            "📖 Words Learned: ${state.totalWordsLearned}",
+            if (state.weakCategories.isNotEmpty()) "🎯 Focus Areas: ${state.weakCategories.joinToString(", ")}" else "",
+            if (state.topErrorWords.isNotEmpty()) "🔤 Words To Review: ${state.topErrorWords.joinToString(", ")}" else ""
+        )
+        lines.filter { it.isNotBlank() }.forEach { line ->
+            canvas.drawText(line, 60f, y, paint)
+            y += 66f
+        }
+
+        // Footer
+        paint.textSize = 32f
+        paint.color = 0xFF7F8C8D.toInt()
+        canvas.drawText("Keep practicing with Lingo English! 🦊", 60f, height - 90f, paint)
+
+        // Write to cache
+        val dir = File(context.cacheDir, "shared_reports").apply { if (!exists()) mkdirs() }
+        val file = File(dir, "weekly_report.png")
+        FileOutputStream(file).use { fos -> bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, fos) }
+        bitmap.recycle()
+
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    } catch (_: Exception) {
+        null
+    }
 }

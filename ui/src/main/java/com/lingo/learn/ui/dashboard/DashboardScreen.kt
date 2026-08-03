@@ -59,6 +59,7 @@ fun DashboardScreen(
     onErrorBookClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
     onRoleplayClick: () -> Unit = {},
+    onUpdateLevel: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
@@ -77,7 +78,7 @@ fun DashboardScreen(
             confirmButton = {
                 Button(onClick = {
                     viewModel.dismissCalibrationPrompt()
-                    onStartLearning() // Start a diagnostic flow — in a full impl this navigates to DiagnosisScreen
+                    onUpdateLevel() // Sprint 12: re-run the diagnosis to recalibrate the level
                 }) {
                     Text("Update My Level")
                 }

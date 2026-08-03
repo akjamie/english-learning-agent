@@ -33,4 +33,10 @@ interface ConfigRepository {
 
     fun getLanguage(): String
     fun setLanguage(value: String)
+
+    fun isReminderEnabled(): Boolean
+    fun setReminderEnabled(value: Boolean)
+
+    fun getReminderHour(): Int
+    fun setReminderHour(value: Int)
 }

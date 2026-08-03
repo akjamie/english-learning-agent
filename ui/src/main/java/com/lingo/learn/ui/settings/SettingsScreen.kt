@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun SettingsScreen(
     onBack: () -> Unit,
     onOpenAiGrowthNotes: () -> Unit = {},
+    onRerunOnboarding: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -225,6 +226,79 @@ fun SettingsScreen(
                         fontSize = 12.sp,
                         color = Color(0xFF7F8C8D)
                     )
+                }
+            }
+
+            // Sprint 12: Daily reminder preferences
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "🔔 Daily Reminder",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF5C6FF2)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Remind me to practice daily", fontSize = 14.sp, color = Color(0xFF2C3E50))
+                        Switch(
+                            checked = uiState.reminderEnabled,
+                            onCheckedChange = { viewModel.updateReminderEnabled(it) }
+                        )
+                    }
+                    Text("Reminder time: ${String.format("%02d:00", uiState.reminderHour)}", fontSize = 13.sp, color = Color(0xFF7F8C8D))
+                    Slider(
+                        value = uiState.reminderHour.toFloat(),
+                        onValueChange = { viewModel.updateReminderHour(it.toInt()) },
+                        valueRange = 0f..23f,
+                        steps = 22,
+                        enabled = uiState.reminderEnabled
+                    )
+                }
+            }
+
+            // Sprint 12: Re-run onboarding / change grade
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onRerunOnboarding() }
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🎓", fontSize = 28.sp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Change Grade / Re-run Onboarding",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2C3E50)
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "Re-pick the grade, textbook, and take a fresh diagnosis",
+                            fontSize = 13.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                    Text("›", fontSize = 24.sp, color = Color(0xFF7F8C8D))
                 }
             }
 

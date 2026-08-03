@@ -362,7 +362,6 @@ which they keep getting wrong. Here is the full error history for this word:
 ## 🗺️ Sprint 11-12 Agent Extensions
 
 > Tech-lead scoping adds two agent roles on top of the Sprint 10-13 roadmap (see `task.md`). Prompts below are design targets; they are wired in the sprint where the corresponding feature ships.
-
 ### 7. Roleplay Scenario Agent (Sprint 11 - Agent Companion) — ✅ Implemented (v3.1)
 
 Generates the scenario script (system prompt + opening line + target vocabulary) for the Roleplay 2.0 scenario bank. Replaces the single hardcoded ice-cream scenario with four curated real-world scenes (zoo / restaurant / school / travel). Offline-safe: `RoleplayScenarioBank` ships curated scripts, and LLM enrichment via `ROLEPLAY_SCENARIO` is optional (curated script is kept on any failure).
@@ -399,9 +398,9 @@ Output a raw JSON object ONLY, no markdown, matching:
 4. 4-6 turns maximum to keep sessions bite-sized.
 ```
 
-### 8. Weekly Lingo Letter Agent (Sprint 12 - Parent Trust)
+### 8. Weekly Lingo Letter Agent (Sprint 12 - Parent Trust) — ✅ Implemented (v3.2)
 
-Generates a short weekly digest for parents summarizing progress, weak areas, and what the AI adjusted — complementary to the existing weekly report "What Lingo adjusted" card.
+Generates a short weekly digest for parents summarizing progress, weak areas, and what the AI adjusted — complementary to the existing weekly report "What Lingo adjusted" card. Wired into `WeeklyReportViewModel` (`LINGO_LETTER` taskType) with an offline `LingoLetterFallback` template.
 
 ```
 You are Lingo, the fox tutor. Summarize this week's learning for {parent_name}

@@ -6,7 +6,9 @@ import org.akj.lingo.learn.domain.model.AgentDecisionLog
 import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
+import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.LingoLetterFallback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,9 @@ data class WeeklyReportUiState(
     val topErrorWords: List<String> = emptyList(),
     val timeByTaskType: Map<String, Long> = emptyMap(),
     val isLoading: Boolean = false,
-    val shareBitmap: ByteArray? = null
+    val shareBitmap: ByteArray? = null,
+    // Sprint 12: "Lingo's letter" weekly parent digest
+    val lingoLetter: String? = null
 )
 
 @HiltViewModel
@@ -34,7 +38,8 @@ class WeeklyReportViewModel @Inject constructor(
     private val learningRecordRepository: LearningRecordRepository,
     private val weeklyPlanRepository: WeeklyPlanRepository,
     private val agentDecisionLogRepository: AgentDecisionLogRepository,
-    private val errorBookRepository: ErrorBookRepository
+    private val errorBookRepository: ErrorBookRepository,
+    private val llmRepository: LlmRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyReportUiState())
@@ -70,12 +75,40 @@ class WeeklyReportViewModel @Inject constructor(
                     agentAdjustments = adjustments,
                     topErrorWords = topErrors,
                     timeByTaskType = timeByType,
-                    isLoading = false
+                    isLoading = false,
+                    lingoLetter = loadLingoLetter(weeklyAccuracy, weeklyRecords.size, topErrors)
                 )
             } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
+    }
+
+    /**
+     * Sprint 12: "Lingo's letter" — a short agent-generated weekly digest for parents.
+     * Uses the LLM when configured; otherwise falls back to a data-driven template.
+     */
+    private suspend fun loadLingoLetter(
+        weeklyAccuracy: Float,
+        sessions: Int,
+        topErrorWords: List<String>
+    ): String? {
+        val prompt = """
+            You are Lingo, the fox tutor. Summarize this week's learning for a parent about their child.
+
+            --- This Week's Data ---
+            Weekly accuracy: ${(weeklyAccuracy * 100).toInt()}%
+            Sessions completed: $sessions
+            Weak areas: ${_uiState.value.weakCategories.joinToString()}
+            Words to review: ${topErrorWords.joinToString()}
+
+            --- Guidelines ---
+            1. 3-4 short sentences, warm and specific (reference actual numbers/words).
+            2. Lead with progress, then ONE gentle area to practice.
+            3. Max 60 words. Frame as growth, never as grades.
+        """.trimIndent()
+        val result = llmRepository.complete(prompt, taskType = "LINGO_LETTER", maxTokens = 120)
+        return result.getOrNull() ?: LingoLetterFallback.digest(weeklyAccuracy, sessions, topErrorWords)
     }
 
     /** Top 5 most-missed words currently in the Error Book for the parent report. */

@@ -27,7 +27,10 @@ data class SettingsUiState(
     val isTestingConnection: Boolean = false,
     val connectionTestResult: String? = null,
     val connectionTestSuccess: Boolean? = null,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    // Sprint 12: daily reminder preferences
+    val reminderEnabled: Boolean = true,
+    val reminderHour: Int = 18
 )
 
 /**
@@ -59,6 +62,8 @@ class SettingsViewModel @Inject constructor(
                 asrScoreThreshold = configRepository.getAsrScoreThreshold(),
                 monthlyTokenLimit = configRepository.getMonthlyTokenLimit(),
                 language = configRepository.getLanguage(),
+                reminderEnabled = configRepository.isReminderEnabled(),
+                reminderHour = configRepository.getReminderHour(),
                 isSaved = false
             )
         }
@@ -116,8 +121,18 @@ class SettingsViewModel @Inject constructor(
         configRepository.setAsrScoreThreshold(state.asrScoreThreshold)
         configRepository.setMonthlyTokenLimit(state.monthlyTokenLimit)
         configRepository.setLanguage(state.language)
+        configRepository.setReminderEnabled(state.reminderEnabled)
+        configRepository.setReminderHour(state.reminderHour)
 
         _uiState.update { it.copy(isSaved = true) }
+    }
+
+    fun updateReminderEnabled(value: Boolean) {
+        _uiState.update { it.copy(reminderEnabled = value, isSaved = false) }
+    }
+
+    fun updateReminderHour(value: Int) {
+        _uiState.update { it.copy(reminderHour = value.coerceIn(0, 23), isSaved = false) }
     }
 
     fun testApiConnection() {
