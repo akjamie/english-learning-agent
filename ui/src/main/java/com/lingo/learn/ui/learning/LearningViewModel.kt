@@ -109,7 +109,8 @@ class LearningViewModel @Inject constructor(
     private val dailyGoalTracker: DailyGoalTracker,
     private val makeupCardManager: MakeupCardManager,
     private val gamificationRepository: GamificationRepository,
-    private val productionTaskScorer: ProductionTaskScorer
+    private val productionTaskScorer: ProductionTaskScorer,
+    private val audioEngine: AudioPlaybackEngine
 ) : ViewModel() {
 
     private val _stage = MutableStateFlow(LearningStage.PRE_TEACH)
@@ -200,8 +201,10 @@ class LearningViewModel @Inject constructor(
                 )
                 _session.value = loadedSession
                 audioPlayer.loadSubtitles(loadedSession.subtitleLines)
+                prepareImmersiveAudio(loadedSession.subtitleLines)
             } catch (e: Exception) {
                 audioPlayer.loadSubtitles(_session.value.subtitleLines)
+                prepareImmersiveAudio(_session.value.subtitleLines)
             }
             // Derive weekly day number from stored task day
             val taskDayStr = TaskStatePrefs.getTaskDay(context)
@@ -343,9 +346,12 @@ class LearningViewModel @Inject constructor(
             TaskStatePrefs.setTaskState(context, TaskState.IN_PROGRESS)
             TaskStatePrefs.setTaskDay(context, java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date()))
         }
-        // Speak subtitle lines via TTS as they become active during immersion playback
+        // Speak subtitle lines via TTS as they become active during immersion playback.
+        // Sprint 13: only fire-and-forget in simulated mode; real audio mode plays
+        // TTS files directly via the AudioPlaybackEngine inside AudioPlayerController.
         viewModelScope.launch {
             audioPlayer.state
+                .filter { !it.isRealAudio }
                 .map { it.currentSubtitleIndex }
                 .distinctUntilChanged()
                 .collect { index ->
@@ -369,6 +375,40 @@ class LearningViewModel @Inject constructor(
     fun setAudioSpeed(speed: Float) = audioPlayer.setSpeed(speed)
 
     fun dismissNewWord(word: String) = audioPlayer.dismissNewWord(word)
+
+    /**
+     * Sprint 13: Pre-synthesizes TTS audio for each subtitle line and configures
+     * the audio player for real audio playback. Falls back to simulated mode
+     * (with per-line system TTS) when cloud TTS is unavailable or synthesis
+     * fails for all lines. Lines that fail synthesis individually degrade to
+     * simulated playback (mixed mode) within the controller.
+     */
+    private fun prepareImmersiveAudio(subtitles: List<SubtitleLine>) {
+        val token = configRepository.getAuthToken()
+        if (token.length < 10) {
+            // Offline - no cloud TTS; use simulated mode with system TTS per-line
+            audioPlayer.clearRealAudio()
+            return
+        }
+        audioPlayer.setPreparingAudio(true)
+        viewModelScope.launch {
+            val files = subtitles.map { line ->
+                try {
+                    val result = ttsRepository.getSpeech(line.text, 1.0f)
+                    result.getOrNull()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            val hasAnyReal = files.any { it != null && it.exists() }
+            if (hasAnyReal) {
+                audioPlayer.configureRealAudio(audioEngine, files)
+            } else {
+                audioPlayer.clearRealAudio()
+            }
+            audioPlayer.setPreparingAudio(false)
+        }
+    }
 
     /** Navigates back to the previous learning stage. */
     fun goToPreviousStage() {

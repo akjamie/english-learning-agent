@@ -158,7 +158,7 @@ Sprint 10-13 turn Lingo from a "task-checker" into a **visible-growth companion*
 | **10.5** | Release Hardening (v3.0.1) | Blocker fixes from v3.0.0 testing: plan→Start flow, evaluation audio + config gating, grade↔difficulty matching, offline/online capability matrix, unified exception handling | Medium | ✅ Done |
 | **11** | Agent Companion (v3.1) | Roleplay 2.0: scenario bank + picker + text-chat fallback + conversation history; enable `FAST_ANSWER` observation trigger | Medium | ✅ Done |
 | **12** | Smooth Interaction & Parent Trust (v3.2) | Wire calibration→re-run diagnosis, grade-change/onboarding re-run, plan-driven Dashboard targets, notification prefs UI, WeeklyReport image share + weekly "Lingo's letter" digest | Low | ✅ Done |
-| **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | Planned |
+| **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | ✅ Done |
 
 **Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`).
 
@@ -232,6 +232,23 @@ Sprint 12 finishes the half-wired UX paths (calibration no-op, missing notificat
 ### Verification
 - **Unit tests**: 4 new (`LingoLetterFallbackTest`) + all module tests green.
 - **Emulator E2E**: Settings shows Daily Reminder card + Change Grade card ✓ → Change Grade returns to Welcome and re-enters onboarding ✓; calibration navigation wired; no crashes.
+
+---
+
+## 🚀 Sprint 13 (v3.3): Real Audio Immersion - 真实音频沉浸
+
+Sprint 13 replaces the **simulated playback** (coroutine timer) in the immersive audio stage with **real TTS-synthesized audio** played via MediaPlayer. Subtitle highlighting and new-word popups are now synced to actual audio progress. The simulated mode is retained as an offline fallback.
+
+### New Capabilities
+1. **`AudioPlaybackEngine` abstraction**: interface + `MediaPlayerAudioEngine` implementation, injected via Hilt (`UiModule`). Keeps `AudioPlayerController` unit-testable without Android MediaPlayer.
+2. **Real audio mode in `AudioPlayerController`**: per-subtitle-line sequential playback - each line's TTS audio file plays via the engine; on completion, the controller auto-advances to the next line. Subtitle highlight and new-word popups follow the currently-playing line. Position is mapped to the global subtitle timeline.
+3. **Mixed-mode degradation**: when a line's TTS synthesis fails (null file), that line degrades to simulated timer playback for its subtitle duration, then advances. This enables partial real audio with graceful per-line fallback.
+4. **Pre-synthesis pipeline**: `LearningViewModel.prepareImmersiveAudio()` pre-synthesizes all subtitle lines via `TtsRepository.getSpeech()` (leveraging the existing LRU `TtsCache`), builds a per-line file list, and configures the controller. A "Preparing audio..." spinner shows during synthesis.
+5. **Offline fallback chain**: no auth token -> simulated mode + per-line system TTS (`SystemTtsHelper`) via the existing `speakWithTts` observer (gated on `!isRealAudio`); all synthesis fails -> simulated mode; individual line fails -> mixed mode.
+
+### Verification
+- **Unit tests**: 14 new (`AudioPlayerControllerRealAudioTest`) covering real audio config, sequential playback, position mapping, pause/resume, seek, reset, speed change, mixed-mode degradation, and clearRealAudio. All 36 UI tests green; `./gradlew test assembleDebug` passes.
+- **Build**: APK assembled successfully (`app-debug.apk`).
 
 
 

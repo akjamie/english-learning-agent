@@ -276,22 +276,22 @@
 
 ---
 
-## Sprint 13: 真实音频沉浸 (Real Audio Immersion) - [ ] v3.3
+## Sprint 13: 真实音频沉浸 (Real Audio Immersion) - [x] v3.3
 > 原则：沉浸式导入阶段当前是**模拟播放** (协程计时器)，无真实音频。本 Sprint 接入真实 TTS 合成 + MediaPlayer 播放，保留字幕高亮与生词弹出。核心阶段质量基线，风险最高，放最后。
 
 ### Phase A: 真实 TTS 音频
-- [ ] **[Impl]** `ImmersiveAudioScreen` 字幕行经 `TtsRepository.getSpeech()` 合成真实音频，MediaPlayer 播放
-- [ ] **[Impl]** `AudioPlayerController` 扩展支持真实文件播放 (保留模拟模式作为离线降级)
-- [ ] **[Impl]** 字幕高亮 / 新词弹出与真实播放进度同步
+- [x] **[Impl]** `ImmersiveAudioScreen` 字幕行经 `TtsRepository.getSpeech()` 合成真实音频，MediaPlayer 播放
+- [x] **[Impl]** `AudioPlayerController` 扩展支持真实文件播放 (保留模拟模式作为离线降级)
+- [x] **[Impl]** 字幕高亮 / 新词弹出与真实播放进度同步
 
 ### Phase B: 降级与性能
-- [ ] **[Impl]** 合成失败 → System TTS / 模拟模式降级路径
-- [ ] **[Impl]** 批量预合成缓存 (接入 TtsCache LRU)
+- [x] **[Impl]** 合成失败 -> System TTS / 模拟模式降级路径
+- [x] **[Impl]** 批量预合成缓存 (接入 TtsCache LRU)
 
 ### Phase C: 质量
-- [ ] **[Unit Test & Build]** AudioPlayerController 真实文件状态测试 + 降级路径测试；`./gradlew test assembleDebug`
-- [ ] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
-- [ ] **[MVP Delivery]** 交付 V3.3 真实音频 APK
+- [x] **[Unit Test & Build]** AudioPlayerController 真实文件状态测试 + 降级路径测试；`./gradlew test assembleDebug` (14 new real-audio tests; all 36 UI tests green)
+- [x] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
+- [x] **[MVP Delivery]** 交付 V3.3 真实音频 APK
 
 ---
 

@@ -50,6 +50,7 @@ fun ImmersiveAudioScreen(
 ) {
     val audioState by viewModel.audioPlayer.state.collectAsState()
     val session by viewModel.session.collectAsState()
+    val isOffline by viewModel.isOfflineMode.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     // Track which new word popup is currently shown (one at a time for clarity)
@@ -195,6 +196,16 @@ fun ImmersiveAudioScreen(
                         color = Color.Gray
                     )
                     Text(
+                        text = when {
+                            audioState.isPreparingAudio -> "Preparing audio..."
+                            audioState.isRealAudio -> "Real Audio"
+                            isOffline -> "Device TTS"
+                            else -> "Real Audio"
+                        },
+                        fontSize = 11.sp,
+                        color = Color(0xFF90A4AE)
+                    )
+                    Text(
                         text = formatTime(audioState.durationMs),
                         fontSize = 12.sp,
                         color = Color.Gray
@@ -223,8 +234,6 @@ fun ImmersiveAudioScreen(
                             color = if (audioState.speed != 1.0f) theme.primaryColor else Color.Gray
                         )
                     }
-
-                    // Play/Pause main button
                     Button(
                         onClick = { viewModel.toggleAudioPlayback() },
                         modifier = Modifier.size(56.dp),
@@ -233,12 +242,21 @@ fun ImmersiveAudioScreen(
                             containerColor = theme.primaryColor,
                             contentColor = theme.buttonContentColor
                         ),
-                        contentPadding = PaddingValues(0.dp)
+                        contentPadding = PaddingValues(0.dp),
+                        enabled = !audioState.isPreparingAudio
                     ) {
-                        Text(
-                            text = if (audioState.isPlaying) "⏸" else "▶",
-                            fontSize = 24.sp
-                        )
+                        if (audioState.isPreparingAudio) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp,
+                                color = theme.buttonContentColor
+                            )
+                        } else {
+                            Text(
+                                text = if (audioState.isPlaying) "⏸" else "▶",
+                                fontSize = 24.sp
+                            )
+                        }
                     }
 
                     // Proceed button (visible when finished)

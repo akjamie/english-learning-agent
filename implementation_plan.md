@@ -293,7 +293,7 @@ graph TD
 
 - **Sprint 11 — 伴学升级 (v3.1) [x]**：场景化 Roleplay 2.0 (场景库 + 选择器 + 文本聊天降级 + 对话历史持久化) 与 `FAST_ANSWER` 观察触发补全。已交付。
 - **Sprint 12 — 流畅交互与家长信任 (v3.2) [x]**：校准→重跑 Diagnosis 接线、年级修改/Onboarding 重跑入口、通知偏好 UI、周报图片分享 + "Lingo 的信"家长摘要。已交付。
-- **Sprint 13 — 真实音频沉浸 (v3.3)**：`ImmersiveAudioScreen` 字幕行真实 TTS 合成 + MediaPlayer 播放，`AudioPlayerController` 支持真实文件 (保留模拟降级)。核心阶段质量基线，风险最高，放最后。
+- **Sprint 13 — 真实音频沉浸 (v3.3) [x]**：`ImmersiveAudioScreen` 字幕行真实 TTS 合成 + MediaPlayer 播放，`AudioPlayerController` 支持真实文件 (保留模拟降级)。核心阶段质量基线，风险最高，放最后。已交付。
 
 ---
 
