@@ -294,15 +294,13 @@ graph TD
 - **Sprint 11 — 伴学升级 (v3.1) [x]**：场景化 Roleplay 2.0 (场景库 + 选择器 + 文本聊天降级 + 对话历史持久化) 与 `FAST_ANSWER` 观察触发补全。已交付。
 - **Sprint 12 — 流畅交互与家长信任 (v3.2) [x]**：校准→重跑 Diagnosis 接线、年级修改/Onboarding 重跑入口、通知偏好 UI、周报图片分享 + "Lingo 的信"家长摘要。已交付。
 - **Sprint 13 — 真实音频沉浸 (v3.3) [x]**：`ImmersiveAudioScreen` 字幕行真实 TTS 合成 + MediaPlayer 播放，`AudioPlayerController` 支持真实文件 (保留模拟降级)。核心阶段质量基线，风险最高，放最后。已交付。
+- **Sprint 14 — 自适应智能与小组件个性化 (v3.4) [x]**：周计划拉取真实指标替代硬编码 75%；诊断结果页"AI 持续调整"提示 + 重跑诊断展示结果；小组件文案改为数据驱动 (纯函数 `WidgetContentGenerator` + 每日缓存 `WidgetContentCache`，UI 经 `WidgetContentRepository` 写入避免 `:ui->:data` 依赖)；`DailyReminderWorker` 按 `reminder_hour` 对齐首次触发并联动刷新小组件。已交付。
 
 ---
 
-### V1.1 待规划 (Deferred Enhancements)
+### V1.1 待规划 (Deferred Enhancements) — 已并入 Sprint 14，无剩余项
 
-> 以下增强已在评审中确认价值，但优先级低于 Sprint 6-7，计划在 V2.0 之后迭代：
-
-- **增强四：Onboarding 诊断结果持续校准** - 诊断结果页文案传达"AI 会持续修正"态度，第10天左右根据实际学习数据触发起点校准提示；需新增校准触发规则，成本中等
-- **增强五：Widget 个性化文案** - Widget 文案从固定模板改为基于近期数据的轻量个性化生成，走 Fallback LLM 通道 + 每日预生成缓存；需接入 WorkManager 预生成 + 缓存机制，成本中等
+> 增强四/五已在 Sprint 14 交付（诊断持续校准反馈、小组件个性化文案）。
 
 ---
 

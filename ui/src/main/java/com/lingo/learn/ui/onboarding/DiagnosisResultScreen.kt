@@ -118,6 +118,28 @@ fun DiagnosisResultScreen(
             )
         }
 
+        // Sprint 14 (Enhancement 4): convey that AI will keep adjusting.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFFF0F4FF))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "🤖",
+                fontSize = 18.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Lingo will keep adjusting your level as you learn. Every two weeks, we'll check in to make sure the difficulty is just right.",
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+                color = Color(0xFF5C6FF2)
+            )
+        }
+
         // 3. Today's task preview card
         Card(
             modifier = Modifier.fillMaxWidth(),

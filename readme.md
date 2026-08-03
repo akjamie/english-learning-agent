@@ -148,9 +148,9 @@ The user-editable `llmEndpoint` field is **removed**; per-channel paths are deri
 
 ---
 
-## 🗺️ Sprint 10-13 Roadmap
+## 🗺️ Sprint 10-14 Roadmap
 
-Sprint 10-13 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio. Scoped by the tech lead from the product-owner enhancement review (market: ELSA multi-scenario AI role-play, Duolingo persistent XP, Lingokids parent hub, Khan Kids growing path) into four **independently shippable** sprints ordered by dependency/risk:
+Sprint 10-14 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio and personalized, data-driven content. Scoped by the tech lead from the product-owner enhancement review (market: ELSA multi-scenario AI role-play, Duolingo persistent XP, Lingokids parent hub, Khan Kids growing path) into five **independently shippable** sprints ordered by dependency/risk:
 
 | Sprint | Theme | Scope | Risk | Status |
 | --- | --- | --- | --- | --- |
@@ -159,8 +159,9 @@ Sprint 10-13 turn Lingo from a "task-checker" into a **visible-growth companion*
 | **11** | Agent Companion (v3.1) | Roleplay 2.0: scenario bank + picker + text-chat fallback + conversation history; enable `FAST_ANSWER` observation trigger | Medium | ✅ Done |
 | **12** | Smooth Interaction & Parent Trust (v3.2) | Wire calibration→re-run diagnosis, grade-change/onboarding re-run, plan-driven Dashboard targets, notification prefs UI, WeeklyReport image share + weekly "Lingo's letter" digest | Low | ✅ Done |
 | **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | ✅ Done |
+| **14** | Adaptive Intelligence & Widget Personalization (v3.4) | Data-driven weekly-plan metrics (replace hardcoded), "AI keeps adjusting" diagnosis feedback, re-diagnosis result screen, personalized widget text via daily pre-generated cache, reminder respects `reminder_hour` + widget refresh | Low | ✅ Done |
 
-**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`).
+**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`); Sprint 14 replaces hardcoded/stale content (plan metrics, widget text, reminder timing) with data-driven personalization.
 
 Detailed task breakdowns live in `task.md`. Status is tracked per sprint as they complete.
 
@@ -249,6 +250,23 @@ Sprint 13 replaces the **simulated playback** (coroutine timer) in the immersive
 ### Verification
 - **Unit tests**: 14 new (`AudioPlayerControllerRealAudioTest`) covering real audio config, sequential playback, position mapping, pause/resume, seek, reset, speed change, mixed-mode degradation, and clearRealAudio. All 36 UI tests green; `./gradlew test assembleDebug` passes.
 - **Build**: APK assembled successfully (`app-debug.apk`).
+
+---
+
+## 🚀 Sprint 14 (v3.4): Adaptive Intelligence & Widget Personalization - 自适应智能与小组件个性化
+
+Sprint 14 (from V1.1 deferred enhancements En4 + En5) replaces hardcoded/stale content with **data-driven personalization** across the plan, diagnosis, widget, and reminder surfaces. The AI makes and *shows* its adjustments using real learning data instead of fixed templates.
+
+### New Capabilities
+1. **Data-driven weekly plan (En4)**: `WeeklyPlanViewModel.generateAndCacheWeeklyPlan()` now pulls real monthly accuracy, weak word categories, streak days, and error-book count from repositories (with safe fallbacks) instead of hardcoded `75%` metrics.
+2. **"AI keeps adjusting" diagnosis feedback**: `DiagnosisResultScreen` tells the child Lingo will keep adjusting difficulty every two weeks; the re-diagnosis path now shows the result screen before returning to the home page.
+3. **Personalized widget text (En5)**: new `WidgetContent` model + pure `WidgetContentGenerator` (branch on streak / todayDone / child name / today theme / error count) built in `domain`; `WidgetContentCache` (plain SharedPreferences) stores the pre-generated content. `DashboardViewModel` generates it on load; the Glance widget reads the cache (no DI) and falls back to a template; `MainActivity` refreshes on app open.
+4. **Wire-through via repository**: `WidgetContentRepository` (domain) + `WidgetContentRepositoryImpl` (data) + `RepositoryModule` binding lets the UI write cache without a `:ui -> :data` dependency.
+5. **Reminder respects user prefs**: `DailyReminderWorker` computes its first run to align with `reminder_hour` (minute-level), reuses the personalized notification text, and refreshes the widget on every trigger.
+
+### Verification
+- **Unit tests**: 12 new (`WidgetContentGeneratorTest`) covering all generator branches, name fallback, theme/error subtitles, and todayDone precedence. Full suite green (199 domain+UI tests); `./gradlew test assembleDebug` passes.
+- **Build**: APK assembled successfully.
 
 
 

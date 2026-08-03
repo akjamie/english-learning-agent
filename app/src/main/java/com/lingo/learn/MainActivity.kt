@@ -24,6 +24,7 @@ import org.akj.lingo.learn.ui.aigrowthnotes.AiGrowthNotesScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookDetailScreen
 import org.akj.lingo.learn.ui.errorbook.ErrorBookScreen
 import org.akj.lingo.learn.ui.learning.LearningContainer
+import org.akj.lingo.learn.ui.onboarding.DiagnosisResultScreen
 import org.akj.lingo.learn.ui.onboarding.DiagnosisScreen
 import org.akj.lingo.learn.ui.onboarding.OnboardingContainer
 import org.akj.lingo.learn.ui.roleplay.RoleplayScreen
@@ -56,6 +57,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // Sprint 14: refresh the widget on app open so it picks up
+                    // the latest pre-generated content from WidgetContentCache.
+                    LaunchedEffect(Unit) {
+                        LingoStreakWidget.refreshAll(applicationContext)
+                    }
+
                     val appPrefs = remember {
                         applicationContext.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
                     }
@@ -95,14 +102,25 @@ class MainActivity : ComponentActivity() {
                             onOpenSettings = { currentTab = MainTab.SETTINGS }
                         )
                     } else if (isRediagnosing) {
-                        // Sprint 12: recalibrate the child's level by re-running the diagnosis.
-                        DiagnosisScreen(
-                            grade = currentGrade,
-                            onDiagnosisFinished = { level ->
-                                appPrefs.edit().putString("diagnostic_level", level).apply()
-                                isRediagnosing = false
-                            }
-                        )
+                        // Sprint 12 + 14: recalibrate the child's level by re-running the
+                        // diagnosis, then show the result screen before exiting.
+                        var rediagnosisResult by remember { mutableStateOf<String?>(null) }
+                        if (rediagnosisResult != null) {
+                            DiagnosisResultScreen(
+                                level = rediagnosisResult!!,
+                                onStartLearning = {
+                                    appPrefs.edit().putString("diagnostic_level", rediagnosisResult).apply()
+                                    isRediagnosing = false
+                                }
+                            )
+                        } else {
+                            DiagnosisScreen(
+                                grade = currentGrade,
+                                onDiagnosisFinished = { level ->
+                                    rediagnosisResult = level
+                                }
+                            )
+                        }
                     } else if (isLearning) {
                         LearningContainer(
                             grade = currentGrade,

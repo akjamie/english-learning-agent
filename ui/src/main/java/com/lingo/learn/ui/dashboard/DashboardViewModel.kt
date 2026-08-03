@@ -9,9 +9,12 @@ import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.GamificationRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.repository.WidgetContentRepository
 import org.akj.lingo.learn.domain.usecase.DailyEncouragerUseCase
 import org.akj.lingo.learn.domain.usecase.DiagnosticCalibrationUseCase
+import org.akj.lingo.learn.domain.usecase.WidgetContentGenerator
 import org.akj.lingo.learn.domain.usecase.XpRewardSystem
+import org.akj.lingo.learn.domain.model.WidgetInput
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,7 +55,8 @@ class DashboardViewModel @Inject constructor(
     private val diagnosticCalibrationUseCase: DiagnosticCalibrationUseCase,
     private val gamificationRepository: GamificationRepository,
     private val configRepository: ConfigRepository,
-    private val xpRewardSystem: XpRewardSystem
+    private val xpRewardSystem: XpRewardSystem,
+    private val widgetContentRepository: WidgetContentRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -120,6 +124,20 @@ class DashboardViewModel @Inject constructor(
                 if (result.isSuccess) {
                     _uiState.value = _uiState.value.copy(greetingMessage = result.getOrNull())
                 }
+
+                // Sprint 14: pre-generate personalized widget content and cache it
+                // so the Glance widget (no DI) can read data-driven text.
+                val widgetContent = WidgetContentGenerator.generate(
+                    WidgetInput(
+                        streakDays = streak,
+                        todayDone = progress >= 1.0f,
+                        childName = childName,
+                        todayTaskTheme = theme.takeIf { it.isNotBlank() },
+                        errorCount = errors,
+                        totalXp = gamification.totalXp
+                    )
+                )
+                widgetContentRepository.save(widgetContent)
 
                 // Sprint 8: Diagnostic Calibration check every 14 active days
                 val prefsEditor = prefs.edit()

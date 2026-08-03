@@ -71,4 +71,10 @@ abstract class RepositoryModule {
     abstract fun bindConversationRepository(
         impl: ConversationRepositoryImpl
     ): ConversationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWidgetContentRepository(
+        impl: WidgetContentRepositoryImpl
+    ): WidgetContentRepository
 }

@@ -3,6 +3,8 @@ package org.akj.lingo.learn.ui.weeklyplan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.model.Plan
+import org.akj.lingo.learn.domain.repository.ErrorBookRepository
+import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.ExplainDecisionUseCase
 import org.akj.lingo.learn.domain.usecase.classifyError
@@ -40,7 +42,9 @@ data class WeeklyPlanUiState(
 @HiltViewModel
 class WeeklyPlanViewModel @Inject constructor(
     private val weeklyPlanRepository: WeeklyPlanRepository,
-    private val explainDecisionUseCase: ExplainDecisionUseCase
+    private val explainDecisionUseCase: ExplainDecisionUseCase,
+    private val learningRecordRepository: LearningRecordRepository,
+    private val errorBookRepository: ErrorBookRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyPlanUiState())
@@ -80,11 +84,21 @@ class WeeklyPlanViewModel @Inject constructor(
                 "C" -> 0.2f
                 else -> 0f
             }
+            // Sprint 14: fetch real learning metrics instead of hardcoded values.
+            val accuracy = try { learningRecordRepository.getMonthlyAccuracy() } catch (_: Exception) { 75f }
+            val weakCategories = try { learningRecordRepository.getWeakCategories() } catch (_: Exception) { emptyList() }
+            val streakDays = try { learningRecordRepository.getStreakDays() } catch (_: Exception) { 0 }
+            val errorCount = try { errorBookRepository.getErrorCount() } catch (_: Exception) { 0 }
+            val completedMilestones = buildList {
+                if (streakDays > 0) add("${streakDays}-day streak")
+                if (errorCount > 0) add("$errorCount words in error book")
+                if (isEmpty()) add("First week starting")
+            }
             val result = weeklyPlanRepository.generateAndCacheWeeklyPlan(
                 grade = grade,
-                accuracy = 75,
-                weakCategories = listOf("Vocabulary", "Pronunciation"),
-                completedMilestones = listOf("First Week Complete"),
+                accuracy = accuracy.toInt(),
+                weakCategories = weakCategories.ifEmpty { listOf("Vocabulary", "Pronunciation") },
+                completedMilestones = completedMilestones,
                 difficultyAdjustment = difficultyAdjustment
             )
             result.onSuccess { plan ->

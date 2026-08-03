@@ -295,9 +295,33 @@
 
 ---
 
-## V1.1 Deferred Enhancements
-- **Enhancement 4**: Onboarding diagnosis continuous calibration - diagnosis result conveys "AI will keep adjusting"; day-10 calibration trigger based on actual data vs diagnostic expectation (medium cost)
-- **Enhancement 5**: Widget personalized text - Widget text from fixed template to data-driven personalized generation via Fallback LLM + daily pre-generation cache (medium cost)
+## Sprint 14: 自适应智能与小组件个性化 (Adaptive Intelligence & Widget Personalization) - [x] v3.4
+> 原则：基于 V1.1 延期增强 En4 (诊断持续校准反馈) 与 En5 (小组件个性化文本)，把硬编码/静态内容替换为数据驱动的个性化体验，并打通诊断-计划-小组件-提醒链路。
+
+### Phase A: 数据驱动计划生成 & 诊断反馈
+- [x] **[Impl]** `WeeklyPlanViewModel.generateAndCacheWeeklyPlan()` 拉取真实指标 (月准确率 / 薄弱词类 / 连续天数 / 错题数) 替代硬编码 75%
+- [x] **[Impl]** `DiagnosisResultScreen` 新增 "AI 将持续调整" 提示，说明每两周校准难度
+- [x] **[Impl]** 重新诊断路径展示 `DiagnosisResultScreen` 后再进入主页 (Enhancement 4)
+
+### Phase B: 小组件个性化文本 (Enhancement 5)
+- [x] **[Impl]** 新增 `WidgetContent` 模型 + `WidgetContentGenerator` (纯函数，按 streak/todayDone/姓名/今日主题/错题数生成)
+- [x] **[Impl]** 新增 `WidgetContentCache` (纯 SharedPreferences) + `LingoStreakWidget` 渲染改为读缓存 (无缓存回退模板)
+- [x] **[Impl]** `DashboardViewModel` 加载时预生成并写缓存；`MainActivity` 打开应用时刷新小组件
+- [x] **[Impl]** DI 接线：`WidgetContentRepository`(domain) + `WidgetContentRepositoryImpl`(data) + `RepositoryModule` 绑定
+
+### Phase C: 提醒尊重偏好 & 小组件联动
+- [x] **[Impl]** `DailyReminderWorker` 按 `reminder_hour` 计算首次触发时间 (分钟级对齐)，通知文本复用个性化缓存
+- [x] **[Impl]** 提醒触发时刷新小组件；无缓存时按 streak 数据兜底生成
+
+### Phase D: 质量
+- [x] **[Unit Test & Build]** `WidgetContentGeneratorTest` 12 条用例 (覆盖分支/兜底)；`./gradlew test assembleDebug` 全绿 (199 domain+ui tests)
+- [x] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
+- [ ] **[MVP Delivery]** 交付 V3.4 APK (由 antigravity 验收与发布)
+
+---
+
+## V1.1 Deferred Enhancements (剩余)
+- **Enhancement 4/5 已并入 Sprint 14 交付**，无剩余延期项
 
 ---
 
