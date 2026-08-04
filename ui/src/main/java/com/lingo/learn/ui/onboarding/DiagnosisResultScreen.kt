@@ -178,14 +178,14 @@ fun DiagnosisResultScreen(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Est. Duration", fontSize = 12.sp, color = Color.Gray)
+                        Text("Est. Duration", fontSize = 11.sp, color = Color.Gray)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(dailyTaskDuration, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                        Text(dailyTaskDuration, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50), maxLines = 1)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Target Goal", fontSize = 12.sp, color = Color.Gray)
+                        Text("Target Goal", fontSize = 11.sp, color = Color.Gray)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(dailyTaskVocabs, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                        Text(dailyTaskVocabs, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50), maxLines = 1)
                     }
                 }
             }

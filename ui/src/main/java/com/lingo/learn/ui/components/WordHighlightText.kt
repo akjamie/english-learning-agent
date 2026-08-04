@@ -13,6 +13,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.domain.model.WordScore
 
+import androidx.compose.ui.text.style.TextAlign
+
 /**
  * Renders a sentence with word-level color highlighting based on pronunciation scores.
  *
@@ -42,7 +44,7 @@ fun WordHighlightText(
             withStyle(
                 SpanStyle(
                     color = color,
-                    fontSize = 22.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
             ) {
@@ -51,5 +53,11 @@ fun WordHighlightText(
         }
     }
 
-    Text(text = annotated, modifier = modifier)
+    Text(
+        text = annotated,
+        modifier = modifier,
+        textAlign = TextAlign.Center,
+        softWrap = true,
+        lineHeight = 28.sp
+    )
 }

@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
                             onFinished = { grade, textbook, level ->
                                 currentGrade = grade
                                 isOnboardingCompleted = true
-                                isLearning = true
+                                isLearning = false
                                 appPrefs.edit()
                                     .putBoolean("onboarding_completed", true)
                                     .putString("grade", grade)

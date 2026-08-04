@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
@@ -98,16 +99,15 @@ fun PreTeachScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     if (engaged) {
                         // ESA: reveal the word only after the child matches it.
-                        Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                            Text(
-                                text = currentWord,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF2C3E50),
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
+                        Text(
+                            text = currentWord,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = theme.primaryColor,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     } else {
                         Text(
                             text = "❓",

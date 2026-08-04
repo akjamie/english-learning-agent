@@ -134,10 +134,11 @@ private fun ReadAlongContent(
                 } else {
                     Text(
                         text = currentSentence.text,
-                        fontSize = 22.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2C3E50),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        lineHeight = 28.sp
                     )
                 }
 
