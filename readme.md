@@ -149,9 +149,9 @@ The user-editable `llmEndpoint` field is **removed**; per-channel paths are deri
 
 ---
 
-## 🗺️ Sprint 10-15 Roadmap
+## 🗺️ Sprint 10-16 Roadmap
 
-Sprint 10-15 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, and quality hardening. Scoped by the tech lead from the product-owner enhancement review into six **independently shippable** sprints:
+Sprint 10-16 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, quality hardening, and cleanup. Scoped by the tech lead from the product-owner enhancement review into seven **independently shippable** sprints:
 
 | Sprint | Theme | Scope | Risk | Status |
 | --- | --- | --- | --- | --- |
@@ -162,8 +162,9 @@ Sprint 10-15 turn Lingo from a "task-checker" into a **visible-growth companion*
 | **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | ✅ Done |
 | **14** | Adaptive Intelligence & Widget Personalization (v3.4) | Data-driven weekly-plan metrics (replace hardcoded), "AI keeps adjusting" diagnosis feedback, re-diagnosis result screen, personalized widget text via daily pre-generated cache, reminder respects `reminder_hour` + widget refresh | Low | ✅ Done |
 | **15** | Quality Hardening & Accessibility (v3.5) | Daily goal reset wiring, settings gear on Dashboard, error-state UI pattern, 48dp touch targets, contentDescription on interactive elements, domain use-case test coverage | Low | ✅ Done |
+| **16** | Polish & Cleanup (v3.6) | WeeklyPlanScreen loadError UI, Roleplay offline TTS fallback, remove 5 unused DAOs+entities, SettingsViewModel unit tests, DB version bump | Low | ✅ Done |
 
-**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`); Sprint 14 replaces hardcoded/stale content with data-driven personalization; Sprint 15 hardens quality and accessibility.
+**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio; Sprint 14 replaces hardcoded content with data-driven personalization; Sprint 15 hardens quality and accessibility; Sprint 16 removes dead code and adds remaining test coverage.
 
 Detailed task breakdowns live in `task.md`. Status is tracked per sprint as they complete.
 
@@ -286,6 +287,22 @@ Sprint 15 fixes residual functional gaps (daily goal reset, missing settings gea
 
 ### Verification
 - **Unit tests**: 17 new domain use-case tests + all existing tests green (218+ total); `./gradlew test assembleDebug` passes.
+- **Build**: APK assembled successfully.
+
+---
+
+## 🚀 Sprint 16 (v3.6): Polish & Cleanup — 代码清理与质量补全
+
+Sprint 16 polishes residual UX gaps (loadError rendering, offline TTS fallback), removes dead code (5 unused DAOs + entities), and adds SettingsViewModel test coverage.
+
+### New Capabilities
+1. **WeeklyPlanScreen loadError UI**: when `uiState.loadError != null`, shows fox emoji + error message + Retry button (ViewModel `loadError` field was already set, screen was missing).
+2. **Roleplay offline TTS fallback**: `RoleplayViewModel.speakAssistant()` now falls back to `SystemTtsHelper.speak(text)` when cloud TTS fails, so the roleplay companion speaks even offline.
+3. **Dead code cleanup**: removed 5 entirely unused DAOs (`UserProfileDao`, `VocabItemDao`, `QuizResultDao`, `DailyStreakDao`, `ThemeUnitDao`) and their corresponding entities, cleaned up `AppDatabase.kt` and `DatabaseModule.kt` (DB version 5→6).
+4. **SettingsViewModel test coverage**: 10 new tests covering loadSettings, updateLanguage, updateReminderHour clamping, saveSettings persistence, string trimming, isSaved flag reset, ASR threshold, and monthly token limit.
+
+### Verification
+- **Unit tests**: 10 new SettingsViewModel tests + all existing tests green; `./gradlew test assembleDebug` passes.
 - **Build**: APK assembled successfully.
 
 

@@ -347,6 +347,30 @@
 
 ---
 
+## Sprint 16: 代码清理与质量补全 (Polish & Cleanup) - [x] v3.6
+> 原则：所有功能已就绪，本 Sprint 聚焦清理遗留问题：修复 `WeeklyPlanScreen` 缺失的 loadError 渲染、添加 Roleplay 离线 TTS 降级、删除 5 个未使用的 DAO/Entity 及对应 DI 接线、补充 `SettingsViewModel` 单元测试。
+
+### Phase A: 用户体验补全 (UX Polish)
+- [x] **[Impl]** `WeeklyPlanScreen` loadError 渲染：当 `uiState.loadError != null` 时显示狐狸 + 错误文案 + Retry 按钮（ViewModel 侧已实现）
+- [x] **[Impl]** `RoleplayViewModel.speakAssistant()` 云 TTS 失败时降级到 `SystemTtsHelper.speak(text)`（离线/错误态声音降级）
+- [x] **[Impl]** `SettingsScreen` 语言切换已有 "Restart required to apply language change" 提示文案
+
+### Phase B: 死代码清理 (Dead Code Cleanup)
+- [x] **[Impl]** 删除 5 个未使用 DAO：`UserProfileDao`、`VocabItemDao`、`QuizResultDao`、`DailyStreakDao`、`ThemeUnitDao`
+- [x] **[Impl]** 删除对应 Entity：`UserProfileEntity`、`VocabItemEntity`、`QuizResultEntity`、`DailyStreakEntity`、`ThemeUnitEntity`
+- [x] **[Impl]** 更新 `AppDatabase.kt`（清除 entity 声明 + DAO 抽象方法，版本 5→6）
+- [x] **[Impl]** 更新 `DatabaseModule.kt`（清除 5 个 `@Provides` 方法）
+
+### Phase C: 单元测试补全 (Unit Test Coverage)
+- [x] **[Unit Test]** `SettingsViewModelTest` 10 条用例（loadSettings、updateLanguage、updateReminderHour 边界、saveSettings 持久化、trim、isSaved 复位、ASR 阈值、月 Token 上限）
+
+### Phase D: 质量
+- [x] **[Unit Test & Build]** 全部 10 条新用例 + 既有测试全绿；`./gradlew test assembleDebug` 通过
+- [x] **[Docs Sync]** 更新 `task.md` / `readme.md` / `implementation_plan.md`
+- [ ] **[MVP Delivery]** 交付 V3.6 APK（由 antigravity 验收与发布）
+
+---
+
 ## V1.1 Deferred Enhancements (剩余)
 - **Enhancement 4/5 已并入 Sprint 14 交付**，无剩余延期项
 

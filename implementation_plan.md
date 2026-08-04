@@ -296,6 +296,7 @@ graph TD
 - **Sprint 13 — 真实音频沉浸 (v3.3) [x]**：`ImmersiveAudioScreen` 字幕行真实 TTS 合成 + MediaPlayer 播放，`AudioPlayerController` 支持真实文件 (保留模拟降级)。核心阶段质量基线，风险最高，放最后。已交付。
 - **Sprint 14 — 自适应智能与小组件个性化 (v3.4) [x]**：周计划拉取真实指标替代硬编码 75%；诊断结果页"AI 持续调整"提示 + 重跑诊断展示结果；小组件文案改为数据驱动 (纯函数 `WidgetContentGenerator` + 每日缓存 `WidgetContentCache`，UI 经 `WidgetContentRepository` 写入避免 `:ui->:data` 依赖)；`DailyReminderWorker` 按 `reminder_hour` 对齐首次触发并联动刷新小组件。已交付。
 - **Sprint 15 — 质量加固与无障碍适配 (v3.5) [x]**：`DashboardViewModel` 每日目标重置接线；标题栏设置齿轮渲染；错误态 UI 模式 (errorMessage + Retry)；`WeeklyPlanScreen` 48dp 触摸目标 ("i" 开关)、`ErrorBookScreen` 排序 Chip 48dp、Quiz/Roleplay/ErrorBook/Dashboard 交互元素添加 `contentDescription`；17 条新领域用例测试 (`ExplanationAgentUseCaseTest` + `DailyEncouragerUseCaseTest`)。已交付。
+- **Sprint 16 — 代码清理与质量补全 (v3.6) [x]**：`WeeklyPlanScreen` loadError UI 渲染；`RoleplayViewModel` 离线 TTS 降级；删除 5 个未使用 DAO/Entity (`UserProfileDao`/`VocabItemDao`/`QuizResultDao`/`DailyStreakDao`/`ThemeUnitDao` 及对应 Entity) 与 `DatabaseModule` DI 绑定，`AppDatabase` 版本 5→6；`SettingsViewModelTest` 10 条用例。已交付。
 
 ---
 

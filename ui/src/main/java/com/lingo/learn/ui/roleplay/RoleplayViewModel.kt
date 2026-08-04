@@ -10,6 +10,7 @@ import org.akj.lingo.learn.domain.repository.ConversationRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.TtsRepository
 import org.akj.lingo.learn.domain.usecase.RoleplayScenarioBank
+import org.akj.lingo.learn.ui.learning.SystemTtsHelper
 import org.akj.lingo.learn.ui.learning.VoiceRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,8 @@ class RoleplayViewModel @Inject constructor(
     private val ttsRepository: TtsRepository,
     private val voiceRecorder: VoiceRecorder,
     private val scenarioBank: RoleplayScenarioBank,
-    private val conversationRepository: ConversationRepository
+    private val conversationRepository: ConversationRepository,
+    private val systemTtsHelper: SystemTtsHelper
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -147,8 +149,13 @@ class RoleplayViewModel @Inject constructor(
         _isSpeaking.value = true
         viewModelScope.launch {
             val ttsResult = ttsRepository.getSpeech(text)
-            _audioToPlay.value = ttsResult.getOrNull()
-            if (ttsResult.isFailure) _isSpeaking.value = false
+            if (ttsResult.isSuccess) {
+                _audioToPlay.value = ttsResult.getOrNull()
+            } else {
+                // Sprint 15: fall back to system TTS when cloud TTS is unavailable (offline / error)
+                systemTtsHelper.speak(text)
+                _isSpeaking.value = false
+            }
         }
     }
 

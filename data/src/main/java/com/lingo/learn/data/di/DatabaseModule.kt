@@ -92,13 +92,7 @@ object DatabaseModule {
     }
 
     @Provides
-    fun provideUserProfileDao(db: AppDatabase): UserProfileDao = db.userProfileDao()
-
-    @Provides
     fun provideLearningRecordDao(db: AppDatabase): LearningRecordDao = db.learningRecordDao()
-
-    @Provides
-    fun provideVocabItemDao(db: AppDatabase): VocabItemDao = db.vocabItemDao()
 
     @Provides
     fun provideErrorBookDao(db: AppDatabase): ErrorBookDao = db.errorBookDao()
@@ -107,19 +101,10 @@ object DatabaseModule {
     fun providePlanDao(db: AppDatabase): PlanDao = db.planDao()
 
     @Provides
-    fun provideQuizResultDao(db: AppDatabase): QuizResultDao = db.quizResultDao()
-
-    @Provides
     fun provideTokenUsageLogDao(db: AppDatabase): TokenUsageLogDao = db.tokenUsageLogDao()
 
     @Provides
     fun provideTtsCacheDao(db: AppDatabase): TtsCacheDao = db.ttsCacheDao()
-
-    @Provides
-    fun provideDailyStreakDao(db: AppDatabase): DailyStreakDao = db.dailyStreakDao()
-
-    @Provides
-    fun provideThemeUnitDao(db: AppDatabase): ThemeUnitDao = db.themeUnitDao()
 
     @Provides
     fun provideAgentDecisionLogDao(db: AppDatabase): AgentDecisionLogDao = db.agentDecisionLogDao()
