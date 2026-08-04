@@ -42,7 +42,9 @@ data class DashboardUiState(
     val makeupCardsLeft: Int = 2,
     // Sprint 10.5: offline-mode status for the Dashboard banner
     val isOfflineMode: Boolean = false,
-    val hasPlan: Boolean = false
+    val hasPlan: Boolean = false,
+    // Sprint 15: error state for retry UI
+    val errorMessage: String? = null
 )
 
 @HiltViewModel
@@ -64,7 +66,7 @@ class DashboardViewModel @Inject constructor(
 
     fun loadDashboardData() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
                 val streak = learningRecordRepository.getStreakDays()
                 val progress = learningRecordRepository.getTodayProgress()
@@ -88,7 +90,17 @@ class DashboardViewModel @Inject constructor(
                     ?.let { "${it.size} Words + 2 Speech" } ?: "5 Words + 2 Speech"
 
                 // Sprint 10: load persisted gamification state for the visible growth bar.
-                val gamification = gamificationRepository.getState()
+                var gamification = gamificationRepository.getState()
+
+                // Sprint 15: reset daily goals when a new calendar day starts so
+                // the 3-goal badges don't show stale "achieved" state from yesterday.
+                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                    .format(java.util.Date())
+                if (gamification.dailyGoalsDate != today) {
+                    gamificationRepository.resetDailyGoals(today, System.currentTimeMillis())
+                    gamification = gamificationRepository.getState()
+                }
+
                 val levelInfo = xpRewardSystem.levelInfo(gamification.totalXp)
                 val makeupMonth = gamification.makeupMonthKey
                 val makeupUsed = if (makeupMonth != null) gamification.makeupCardsUsed else 0
@@ -142,8 +154,6 @@ class DashboardViewModel @Inject constructor(
                 // Sprint 8: Diagnostic Calibration check every 14 active days
                 val prefsEditor = prefs.edit()
                 // Count each new active day (dashboard opened on a fresh date)
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-                    .format(java.util.Date())
                 if (prefs.getString("last_active_day", null) != today) {
                     val currentDays = prefs.getInt("days_since_calibration", 0)
                     prefsEditor.putInt("days_since_calibration", currentDays + 1)
@@ -167,9 +177,17 @@ class DashboardViewModel @Inject constructor(
                 }
 
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Couldn't load your dashboard. Check your connection and try again."
+                )
             }
         }
+    }
+
+    /** Sprint 15: Called from the error retry button. */
+    fun retry() {
+        loadDashboardData()
     }
 
     /** Called when the user dismisses the calibration prompt dialog. */

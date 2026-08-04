@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -261,20 +263,28 @@ private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -
                     }
                     if (dayItem.rationale.isNotBlank()) {
                         Spacer(Modifier.width(4.dp))
+                        // Sprint 15: 48dp touch target for accessibility (was 24dp)
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(if (rationaleExpanded) Color(0xFF5C6FF2) else Color(0xFFF0F4FF))
-                                .clickable { rationaleExpanded = !rationaleExpanded },
+                                .size(48.dp)
+                                .clickable { rationaleExpanded = !rationaleExpanded }
+                                .semantics { contentDescription = "Why this arrangement?" },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                "i",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (rationaleExpanded) Color.White else Color(0xFF5C6FF2)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(if (rationaleExpanded) Color(0xFF5C6FF2) else Color(0xFFF0F4FF)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "i",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (rationaleExpanded) Color.White else Color(0xFF5C6FF2)
+                                )
+                            }
                         }
                     }
                 }

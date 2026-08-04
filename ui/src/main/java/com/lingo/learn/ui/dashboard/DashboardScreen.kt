@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -91,6 +95,34 @@ fun DashboardScreen(
         )
     }
 
+    // Sprint 15: error state with retry button (replaces silent empty/loading state)
+    uiState.errorMessage?.let { message ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "🦊",
+                fontSize = 48.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                fontSize = 14.sp,
+                color = Color(0xFF7F8C8D),
+                lineHeight = 20.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { viewModel.retry() }) {
+                Text("Retry")
+            }
+        }
+        return
+    }
+
     val streakDays = uiState.streakDays
     val todayProgress = uiState.todayProgress
     val errorCount = uiState.errorCount
@@ -135,7 +167,21 @@ fun DashboardScreen(
                 )
             }
 
-            StreakCounter(streakDays = streakDays)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StreakCounter(streakDays = streakDays)
+                Spacer(modifier = Modifier.width(4.dp))
+                // Sprint 15: render the settings gear (was declared but never shown)
+                IconButton(
+                    onClick = onSettingsClick,
+                    modifier = Modifier.semantics { contentDescription = "Settings" }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = Color(0xFF7F8C8D)
+                    )
+                }
+            }
         }
 
         // Sprint 10: Visible growth — XP progress bar, level badge & makeup balance

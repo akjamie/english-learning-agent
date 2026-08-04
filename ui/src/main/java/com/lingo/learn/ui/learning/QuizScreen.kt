@@ -12,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -560,7 +562,8 @@ private fun RowScope.QuizOptionButton(
             .clip(RoundedCornerShape(16.dp))
             .background(backgroundColor)
             .border(2.dp, borderColor, RoundedCornerShape(16.dp))
-            .clickable(enabled = !answered, onClick = onClick),
+            .clickable(enabled = !answered, onClick = onClick)
+            .semantics { contentDescription = "Answer: $text" },
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -597,7 +600,8 @@ private fun LetterOptionButton(
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .border(2.dp, borderColor, RoundedCornerShape(12.dp))
-            .clickable(enabled = !answered, onClick = onClick),
+            .clickable(enabled = !answered, onClick = onClick)
+            .semantics { contentDescription = "Letter: $letter" },
         contentAlignment = Alignment.Center
     ) {
         Text(

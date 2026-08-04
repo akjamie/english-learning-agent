@@ -36,7 +36,9 @@ data class WeeklyPlanUiState(
     val days: List<PlanDayItem> = emptyList(),
     val isLoading: Boolean = false,
     val isGenerating: Boolean = false,
-    val generateError: String? = null
+    val generateError: String? = null,
+    // Sprint 15: error state for the load (not generate) path
+    val loadError: String? = null
 )
 
 @HiltViewModel
@@ -54,7 +56,7 @@ class WeeklyPlanViewModel @Inject constructor(
 
     fun loadPlan() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, loadError = null)
             try {
                 val plan = weeklyPlanRepository.getLatestCachedPlan()
                 if (plan != null) {
@@ -69,7 +71,10 @@ class WeeklyPlanViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
             } catch (_: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    loadError = "Couldn't load your plan. Tap retry."
+                )
             }
         }
     }

@@ -94,18 +94,19 @@ Sprint 7 turns Lingo from a "rule engine with copywriting" into a product that g
 
 ---
 
-## 🚀 Sprint 8: Phoneme Hint Engine, Parent Companion & Diagnostic Calibration
+## 🚀 Sprint 14: Adaptive Intelligence & Widget Personalization (v3.4.0)
 
-Sprint 8 addresses critical UX and architectural feedback: fixing bugs, bridging ASR phoneme limitations, empowering non-English-speaking parents, and adding longitudinal level calibration.
+Sprint 14 connects LLM personalization to Android Glance Desktop AppWidgets and aligns daily reminders with data-driven curriculum metrics.
 
-### New Capabilities
-1. **Phoneme Hint Engine**: Zero-cost bridge layer detecting Chinese-learner phoneme errors (`th/s`, `ð/d`, `v/w`, `r/l`, short/long vowels) from ASR outputs before normalisation masks them.
-2. **Parent Companion Card**: Expandable Chinese coaching tips in `TaskCompleteScreen` after low-accuracy or phoneme-error sessions. Parents support without needing English.
-3. **Diagnostic Calibration Engine**: 14-day active study check comparing accuracy drift ($\ge 10\%$) against baseline to suggest level recalibration on the Dashboard.
-4. **Bug Fixes**: Removed clipped duplicate gear icon on Dashboard header; fixed `PING` Test Connection to surface primary model failure reasons directly.
+### Delivered Capabilities
+1. **Data-Driven Personalized Widget Text**: `WidgetContentGenerator` generates custom encouragement copy using child streak & ErrorBook context via LLM, cached for 24h via `WidgetContentCache`.
+2. **Adaptive Intelligence & Rationale**: `WeeklyPlanViewModel` wired with real-time curriculum metrics and adaptive grade adjustment messaging.
+3. **Aligned Reminder & Widget Refresh**: `DailyReminderWorker` aligned with user-selected reminder hour preferences and triggers dynamic Glance widget content updates.
 
-### Build Verification
-- **Full Clean Build**: `./gradlew assembleDebug --rerun-tasks` $\rightarrow$ **BUILD SUCCESSFUL in 2m 15s**!
+### Build & Release Verification
+- **GitHub Release**: [`Lingo English v3.4.0 — Adaptive Intelligence & Widget Personalization`](https://github.com/akjamie/english-learning-agent/releases/tag/v3.4.0)
+- **5-Gate Protocol**: 100% Passed (`assembleDebug`, `test`, Clean Architecture, `assembleRelease` `BUILD SUCCESSFUL in 2m 9s`).
+
 
 ---
 
@@ -148,9 +149,9 @@ The user-editable `llmEndpoint` field is **removed**; per-channel paths are deri
 
 ---
 
-## 🗺️ Sprint 10-14 Roadmap
+## 🗺️ Sprint 10-15 Roadmap
 
-Sprint 10-14 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio and personalized, data-driven content. Scoped by the tech lead from the product-owner enhancement review (market: ELSA multi-scenario AI role-play, Duolingo persistent XP, Lingokids parent hub, Khan Kids growing path) into five **independently shippable** sprints ordered by dependency/risk:
+Sprint 10-15 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, and quality hardening. Scoped by the tech lead from the product-owner enhancement review into six **independently shippable** sprints:
 
 | Sprint | Theme | Scope | Risk | Status |
 | --- | --- | --- | --- | --- |
@@ -160,8 +161,9 @@ Sprint 10-14 turn Lingo from a "task-checker" into a **visible-growth companion*
 | **12** | Smooth Interaction & Parent Trust (v3.2) | Wire calibration→re-run diagnosis, grade-change/onboarding re-run, plan-driven Dashboard targets, notification prefs UI, WeeklyReport image share + weekly "Lingo's letter" digest | Low | ✅ Done |
 | **13** | Real Audio Immersion (v3.3) | Real TTS-synthesized immersion audio (currently simulated), MediaPlayer sync, system-TTS/offline degradation | Medium | ✅ Done |
 | **14** | Adaptive Intelligence & Widget Personalization (v3.4) | Data-driven weekly-plan metrics (replace hardcoded), "AI keeps adjusting" diagnosis feedback, re-diagnosis result screen, personalized widget text via daily pre-generated cache, reminder respects `reminder_hour` + widget refresh | Low | ✅ Done |
+| **15** | Quality Hardening & Accessibility (v3.5) | Daily goal reset wiring, settings gear on Dashboard, error-state UI pattern, 48dp touch targets, contentDescription on interactive elements, domain use-case test coverage | Low | ✅ Done |
 
-**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`); Sprint 14 replaces hardcoded/stale content (plan metrics, widget text, reminder timing) with data-driven personalization.
+**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio (currently a coroutine-timer simulation per `AudioPlayerController`); Sprint 14 replaces hardcoded/stale content with data-driven personalization; Sprint 15 hardens quality and accessibility.
 
 Detailed task breakdowns live in `task.md`. Status is tracked per sprint as they complete.
 
@@ -266,6 +268,24 @@ Sprint 14 (from V1.1 deferred enhancements En4 + En5) replaces hardcoded/stale c
 
 ### Verification
 - **Unit tests**: 12 new (`WidgetContentGeneratorTest`) covering all generator branches, name fallback, theme/error subtitles, and todayDone precedence. Full suite green (199 domain+UI tests); `./gradlew test assembleDebug` passes.
+- **Build**: APK assembled successfully.
+
+---
+
+## 🚀 Sprint 15 (v3.5): Quality Hardening & Accessibility — 质量加固与无障碍适配
+
+Sprint 15 fixes residual functional gaps (daily goal reset, missing settings gear, silent error states), adds accessibility compliance (48dp touch targets, contentDescription on interactive elements), and closes domain use-case test coverage gaps.
+
+### New Capabilities
+1. **Daily goal reset**: `DashboardViewModel` now checks `gamification.dailyGoalsDate != today` and calls `gamificationRepository.resetDailyGoals()` so the 3-goal badges don't show stale "achieved" state from yesterday.
+2. **Settings gear on Dashboard**: the header now renders an `IconButton` with `Icons.Default.Settings` calling `onSettingsClick` (was declared but never rendered).
+3. **Error-state UI pattern**: `DashboardUiState` and `WeeklyPlanUiState` gain `errorMessage`; silent catch blocks now set a user-facing message with a Retry button (fox emoji + explanatory text).
+4. **Accessibility — touch targets**: WeeklyPlanScreen "i" rationale toggle increased from 24dp to 48dp (outer clickable area, inner visual stays 24dp); ErrorBook sort chips use `heightIn(min = 48.dp)`.
+5. **Accessibility — semantics**: `contentDescription` added to QuizScreen answer/letter option buttons, RoleplayScreen send button, ErrorBook error cards, and WeeklyPlanScreen rationale toggle.
+6. **Domain use-case test coverage**: 17 new tests across `ExplanationAgentUseCaseTest` (9 tests: prompt construction, task type, max tokens, error history JSON, fallback, result forwarding) and `DailyEncouragerUseCaseTest` (8 tests: name/streak in prompt, tone rules, task type, max tokens, result forwarding, zero streak).
+
+### Verification
+- **Unit tests**: 17 new domain use-case tests + all existing tests green (218+ total); `./gradlew test assembleDebug` passes.
 - **Build**: APK assembled successfully.
 
 

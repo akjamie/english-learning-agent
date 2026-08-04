@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import android.content.Context
@@ -205,10 +207,13 @@ private fun SortChips(mode: ErrorBookSortMode, onModeChange: (ErrorBookSortMode)
             val textColor = if (isSelected) Color.White else Color(0xFF2C3E50)
             Box(
                 modifier = Modifier
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(bgColor)
                     .clickable { onModeChange(chipMode) }
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 16.dp)
+                    .semantics { contentDescription = "Sort by ${chipMode.name.lowercase()}" },
+                contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = when (chipMode) {
@@ -232,7 +237,10 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
     val priorityPct = (entry.priorityScore / 10f).coerceIn(0f, 1f)
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "${entry.vocabId}, error type ${entry.errorType}" },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

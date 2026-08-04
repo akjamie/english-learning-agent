@@ -316,7 +316,34 @@
 ### Phase D: 质量
 - [x] **[Unit Test & Build]** `WidgetContentGeneratorTest` 12 条用例 (覆盖分支/兜底)；`./gradlew test assembleDebug` 全绿 (199 domain+ui tests)
 - [x] **[Docs Sync]** 更新 `readme.md` / `implementation_plan.md` / `task.md`
-- [ ] **[MVP Delivery]** 交付 V3.4 APK (由 antigravity 验收与发布)
+- [x] **[MVP Delivery]** 交付 V3.4 APK (由 antigravity 验收与发布)
+
+---
+
+## Sprint 15: 质量加固与无障碍适配 (Quality Hardening & Accessibility) - [x] v3.5
+> 原则：所有功能已就绪（Sprint 0-14 完成），本 Sprint 聚焦质量：修复功能遗漏（每日目标重置未接线、设置齿轮未渲染）、增加错误态 UI、修复触摸目标与语义，补全领域用例测试。
+
+### Phase A: 功能修复 (Functional Fixes)
+- [x] **[Impl]** `DashboardViewModel.loadDashboardData()` 每日目标重置：当 `gamification.dailyGoalsDate != today` 时调用 `gamificationRepository.resetDailyGoals()`，避免跨天显示旧日"已完成"状态
+- [x] **[Impl]** `DashboardScreen` 标题栏渲染设置齿轮图标（原声明 `onSettingsClick` 但从未渲染）
+- [x] **[Impl]** `DashboardUiState` 新增 `errorMessage`，catch 块设置错误提示；`DashboardScreen` 新增错误态 UI（狐狸 + 文案 + Retry 按钮）；`WeeklyPlanViewModel.loadPlan()` 类似处理
+
+### Phase B: 无障碍适配 (Accessibility)
+- [x] **[Impl]** `WeeklyPlanScreen` "i" 理由切换按钮触摸目标 24dp → 48dp（外层 48dp 可点击、内层 24dp 视觉圆环）
+- [x] **[Impl]** `ErrorBookScreen` 排序 Chip 触摸目标（`heightIn(min = 48.dp)`）+ 添加 `contentDescription`
+- [x] **[Impl]** `QuizScreen` 选项按钮 / 字母选项添加 `contentDescription`
+- [x] **[Impl]** `RoleplayScreen` 发送按钮添加 `contentDescription`
+- [x] **[Impl]** `ErrorBookScreen` 错误卡片添加 `contentDescription`
+- [x] **[Impl]** `DashboardScreen` 设置齿轮添加 `semantics`
+
+### Phase C: 领域用例测试补全 (Domain Use Case Tests)
+- [x] **[Unit Test]** `ExplanationAgentUseCaseTest` 9 条用例（提示词含 word/grade/errorType、EXPLAIN 任务类型、maxTokens=150、history JSON、无 history 回退、成功/失败传递、指南段落）
+- [x] **[Unit Test]** `DailyEncouragerUseCaseTest` 8 条用例（提示词含 name/streak、ENCOURAGEMENT 任务类型、maxTokens=60、语气规则、成功/失败传递、0 连续天数）
+
+### Phase D: 质量
+- [x] **[Unit Test & Build]** 全部 19 条新用例 + 既有测试全绿；`./gradlew test assembleDebug` 通过
+- [x] **[Docs Sync]** 更新 `task.md` / `readme.md` / `implementation_plan.md`
+- [ ] **[MVP Delivery]** 交付 V3.5 APK（由 antigravity 验收与发布）
 
 ---
 
