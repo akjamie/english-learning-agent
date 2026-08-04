@@ -343,7 +343,7 @@
 ### Phase D: 质量
 - [x] **[Unit Test & Build]** 全部 19 条新用例 + 既有测试全绿；`./gradlew test assembleDebug` 通过
 - [x] **[Docs Sync]** 更新 `task.md` / `readme.md` / `implementation_plan.md`
-- [ ] **[MVP Delivery]** 交付 V3.5 APK（由 antigravity 验收与发布）
+- [x] **[MVP Delivery]** 交付 V3.5 APK（由 antigravity 验收与发布）
 
 ---
 
