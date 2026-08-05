@@ -149,9 +149,9 @@ The user-editable `llmEndpoint` field is **removed**; per-channel paths are deri
 
 ---
 
-## 🗺️ Sprint 10-17 Roadmap
+## 🗺️ Sprint 10-18 Roadmap
 
-Sprint 10-17 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, quality hardening, cleanup, and E2E-verified polish. Scoped by the tech lead from the product-owner enhancement review into eight **independently shippable** sprints:
+Sprint 10-18 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, quality hardening, cleanup, and E2E-verified polish. Scoped by the tech lead from the product-owner enhancement review into **independently shippable** sprints:
 
 | Sprint | Theme | Scope | Risk | Status |
 | --- | --- | --- | --- | --- |
@@ -164,6 +164,7 @@ Sprint 10-17 turn Lingo from a "task-checker" into a **visible-growth companion*
 | **15** | Quality Hardening & Accessibility (v3.5) | Daily goal reset wiring, settings gear on Dashboard, error-state UI pattern, 48dp touch targets, contentDescription on interactive elements, domain use-case test coverage | Low | ✅ Done |
 | **16** | Polish & Cleanup (v3.6) | WeeklyPlanScreen loadError UI, Roleplay offline TTS fallback, remove 5 unused DAOs+entities, SettingsViewModel unit tests, DB version bump | Low | ✅ Done |
 | **17** | Error State Polish & E2E Regression (v3.7) | WeeklyReportScreen + ErrorBookScreen error-state UI with retry, Mate 80 E2E regression testing | Low | ✅ Done |
+| **18** | Error Book Graduation Observation (v3.8) | Wire unused `getErrorsInObservation()` DAO query into Error Book UI - Graduation Watch section for `GRADUATION_OBSERVATION` words | Low | ✅ Done |
 
 **Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio; Sprint 14 replaces hardcoded content with data-driven personalization; Sprint 15 hardens quality and accessibility; Sprint 16 removes dead code and adds remaining test coverage; Sprint 17 adds error states to remaining screens and validates on Mate 80.
 
@@ -320,6 +321,22 @@ Sprint 17 adds error-state UI (loadError + Retry) to the remaining screens where
 ### Verification
 - **Unit tests**: All existing tests green; `./gradlew test assembleDebug` passes (216 tasks).
 - **E2E**: Mate 80 simulator (1260x2816 @ 480dpi) — Dashboard renders correctly with settings gear, streak, XP/Level, makeup cards, Today's Goal, Weekend Roleplay. Plan and Error Book screens load with empty states. No ANR, FATAL, or crashes.
+
+---
+
+## 🚀 Sprint 18 (v3.8): Error Book Graduation Observation — 错题本毕业观察接线
+
+Sprint 18 wires the previously-unused `ErrorBookDao.getErrorsInObservation()` query into the Error Book UI, surfacing words in the `GRADUATION_OBSERVATION` window (3 consecutive correct answers) as a distinct "Graduation Watch" section instead of hiding them inside the generic practice list.
+
+### New Capabilities
+1. **Repository wiring**: `ErrorBookRepository` interface + `ErrorBookRepositoryImpl` now expose `getErrorsInObservation()` mapping `ErrorBookEntity` → `ErrorBookEntry` (the DAO query existed but was dead code).
+2. **Graduation Watch section in Error Book**: words with `status = GRADUATION_OBSERVATION` render under a dedicated "🔵 Graduation Watch" header ("Almost there! Keep practicing to graduate these words.") with count badge, sorted by priority score.
+3. **Deduped practice list**: `GRADUATION_OBSERVATION` entries are excluded from the main "Needs Practice" list (they previously appeared inline), so each word appears exactly once.
+4. **Unit test coverage**: 2 new `ErrorBookPriorityTest` cases covering observation entry mapping and the empty-list path.
+
+### Verification
+- **Unit tests**: 2 new data-module tests + all existing tests green; `./gradlew test assembleDebug` passes (216 tasks, BUILD SUCCESSFUL).
+- **Build**: APK assembled successfully.
 
 
 

@@ -107,6 +107,38 @@ fun ErrorBookScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
+                if (uiState.observationEntries.isNotEmpty()) {
+                    item(key = "observation_header") {
+                        SectionHeader(
+                            emoji = "🔵",
+                            title = "Graduation Watch",
+                            subtitle = "Almost there! Keep practicing to graduate these words.",
+                            count = uiState.observationEntries.size
+                        )
+                    }
+                    items(uiState.observationEntries, key = { "obs_${it.id}" }) { entry ->
+                        ErrorCard(
+                            entry = entry,
+                            onClick = {
+                                selectedEntry = entry
+                                showExplanationDialog = true
+                                viewModel.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
+                                onEntryClick(entry)
+                            },
+                            viewModel = viewModel
+                        )
+                    }
+                    if (uiState.entries.isNotEmpty()) {
+                        item(key = "practice_header") {
+                            SectionHeader(
+                                emoji = "📖",
+                                title = "Needs Practice",
+                                subtitle = "Keep going, you will get there!",
+                                count = uiState.entries.size
+                            )
+                        }
+                    }
+                }
                 items(uiState.entries, key = { it.id }) { entry ->
                     ErrorCard(
                         entry = entry,
@@ -176,6 +208,32 @@ fun ErrorBookScreen(
         }
     }
 }
+@Composable
+private fun SectionHeader(emoji: String, title: String, subtitle: String, count: Int) {
+    Column(modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(emoji, fontSize = 16.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+            Spacer(Modifier.width(8.dp))
+            Surface(
+                color = Color(0xFFECEFF1),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(
+                    count.toString(),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF5C6FF2)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(subtitle, fontSize = 12.sp, color = Color(0xFF7F8C8D))
+    }
+}
+
 @Composable
 private fun StatsBar(total: Int, review: Int, consolidated: Int) {
     Row(

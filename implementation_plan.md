@@ -298,6 +298,7 @@ graph TD
 - **Sprint 15 — 质量加固与无障碍适配 (v3.5) [x]**：`DashboardViewModel` 每日目标重置接线；标题栏设置齿轮渲染；错误态 UI 模式 (errorMessage + Retry)；`WeeklyPlanScreen` 48dp 触摸目标 ("i" 开关)、`ErrorBookScreen` 排序 Chip 48dp、Quiz/Roleplay/ErrorBook/Dashboard 交互元素添加 `contentDescription`；17 条新领域用例测试 (`ExplanationAgentUseCaseTest` + `DailyEncouragerUseCaseTest`)。已交付。
 - **Sprint 16 — 代码清理与质量补全 (v3.6) [x]**：`WeeklyPlanScreen` loadError UI 渲染；`RoleplayViewModel` 离线 TTS 降级；删除 5 个未使用 DAO/Entity (`UserProfileDao`/`VocabItemDao`/`QuizResultDao`/`DailyStreakDao`/`ThemeUnitDao` 及对应 Entity) 与 `DatabaseModule` DI 绑定，`AppDatabase` 版本 5→6；`SettingsViewModelTest` 10 条用例。已交付。
 - **Sprint 17 — 错误态补全与 E2E 回归测试 (v3.7) [x]**：`WeeklyReportViewModel`/`ErrorBookViewModel` 添加 `loadError` 状态与 Retry UI；Mate 80 分辨率模拟器 (1260x2816 @ 480dpi) E2E 回归测试验证 Dashboard/Plan/ErrorBook/Settings 四页面无崩溃。已交付。
+- **Sprint 18 — 错题本毕业观察接线 (v3.8) [x]**：PO P0 变更 —— 接线 Sprint 7 遗留的未使用查询 `ErrorBookDao.getErrorsInObservation()`（`GRADUATION_OBSERVATION` 状态词条）；`ErrorBookRepository` 接口 + Impl 新增对应方法；`ErrorBookUiState` 新增 `observationEntries`，主列表过滤该状态避免重复；`ErrorBookScreen` 新增 "🔵 Graduation Watch" 独立区块（SectionHeader + 计数徽章）；`ErrorBookPriorityTest` 新增 2 条用例。已交付。
 
 ---
 

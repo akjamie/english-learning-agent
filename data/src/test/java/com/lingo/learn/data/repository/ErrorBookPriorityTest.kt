@@ -157,6 +157,32 @@ class ErrorBookPriorityTest {
     }
 
     @Test
+    fun `getErrorsInObservation maps entities to domain entries`() = runBlocking {
+        val now = System.currentTimeMillis()
+        val entities = listOf(
+            createEntity("watch1", 2, now, "SPELL", consecutiveCorrect = 3).copy(status = "GRADUATION_OBSERVATION"),
+            createEntity("watch2", 1, now, "READ_ALOUD", consecutiveCorrect = 3).copy(status = "GRADUATION_OBSERVATION")
+        )
+        whenever(dao.getErrorsInObservation()).thenReturn(entities)
+
+        val result = repository.getErrorsInObservation()
+
+        assertEquals(2, result.size)
+        assertTrue(result.all { it.status == "GRADUATION_OBSERVATION" })
+        assertEquals("watch1", result[0].vocabId)
+        assertEquals(3, result[0].consecutiveCorrectCount)
+    }
+
+    @Test
+    fun `getErrorsInObservation returns empty when no entries in observation`() = runBlocking {
+        whenever(dao.getErrorsInObservation()).thenReturn(emptyList())
+
+        val result = repository.getErrorsInObservation()
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
     fun `getReviewQuestionsForQuiz returns expected format`() = runBlocking {
         val now = System.currentTimeMillis()
         val entries = listOf(

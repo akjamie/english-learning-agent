@@ -392,6 +392,24 @@
 
 ---
 
+## Sprint 18: 错题本毕业观察接线 (Error Book Graduation Observation) - [x] v3.8
+> 原则：PO P0 变更 —— `ErrorBookDao.getErrorsInObservation()` 查询自 Sprint 7 以来存在但从未被调用（死代码），将毕业观察窗口中的词（连续答对 3 次 → `GRADUATION_OBSERVATION`）显性化为错题本独立区块。
+
+### Phase A: 毕业观察接线 (Graduation Observation Wiring)
+- [x] **[Impl]** `ErrorBookRepository` 接口新增 `getErrorsInObservation(): List<ErrorBookEntry>`；`ErrorBookRepositoryImpl` 实现（`errorBookDao.getErrorsInObservation()` → `toDomain()`）
+- [x] **[Impl]** `ErrorBookUiState` 新增 `observationEntries`；`ErrorBookViewModel.loadErrors()` 加载并按 priorityScore 降序排序；主列表 `entries` 过滤掉 `GRADUATION_OBSERVATION`（避免重复展示）
+- [x] **[Impl]** `ErrorBookScreen` 新增 "🔵 Graduation Watch" 区块（SectionHeader + 计数徽章 + 副标题 "Almost there! Keep practicing to graduate these words."），下方 "📖 Needs Practice" 区块承接剩余条目
+
+### Phase B: 单元测试 (Unit Tests)
+- [x] **[Unit Test]** `ErrorBookPriorityTest` 新增 2 条：`getErrorsInObservation maps entities to domain entries`（状态/词条/连续正确数断言）、`getErrorsInObservation returns empty when no entries in observation`
+
+### Phase C: 质量
+- [x] **[Unit Test & Build]** `./gradlew test assembleDebug` 全绿（216 tasks, BUILD SUCCESSFUL）
+- [x] **[Docs Sync]** 更新 `task.md` / `readme.md` / `implementation_plan.md`
+- [ ] **[MVP Delivery]** 交付 V3.8 APK（由 antigravity 验收与发布）
+
+---
+
 ## V1.1 Deferred Enhancements (剩余)
 - **Enhancement 4/5 已并入 Sprint 14 交付**，无剩余延期项
 

@@ -16,6 +16,7 @@ enum class ErrorBookSortMode { PRIORITY, DATE, ERROR_COUNT, ERROR_TYPE }
 
 data class ErrorBookUiState(
     val entries: List<ErrorBookEntry> = emptyList(),
+    val observationEntries: List<ErrorBookEntry> = emptyList(),
     val sortMode: ErrorBookSortMode = ErrorBookSortMode.PRIORITY,
     val isLoading: Boolean = false,
     val totalCount: Int = 0,
@@ -44,8 +45,12 @@ class ErrorBookViewModel @Inject constructor(
             try {
                 val all = errorBookRepository.getTopPriorityErrors(100)
                 val sorted = sortEntries(all, _uiState.value.sortMode)
+                val observation = errorBookRepository.getErrorsInObservation()
+                    .sortedByDescending { it.priorityScore }
+                val active = sorted.filter { it.status != "GRADUATION_OBSERVATION" }
                 _uiState.value = ErrorBookUiState(
-                    entries = sorted,
+                    entries = active,
+                    observationEntries = observation,
                     sortMode = _uiState.value.sortMode,
                     totalCount = all.size,
                     reviewCount = all.count { it.status == "TO_REVIEW" },

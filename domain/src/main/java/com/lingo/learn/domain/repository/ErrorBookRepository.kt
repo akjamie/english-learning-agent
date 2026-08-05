@@ -33,4 +33,11 @@ interface ErrorBookRepository {
      * Get review questions formatted for daily quiz integration.
      */
     suspend fun getReviewQuestionsForQuiz(count: Int = 2): List<QuizQuestion>
+
+    /**
+     * Sprint 18: Get entries currently in GRADUATION_OBSERVATION status.
+     * These are words that have been marked correct 3+ consecutive times
+     * and are being monitored before final graduation.
+     */
+    suspend fun getErrorsInObservation(): List<ErrorBookEntry>
 }

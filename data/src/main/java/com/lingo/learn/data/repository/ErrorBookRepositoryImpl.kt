@@ -103,6 +103,10 @@ class ErrorBookRepositoryImpl @Inject constructor(
         return errorBookDao.getActiveErrorCount()
     }
 
+    override suspend fun getErrorsInObservation(): List<ErrorBookEntry> {
+        return errorBookDao.getErrorsInObservation().map { it.toDomain() }
+    }
+
     override suspend fun getReviewQuestionsForQuiz(count: Int): List<QuizQuestion> {
         // Spaced repetition: only words that are due (scheduled timestamp passed) are reviewed.
         val now = System.currentTimeMillis()
