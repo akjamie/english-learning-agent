@@ -371,6 +371,27 @@
 
 ---
 
+## Sprint 17: 错误态补全与 E2E 回归测试 (Error State Polish & E2E Regression) - [x] v3.7
+> 原则：在所有主要屏幕添加错误态 UI 渲染（替代静默吞异常），并在华为 Mate 80 分辨率模拟器上完成端到端回归测试。
+
+### Phase A: 错误态 UI 补全 (Error State UI Polish)
+- [x] **[Impl]** `WeeklyReportViewModel` 新增 `loadError` 状态，catch 块设置用户友好错误信息；`WeeklyReportScreen` 渲染狐狸 + 错误文案 + Retry 按钮
+- [x] **[Impl]** `ErrorBookViewModel` 新增 `loadError` 状态，catch 块设置错误信息；`ErrorBookScreen` 渲染相同错误态 UI
+
+### Phase B: (Sprint 16 已覆盖 - 无新增死代码清理)
+
+### Phase C: E2E 回归测试 (E2E Regression Testing)
+- [x] **[E2E]** 华为 Mate 80 规格模拟器（1260x2816 @ 480dpi）上完整回归：Dashboard 渲染（设置齿轮/XP/Level/Streak）、Weekly Plan、Error Book、Settings 四个页面
+- [x] **[E2E]** 验证所有触摸目标 ≥ 48dp（设置齿轮 48x48dp ✅、Back 按钮 ✅、Start 按钮 ✅）
+- [x] **[E2E]** logcat 无崩溃、无 FATAL、无 ANR
+
+### Phase D: 质量
+- [x] **[Unit Test & Build]** `./gradlew test assembleDebug` 全绿（216 tasks）
+- [x] **[Docs Sync]** 更新 `task.md` / `readme.md` / `implementation_plan.md`
+- [ ] **[MVP Delivery]** 交付 V3.7 APK（由 antigravity 验收与发布）
+
+---
+
 ## V1.1 Deferred Enhancements (剩余)
 - **Enhancement 4/5 已并入 Sprint 14 交付**，无剩余延期项
 

@@ -65,7 +65,17 @@ fun ErrorBookScreen(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFFFFDF5))
         )
 
-        if (uiState.isLoading) {
+        if (uiState.loadError != null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("🦊", fontSize = 48.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Text(uiState.loadError!!, fontSize = 14.sp, color = Color(0xFF7F8C8D), lineHeight = 20.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { viewModel.loadErrors() }) { Text("Retry") }
+                }
+            }
+        } else if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color(0xFF5C6FF2))
             }

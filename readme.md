@@ -149,9 +149,9 @@ The user-editable `llmEndpoint` field is **removed**; per-channel paths are deri
 
 ---
 
-## 🗺️ Sprint 10-16 Roadmap
+## 🗺️ Sprint 10-17 Roadmap
 
-Sprint 10-16 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, quality hardening, and cleanup. Scoped by the tech lead from the product-owner enhancement review into seven **independently shippable** sprints:
+Sprint 10-17 turn Lingo from a "task-checker" into a **visible-growth companion** with real audio, personalized data-driven content, quality hardening, cleanup, and E2E-verified polish. Scoped by the tech lead from the product-owner enhancement review into eight **independently shippable** sprints:
 
 | Sprint | Theme | Scope | Risk | Status |
 | --- | --- | --- | --- | --- |
@@ -163,8 +163,9 @@ Sprint 10-16 turn Lingo from a "task-checker" into a **visible-growth companion*
 | **14** | Adaptive Intelligence & Widget Personalization (v3.4) | Data-driven weekly-plan metrics (replace hardcoded), "AI keeps adjusting" diagnosis feedback, re-diagnosis result screen, personalized widget text via daily pre-generated cache, reminder respects `reminder_hour` + widget refresh | Low | ✅ Done |
 | **15** | Quality Hardening & Accessibility (v3.5) | Daily goal reset wiring, settings gear on Dashboard, error-state UI pattern, 48dp touch targets, contentDescription on interactive elements, domain use-case test coverage | Low | ✅ Done |
 | **16** | Polish & Cleanup (v3.6) | WeeklyPlanScreen loadError UI, Roleplay offline TTS fallback, remove 5 unused DAOs+entities, SettingsViewModel unit tests, DB version bump | Low | ✅ Done |
+| **17** | Error State Polish & E2E Regression (v3.7) | WeeklyReportScreen + ErrorBookScreen error-state UI with retry, Mate 80 E2E regression testing | Low | ✅ Done |
 
-**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio; Sprint 14 replaces hardcoded content with data-driven personalization; Sprint 15 hardens quality and accessibility; Sprint 16 removes dead code and adds remaining test coverage.
+**Key product principle (Sprint 10+):** all gamification engines already exist (`XpRewardSystem`, `DailyGoalTracker`, `MakeupCardManager`) but are invisible to the child and have no persistence entity. Sprint 10 surfaces what already runs; Sprint 13 gives the core listening stage real audio; Sprint 14 replaces hardcoded content with data-driven personalization; Sprint 15 hardens quality and accessibility; Sprint 16 removes dead code and adds remaining test coverage; Sprint 17 adds error states to remaining screens and validates on Mate 80.
 
 Detailed task breakdowns live in `task.md`. Status is tracked per sprint as they complete.
 
@@ -304,6 +305,21 @@ Sprint 16 polishes residual UX gaps (loadError rendering, offline TTS fallback),
 ### Verification
 - **Unit tests**: 10 new SettingsViewModel tests + all existing tests green; `./gradlew test assembleDebug` passes.
 - **Build**: APK assembled successfully.
+
+---
+
+## 🚀 Sprint 17 (v3.7): Error State Polish & E2E Regression — 错误态补全与回归测试
+
+Sprint 17 adds error-state UI (loadError + Retry) to the remaining screens where silent catch blocks were swallowing exceptions, and validates the app via end-to-end regression on a Huawei Mate 80-class simulator.
+
+### New Capabilities
+1. **WeeklyReportScreen error state**: `WeeklyReportUiState.loadError` field with fox emoji + error message + Retry button that calls `loadReport()` (was silently setting `isLoading = false`).
+2. **ErrorBookScreen error state**: `ErrorBookUiState.loadError` field with same error UI pattern (was silently setting `isLoading = false`).
+3. **E2E regression on Mate 80**: Full app walkthrough (Dashboard, Plan, Error Book, Settings) at 1260x2816 @ 480dpi; all touch targets verified ≥48dp; zero crashes in logcat.
+
+### Verification
+- **Unit tests**: All existing tests green; `./gradlew test assembleDebug` passes (216 tasks).
+- **E2E**: Mate 80 simulator (1260x2816 @ 480dpi) — Dashboard renders correctly with settings gear, streak, XP/Level, makeup cards, Today's Goal, Weekend Roleplay. Plan and Error Book screens load with empty states. No ANR, FATAL, or crashes.
 
 
 

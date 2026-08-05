@@ -30,7 +30,8 @@ data class WeeklyReportUiState(
     val isLoading: Boolean = false,
     val shareBitmap: ByteArray? = null,
     // Sprint 12: "Lingo's letter" weekly parent digest
-    val lingoLetter: String? = null
+    val lingoLetter: String? = null,
+    val loadError: String? = null
 )
 
 @HiltViewModel
@@ -79,7 +80,7 @@ class WeeklyReportViewModel @Inject constructor(
                     lingoLetter = loadLingoLetter(weeklyAccuracy, weeklyRecords.size, topErrors)
                 )
             } catch (_: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(isLoading = false, loadError = "Couldn't load weekly report. Tap retry.")
             }
         }
     }

@@ -20,7 +20,8 @@ data class ErrorBookUiState(
     val isLoading: Boolean = false,
     val totalCount: Int = 0,
     val reviewCount: Int = 0,
-    val consolidatedCount: Int = 0
+    val consolidatedCount: Int = 0,
+    val loadError: String? = null
 )
 
 @HiltViewModel
@@ -52,7 +53,7 @@ class ErrorBookViewModel @Inject constructor(
                     isLoading = false
                 )
             } catch (_: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(isLoading = false, loadError = "Couldn't load error book. Tap retry.")
             }
         }
     }
