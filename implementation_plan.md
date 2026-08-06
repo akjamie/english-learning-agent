@@ -299,6 +299,7 @@ graph TD
 - **Sprint 16 — 代码清理与质量补全 (v3.6) [x]**：`WeeklyPlanScreen` loadError UI 渲染；`RoleplayViewModel` 离线 TTS 降级；删除 5 个未使用 DAO/Entity (`UserProfileDao`/`VocabItemDao`/`QuizResultDao`/`DailyStreakDao`/`ThemeUnitDao` 及对应 Entity) 与 `DatabaseModule` DI 绑定，`AppDatabase` 版本 5→6；`SettingsViewModelTest` 10 条用例。已交付。
 - **Sprint 17 — 错误态补全与 E2E 回归测试 (v3.7) [x]**：`WeeklyReportViewModel`/`ErrorBookViewModel` 添加 `loadError` 状态与 Retry UI；Mate 80 分辨率模拟器 (1260x2816 @ 480dpi) E2E 回归测试验证 Dashboard/Plan/ErrorBook/Settings 四页面无崩溃。已交付。
 - **Sprint 18 — 错题本毕业观察接线 (v3.8) [x]**：PO P0 变更 —— 接线 Sprint 7 遗留的未使用查询 `ErrorBookDao.getErrorsInObservation()`（`GRADUATION_OBSERVATION` 状态词条）；`ErrorBookRepository` 接口 + Impl 新增对应方法；`ErrorBookUiState` 新增 `observationEntries`，主列表过滤该状态避免重复；`ErrorBookScreen` 新增 "🔵 Graduation Watch" 独立区块（SectionHeader + 计数徽章）；`ErrorBookPriorityTest` 新增 2 条用例。已交付。
+- **Sprint 19 — 流利度突破与离线韧性 (v4.3.0) [ ]**：PO P0 变更 —— 2026 年市场调研显示"流利度缺口"是中国 EdTech App 最大痛点；Shadowing（影子跟读 `PracticeScreen` 切换）是经科学验证的流利度桥梁；离线内容包 (5 预生成 Session `res/raw/`) 消除离线黑屏；中级"挑战轨道" (Level 2+ 再激活)；5 个新角色扮演场景 (医院/超市/生日/图书馆/天气)；CEFR 国际等级指示器 (`CefrMapper`)；可打印英语成长报告单 (`ReportCardScreen`)。待开发。
 
 ---
 
@@ -314,3 +315,4 @@ graph TD
 2. **构建成功率**：每个 Sprint 提交前必须执行 `./gradlew assembleDebug`，确保 `BUILD SUCCESSFUL`。
 3. **测试覆盖**：核心 Domain 逻辑（如 Levenshtein 匹配算法、错题优先级计算）单元测试覆盖率 ≥ 80%。
 4. **文档同步率**：每个 Sprint 结束时，`readme.md` 与 `agents.md` 必须精确反映当前的架构与 Agent Prompts。
+
