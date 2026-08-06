@@ -268,6 +268,56 @@ fun SettingsScreen(
                 }
             }
 
+            // Sprint 19: Shadowing mode delay preference
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "🦊 Shadow Mode Delay",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF5C6FF2)
+                    )
+                    Text(
+                        text = "Delay between TTS playback and mic opening when shadowing",
+                        fontSize = 13.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
+                    val delays = listOf(0, 250, 500)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        delays.forEach { delay ->
+                            val isSelected = uiState.shadowDelayMs == delay
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) Color(0xFF5C6FF2) else Color(0xFFECEFF1))
+                                    .clickable { viewModel.updateShadowDelayMs(delay) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (delay == 0) "None" else "${delay}ms",
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF2C3E50)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // Sprint 12: Re-run onboarding / change grade
             Card(
                 modifier = Modifier.fillMaxWidth(),

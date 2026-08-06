@@ -30,7 +30,8 @@ data class SettingsUiState(
     val isSaved: Boolean = false,
     // Sprint 12: daily reminder preferences
     val reminderEnabled: Boolean = true,
-    val reminderHour: Int = 18
+    val reminderHour: Int = 18,
+    val shadowDelayMs: Int = 250
 )
 
 /**
@@ -64,6 +65,7 @@ class SettingsViewModel @Inject constructor(
                 language = configRepository.getLanguage(),
                 reminderEnabled = configRepository.isReminderEnabled(),
                 reminderHour = configRepository.getReminderHour(),
+                shadowDelayMs = configRepository.getShadowDelayMs(),
                 isSaved = false
             )
         }
@@ -123,6 +125,7 @@ class SettingsViewModel @Inject constructor(
         configRepository.setLanguage(state.language)
         configRepository.setReminderEnabled(state.reminderEnabled)
         configRepository.setReminderHour(state.reminderHour)
+        configRepository.setShadowDelayMs(state.shadowDelayMs)
 
         _uiState.update { it.copy(isSaved = true) }
     }
@@ -133,6 +136,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateReminderHour(value: Int) {
         _uiState.update { it.copy(reminderHour = value.coerceIn(0, 23), isSaved = false) }
+    }
+
+    fun updateShadowDelayMs(value: Int) {
+        _uiState.update { it.copy(shadowDelayMs = value, isSaved = false) }
     }
 
     fun testApiConnection() {

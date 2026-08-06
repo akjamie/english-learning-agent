@@ -91,6 +91,10 @@ class SecureConfigPrefs @Inject constructor(
     fun getReminderHour(): Int = prefs.getInt(KEY_REMINDER_HOUR, 18)
     fun setReminderHour(value: Int) = prefs.edit().putInt(KEY_REMINDER_HOUR, value.coerceIn(0, 23)).apply()
 
+    /** Shadowing mode delay in ms (0 / 250 / 500). Default 250ms. */
+    fun getShadowDelayMs(): Int = prefs.getInt(KEY_SHADOW_DELAY_MS, 250)
+    fun setShadowDelayMs(value: Int) = prefs.edit().putInt(KEY_SHADOW_DELAY_MS, value.coerceIn(0, 500)).apply()
+
     companion object {
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_AUTH_TOKEN = "auth_token"
@@ -106,5 +110,6 @@ class SecureConfigPrefs @Inject constructor(
         private const val KEY_LANGUAGE = "app_language"
         private const val KEY_REMINDER_ENABLED = "reminder_enabled"
         private const val KEY_REMINDER_HOUR = "reminder_hour"
+        private const val KEY_SHADOW_DELAY_MS = "shadow_delay_ms"
     }
 }

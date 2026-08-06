@@ -21,6 +21,7 @@ import org.akj.lingo.learn.domain.usecase.XpRewardSystem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import org.akj.lingo.learn.ui.Checkpoint
 import org.akj.lingo.learn.ui.StreakPrefs
 import org.akj.lingo.learn.ui.TaskState
@@ -51,7 +52,10 @@ data class ReadAlongState(
     val cumulativeScore: Int = 0,
     val evaluationsCount: Int = 0,
     /** Phoneme hints aggregated across read-along evaluations for the Parent Companion Card. */
-    val phonemeHints: List<PhonemeHintEngine.PhonemeHint> = emptyList()
+    val phonemeHints: List<PhonemeHintEngine.PhonemeHint> = emptyList(),
+    val isShadowMode: Boolean = false,
+    val isCountdownActive: Boolean = false,
+    val countdownValue: Int = 0
 )
 
 data class GameState(

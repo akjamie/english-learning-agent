@@ -45,4 +45,7 @@ class ConfigRepositoryImpl @Inject constructor(
 
     override fun getReminderHour(): Int = prefs.getReminderHour()
     override fun setReminderHour(value: Int) = prefs.setReminderHour(value)
+
+    override fun getShadowDelayMs(): Int = prefs.getShadowDelayMs()
+    override fun setShadowDelayMs(value: Int) = prefs.setShadowDelayMs(value)
 }

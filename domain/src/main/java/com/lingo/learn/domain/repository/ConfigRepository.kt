@@ -39,4 +39,7 @@ interface ConfigRepository {
 
     fun getReminderHour(): Int
     fun setReminderHour(value: Int)
+
+    fun getShadowDelayMs(): Int
+    fun setShadowDelayMs(value: Int)
 }
