@@ -21,6 +21,8 @@ class SettingsViewModelTest {
         private var _language = "en"
         private var _reminderEnabled = true
         private var _reminderHour = 18
+        private var _shadowDelayMs = 250
+        private var _challengeModeEnabled = false
 
         override fun getBaseUrl() = _baseUrl
         override fun setBaseUrl(value: String) { _baseUrl = value }
@@ -46,6 +48,10 @@ class SettingsViewModelTest {
         override fun setReminderEnabled(value: Boolean) { _reminderEnabled = value }
         override fun getReminderHour() = _reminderHour
         override fun setReminderHour(value: Int) { _reminderHour = value }
+        override fun getShadowDelayMs() = _shadowDelayMs
+        override fun setShadowDelayMs(value: Int) { _shadowDelayMs = value }
+        override fun isChallengeModeEnabled() = _challengeModeEnabled
+        override fun setChallengeModeEnabled(value: Boolean) { _challengeModeEnabled = value }
     }
 
     private class FakeLlmRepository(

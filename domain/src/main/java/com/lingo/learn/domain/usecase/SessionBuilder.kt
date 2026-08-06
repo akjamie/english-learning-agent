@@ -35,7 +35,8 @@ class SessionBuilder(
         gradeBand: GradeBand,
         dayIndex: Int,
         reviewQuestions: List<QuizQuestion> = emptyList(),
-        sentenceLengthAdjustment: Int = 0
+        sentenceLengthAdjustment: Int = 0,
+        challengeMode: Boolean = false
     ): LearningSession? {
         return try {
             val root = JSONObject(planSnapshotJson)
@@ -48,11 +49,12 @@ class SessionBuilder(
             val referenceSentence = dayObj.optString("reference_sentence", "")
             val focus = dayObj.optString("focus", "Vocabulary & Dialogue")
 
-            val adjustedMaxWords = (gradeBand.maxWordsPerSentence + sentenceLengthAdjustment)
+            val challengeBonus = if (challengeMode) 4 else 0
+            val adjustedMaxWords = (gradeBand.maxWordsPerSentence + sentenceLengthAdjustment + challengeBonus)
                 .coerceAtLeast(4)
 
             val subtitles = generateSubtitles(referenceSentence, targetWords, gradeBand, adjustedMaxWords)
-            val readAlong = generateReadAlong(referenceSentence, targetWords, gradeBand, adjustedMaxWords)
+            val readAlong = generateReadAlong(referenceSentence, targetWords, gradeBand, adjustedMaxWords, challengeMode)
             val games = generateGames(targetWords, gradeBand)
             val quiz = generateQuizQuestions(targetWords, theme, gradeBand, dayIdx, reviewQuestions)
 
@@ -125,11 +127,11 @@ class SessionBuilder(
         referenceSentence: String,
         targetWords: List<String>,
         gradeBand: GradeBand,
-        maxWordsPerSentence: Int
+        maxWordsPerSentence: Int,
+        challengeMode: Boolean = false
     ): List<ReadAlongSentence> {
         val sentences = mutableListOf<ReadAlongSentence>()
 
-        // Primary sentence from reference
         if (referenceSentence.isNotBlank()) {
             sentences.add(
                 ReadAlongSentence(
@@ -140,12 +142,12 @@ class SessionBuilder(
             )
         }
 
-        // Additional sentences for each target word
         targetWords.take(maxWordsPerSentence).forEachIndexed { index, word ->
-            val simpleSentence = when (gradeBand) {
-                GradeBand.PRIMARY -> "I see a $word."
-                GradeBand.JUNIOR -> "Can you find the $word?"
-                GradeBand.SENIOR -> "The $word is very important for our lesson today."
+            val simpleSentence = when {
+                challengeMode -> "Can you tell me more about the $word and why it matters today?"
+                gradeBand == GradeBand.PRIMARY -> "I see a $word."
+                gradeBand == GradeBand.JUNIOR -> "Can you find the $word?"
+                else -> "The $word is very important for our lesson today."
             }
             sentences.add(
                 ReadAlongSentence(
@@ -156,7 +158,7 @@ class SessionBuilder(
             )
         }
 
-        return sentences.distinctBy { it.text.lowercase() }.take(3)
+        return sentences.distinctBy { it.text.lowercase() }.take(if (challengeMode) 5 else 3)
     }
 
     //endregion

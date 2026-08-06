@@ -95,6 +95,10 @@ class SecureConfigPrefs @Inject constructor(
     fun getShadowDelayMs(): Int = prefs.getInt(KEY_SHADOW_DELAY_MS, 250)
     fun setShadowDelayMs(value: Int) = prefs.edit().putInt(KEY_SHADOW_DELAY_MS, value.coerceIn(0, 500)).apply()
 
+    /** Intermediate challenge track (B1-level content for advanced learners). */
+    fun isChallengeModeEnabled(): Boolean = prefs.getBoolean(KEY_CHALLENGE_MODE_ENABLED, false)
+    fun setChallengeModeEnabled(value: Boolean) = prefs.edit().putBoolean(KEY_CHALLENGE_MODE_ENABLED, value).apply()
+
     companion object {
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_AUTH_TOKEN = "auth_token"
@@ -111,5 +115,6 @@ class SecureConfigPrefs @Inject constructor(
         private const val KEY_REMINDER_ENABLED = "reminder_enabled"
         private const val KEY_REMINDER_HOUR = "reminder_hour"
         private const val KEY_SHADOW_DELAY_MS = "shadow_delay_ms"
+        private const val KEY_CHALLENGE_MODE_ENABLED = "challenge_mode_enabled"
     }
 }

@@ -144,6 +144,10 @@ class LearningViewModel @Inject constructor(
     private val _isOfflineMode = MutableStateFlow(false)
     val isOfflineMode: StateFlow<Boolean> = _isOfflineMode.asStateFlow()
 
+    // Sprint 19: challenge track active (B1-level content)
+    private val _isChallengeMode = MutableStateFlow(false)
+    val isChallengeMode: StateFlow<Boolean> = _isChallengeMode.asStateFlow()
+
     private val _restoredFromCheckpoint = MutableStateFlow(false)
     val restoredFromCheckpoint: StateFlow<Boolean> = _restoredFromCheckpoint.asStateFlow()
 
@@ -476,6 +480,7 @@ class LearningViewModel @Inject constructor(
     private fun refreshOfflineMode() {
         val token = configRepository.getAuthToken()
         _isOfflineMode.value = token.length < 10
+        _isChallengeMode.value = configRepository.isChallengeModeEnabled()
     }
 
     /** Advances from Stage 0 (pre-teach) to Stage 1 (immersion). */
@@ -590,6 +595,44 @@ class LearningViewModel @Inject constructor(
             _readAlongState.value = _readAlongState.value.copy(isPlayingDemo = false)
         } ?: run {
             speakWithTts(sentence.text, 0.9f)
+        }
+    }
+
+    /** Toggles shadow mode on/off. When activated, starts the auto-shadow flow. */
+    fun toggleShadowMode() {
+        val current = _readAlongState.value
+        if (current.isShadowMode) {
+            _readAlongState.value = current.copy(isShadowMode = false)
+        } else {
+            _readAlongState.value = current.copy(isShadowMode = true)
+            startShadowFlow()
+        }
+    }
+
+    /** Auto-recording flow for shadow mode: TTS play → countdown → auto-mic → wait → evaluate. */
+    private fun startShadowFlow() {
+        val sentence = _session.value.readAlongSentences[_readAlongState.value.currentIndex]
+        val shadowDelay = configRepository.getShadowDelayMs()
+
+        viewModelScope.launch {
+            speakWithTts(sentence.text, 0.9f)
+
+            _readAlongState.value = _readAlongState.value.copy(isCountdownActive = true)
+            for (i in 3 downTo 1) {
+                _readAlongState.value = _readAlongState.value.copy(countdownValue = i)
+                delay(1000)
+            }
+            _readAlongState.value = _readAlongState.value.copy(countdownValue = 0, isCountdownActive = false)
+
+            startRecording()
+
+            val sentenceDuration = (sentence.text.length * 80L) + 1500L
+            delay(sentenceDuration + shadowDelay)
+
+            stopRecording()
+
+            delay(2000)
+            nextReadAlongSentence()
         }
     }
 

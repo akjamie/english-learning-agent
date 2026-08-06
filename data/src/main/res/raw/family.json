@@ -1,0 +1,28 @@
+{
+  "theme": "Family",
+  "targetNewWords": ["mother", "father", "sister", "brother", "grandma", "grandpa", "uncle", "aunt"],
+  "subtitleLines": [
+    {"id": 1, "startTimeMs": 0, "endTimeMs": 4000, "text": "This is my family. We live together.", "newWords": ["family", "live"]},
+    {"id": 2, "startTimeMs": 4000, "endTimeMs": 8000, "text": "My mother is kind. She cooks yummy food.", "newWords": ["mother", "kind"]},
+    {"id": 3, "startTimeMs": 8000, "endTimeMs": 12000, "text": "My father is tall. He reads stories to me.", "newWords": ["father", "stories"]},
+    {"id": 4, "startTimeMs": 12000, "endTimeMs": 16000, "text": "I have a little sister. She likes to play.", "newWords": ["sister", "little"]},
+    {"id": 5, "startTimeMs": 16000, "endTimeMs": 20000, "text": "My grandma and grandpa love me very much.", "newWords": ["grandma", "grandpa"]}
+  ],
+  "readAlongSentences": [
+    {"id": 1, "text": "This is my mother.", "chineseHint": "这是我的妈妈。"},
+    {"id": 2, "text": "My father is tall.", "chineseHint": "我的爸爸很高。"},
+    {"id": 3, "text": "I love my family.", "chineseHint": "我爱我的家人。"}
+  ],
+  "gameQuestions": [
+    {"id": 1, "type": "DRAG_MATCH", "prompt": "Which word means '妈妈' (mother)?", "options": ["mother", "father", "sister", "brother"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_IMAGE", "prompt": "Listen and choose the correct picture", "audioText": "father", "options": ["👨 Father", "👩 Mother", "👧 Sister", "👦 Brother"], "correctIndex": 0},
+    {"id": 3, "type": "DRAG_MATCH", "prompt": "Which word means '姐姐/妹妹' (sister)?", "options": ["father", "mother", "sister", "uncle"], "correctIndex": 2}
+  ],
+  "quizQuestions": [
+    {"id": 1, "type": "IMAGE_CHOOSE_WORD", "question": "Who is this? 👩", "options": ["mother", "father", "sister", "grandma"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_WORD", "question": "Listen and choose the word you hear", "audioText": "brother", "options": ["sister", "brother", "uncle", "aunt"], "correctIndex": 1},
+    {"id": 3, "type": "SPELL_FILL_BLANK", "question": "Fill in the missing letter: fath_r", "options": ["e", "o", "a", "i"], "correctIndex": 0, "isFromErrorBook": false},
+    {"id": 4, "type": "SENTENCE_ORDER", "question": "Put the words in the correct order", "options": ["my", "This", "mother", "is"], "correctOrder": ["This", "is", "my", "mother"]},
+    {"id": 5, "type": "READ_ALOUD", "question": "Read this sentence aloud", "audioText": "This is my mother.", "isFromErrorBook": false}
+  ]
+}

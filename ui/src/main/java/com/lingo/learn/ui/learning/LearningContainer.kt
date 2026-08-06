@@ -224,6 +224,24 @@ fun LearningContainer(
             }
         }
 
+        // Sprint 19: challenge track identifier
+        val isChallengeMode by viewModel.isChallengeMode.collectAsState()
+        if (isChallengeMode) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF5C6FF2).copy(alpha = 0.1f),
+                shape = RoundedCornerShape(0.dp)
+            ) {
+                Text(
+                    text = "🔥 Challenge Mode",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF5C6FF2)
+                )
+            }
+        }
+
         // Lingo Observation bubble (Sprint 6) — non-blocking, auto-dismisses
         val observation by viewModel.observation.collectAsState()
         val currentObservation = observation

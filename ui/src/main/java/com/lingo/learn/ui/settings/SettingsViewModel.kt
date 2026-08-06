@@ -31,7 +31,8 @@ data class SettingsUiState(
     // Sprint 12: daily reminder preferences
     val reminderEnabled: Boolean = true,
     val reminderHour: Int = 18,
-    val shadowDelayMs: Int = 250
+    val shadowDelayMs: Int = 250,
+    val challengeModeEnabled: Boolean = false
 )
 
 /**
@@ -66,6 +67,7 @@ class SettingsViewModel @Inject constructor(
                 reminderEnabled = configRepository.isReminderEnabled(),
                 reminderHour = configRepository.getReminderHour(),
                 shadowDelayMs = configRepository.getShadowDelayMs(),
+                challengeModeEnabled = configRepository.isChallengeModeEnabled(),
                 isSaved = false
             )
         }
@@ -126,6 +128,7 @@ class SettingsViewModel @Inject constructor(
         configRepository.setReminderEnabled(state.reminderEnabled)
         configRepository.setReminderHour(state.reminderHour)
         configRepository.setShadowDelayMs(state.shadowDelayMs)
+        configRepository.setChallengeModeEnabled(state.challengeModeEnabled)
 
         _uiState.update { it.copy(isSaved = true) }
     }
@@ -140,6 +143,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateShadowDelayMs(value: Int) {
         _uiState.update { it.copy(shadowDelayMs = value, isSaved = false) }
+    }
+
+    fun updateChallengeModeEnabled(value: Boolean) {
+        _uiState.update { it.copy(challengeModeEnabled = value, isSaved = false) }
     }
 
     fun testApiConnection() {

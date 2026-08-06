@@ -1,0 +1,28 @@
+{
+  "theme": "Food",
+  "targetNewWords": ["apple", "bread", "milk", "rice", "egg", "cake", "juice", "cookie"],
+  "subtitleLines": [
+    {"id": 1, "startTimeMs": 0, "endTimeMs": 4000, "text": "It is lunch time. I am very hungry!", "newWords": ["lunch", "hungry"]},
+    {"id": 2, "startTimeMs": 4000, "endTimeMs": 8000, "text": "I have an apple and some bread for lunch.", "newWords": ["apple", "bread"]},
+    {"id": 3, "startTimeMs": 8000, "endTimeMs": 12000, "text": "I drink a glass of milk every day.", "newWords": ["milk", "drink"]},
+    {"id": 4, "startTimeMs": 12000, "endTimeMs": 16000, "text": "For dinner I like rice and eggs.", "newWords": ["rice", "dinner"]},
+    {"id": 5, "startTimeMs": 16000, "endTimeMs": 20000, "text": "After dinner I have a piece of cake. Yummy!", "newWords": ["cake", "yummy"]}
+  ],
+  "readAlongSentences": [
+    {"id": 1, "text": "I like apples.", "chineseHint": "我喜欢苹果。"},
+    {"id": 2, "text": "Milk is good for you.", "chineseHint": "牛奶对你有好处。"},
+    {"id": 3, "text": "I eat rice for dinner.", "chineseHint": "我晚餐吃米饭。"}
+  ],
+  "gameQuestions": [
+    {"id": 1, "type": "DRAG_MATCH", "prompt": "Which word means '面包' (bread)?", "options": ["bread", "milk", "rice", "cake"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_IMAGE", "prompt": "Listen and choose the correct picture", "audioText": "apple", "options": ["🍎 Apple", "🍞 Bread", "🥛 Milk", "🍚 Rice"], "correctIndex": 0},
+    {"id": 3, "type": "DRAG_MATCH", "prompt": "Which word means '鸡蛋' (egg)?", "options": ["cake", "egg", "juice", "cookie"], "correctIndex": 1}
+  ],
+  "quizQuestions": [
+    {"id": 1, "type": "IMAGE_CHOOSE_WORD", "question": "What food is this? 🍎", "options": ["apple", "bread", "milk", "rice"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_WORD", "question": "Listen and choose the word you hear", "audioText": "milk", "options": ["bread", "milk", "egg", "juice"], "correctIndex": 1},
+    {"id": 3, "type": "SPELL_FILL_BLANK", "question": "Fill in the missing letter: ri_e", "options": ["c", "s", "t", "p"], "correctIndex": 0, "isFromErrorBook": false},
+    {"id": 4, "type": "SENTENCE_ORDER", "question": "Put the words in the correct order", "options": ["apples", "like", "I"], "correctOrder": ["I", "like", "apples"]},
+    {"id": 5, "type": "READ_ALOUD", "question": "Read this sentence aloud", "audioText": "I like apples.", "isFromErrorBook": false}
+  ]
+}

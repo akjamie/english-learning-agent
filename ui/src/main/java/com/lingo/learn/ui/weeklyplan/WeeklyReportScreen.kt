@@ -176,6 +176,24 @@ fun WeeklyReportScreen(
                 StatCard("📖 Words", "${uiState.totalWordsLearned}", modifier = Modifier.weight(1f))
             }
 
+            // Sprint 19: estimated CEFR level
+            if (!uiState.cefrLabel.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFF5C6FF2).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "🌍 Estimated CEFR Level: ${uiState.cefrLabel}",
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF5C6FF2)
+                    )
+                }
+            }
+
             // Weak categories
             if (uiState.weakCategories.isNotEmpty()) {
                 Card(

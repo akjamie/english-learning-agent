@@ -1,0 +1,28 @@
+{
+  "theme": "Animals",
+  "targetNewWords": ["cat", "dog", "fish", "bird", "rabbit", "turtle", "hamster", "parrot"],
+  "subtitleLines": [
+    {"id": 1, "startTimeMs": 0, "endTimeMs": 4000, "text": "Welcome to the pet shop! Look at all the animals.", "newWords": ["welcome", "animals"]},
+    {"id": 2, "startTimeMs": 4000, "endTimeMs": 8000, "text": "This is a cat. It is soft and likes to sleep.", "newWords": ["cat", "soft"]},
+    {"id": 3, "startTimeMs": 8000, "endTimeMs": 12000, "text": "The dog is very friendly. It likes to run and play.", "newWords": ["dog", "friendly"]},
+    {"id": 4, "startTimeMs": 12000, "endTimeMs": 16000, "text": "Look at the fish swimming in the water.", "newWords": ["fish", "swim"]},
+    {"id": 5, "startTimeMs": 16000, "endTimeMs": 20000, "text": "The bird can sing and fly high in the sky.", "newWords": ["bird", "fly"]}
+  ],
+  "readAlongSentences": [
+    {"id": 1, "text": "I see a cat.", "chineseHint": "我看到一只猫。"},
+    {"id": 2, "text": "The dog is friendly.", "chineseHint": "这只狗很友好。"},
+    {"id": 3, "text": "I like my pet.", "chineseHint": "我喜欢我的宠物。"}
+  ],
+  "gameQuestions": [
+    {"id": 1, "type": "DRAG_MATCH", "prompt": "Which word means '猫' (cat)?", "options": ["cat", "dog", "bird", "fish"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_IMAGE", "prompt": "Listen and choose the correct picture", "audioText": "dog", "options": ["🐕 Dog", "🐱 Cat", "🐦 Bird", "🐟 Fish"], "correctIndex": 0},
+    {"id": 3, "type": "DRAG_MATCH", "prompt": "Which word means '鱼' (fish)?", "options": ["cat", "dog", "fish", "bird"], "correctIndex": 2}
+  ],
+  "quizQuestions": [
+    {"id": 1, "type": "IMAGE_CHOOSE_WORD", "question": "What animal is this? 🐱", "options": ["cat", "dog", "fish", "bird"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_WORD", "question": "Listen and choose the word you hear", "audioText": "bird", "options": ["cat", "dog", "bird", "fish"], "correctIndex": 2},
+    {"id": 3, "type": "SPELL_FILL_BLANK", "question": "Fill in the missing letter: do_", "options": ["g", "t", "c", "p"], "correctIndex": 0, "isFromErrorBook": false},
+    {"id": 4, "type": "SENTENCE_ORDER", "question": "Put the words in the correct order", "options": ["a", "see", "I", "cat"], "correctOrder": ["I", "see", "a", "cat"]},
+    {"id": 5, "type": "READ_ALOUD", "question": "Read this sentence aloud", "audioText": "I see a cat.", "isFromErrorBook": false}
+  ]
+}

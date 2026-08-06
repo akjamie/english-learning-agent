@@ -30,6 +30,7 @@ import org.akj.lingo.learn.ui.onboarding.OnboardingContainer
 import org.akj.lingo.learn.ui.roleplay.RoleplayScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyPlanScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyReportScreen
+import org.akj.lingo.learn.ui.reportcard.ReportCardScreen
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 import javax.inject.Inject
@@ -83,6 +84,7 @@ class MainActivity : ComponentActivity() {
                     var isWeeklyReportOpen by remember { mutableStateOf(false) }
                     var isRoleplayOpen by remember { mutableStateOf(false) }
                     var isAiGrowthNotesOpen by remember { mutableStateOf(false) }
+                    var isReportCardOpen by remember { mutableStateOf(false) }
 
                     if (!isOnboardingCompleted) {
                         OnboardingContainer(
@@ -144,6 +146,10 @@ class MainActivity : ComponentActivity() {
                         AiGrowthNotesScreen(
                             onBack = { isAiGrowthNotesOpen = false }
                         )
+                    } else if (isReportCardOpen) {
+                        ReportCardScreen(
+                            onBack = { isReportCardOpen = false }
+                        )
                     } else {
                         // Main Scaffold with Bottom Navigation
                         androidx.compose.material3.Scaffold(
@@ -183,7 +189,8 @@ class MainActivity : ComponentActivity() {
                                         onErrorBookClick = { currentTab = MainTab.ERROR_BOOK },
                                         onSettingsClick = { currentTab = MainTab.SETTINGS },
                                         onRoleplayClick = { isRoleplayOpen = true },
-                                        onUpdateLevel = { isRediagnosing = true }
+                                        onUpdateLevel = { isRediagnosing = true },
+                                        onReportCardClick = { isReportCardOpen = true }
                                     )
                                     MainTab.PLAN -> WeeklyPlanScreen(
                                         grade = currentGrade,

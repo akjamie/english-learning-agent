@@ -42,4 +42,7 @@ interface ConfigRepository {
 
     fun getShadowDelayMs(): Int
     fun setShadowDelayMs(value: Int)
+
+    fun isChallengeModeEnabled(): Boolean
+    fun setChallengeModeEnabled(value: Boolean)
 }

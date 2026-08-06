@@ -20,11 +20,11 @@ class RoleplayScenarioBankTest {
     private val bank = RoleplayScenarioBank(llmRepository)
 
     @Test
-    fun `curated scenarios includes all four scenes`() {
+    fun `curated scenarios includes all nine scenes`() {
         val scenarios = bank.curatedScenarios()
-        assertEquals(4, scenarios.size)
+        assertEquals(9, scenarios.size)
         val ids = scenarios.map { it.id }.toSet()
-        assertTrue(ids.containsAll(listOf("zoo", "restaurant", "school", "travel")))
+        assertTrue(ids.containsAll(listOf("zoo", "restaurant", "school", "travel", "doctor", "supermarket", "birthday", "library", "weather")))
     }
 
     @Test

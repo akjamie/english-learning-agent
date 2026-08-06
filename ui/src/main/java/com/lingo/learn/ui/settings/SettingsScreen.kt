@@ -318,6 +318,41 @@ fun SettingsScreen(
                 }
             }
 
+            // Sprint 19: Challenge mode toggle
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "🔥 Challenge Mode",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF5C6FF2)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "B1-level vocabulary and longer sentences for advanced learners",
+                            fontSize = 13.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                    }
+                    Switch(
+                        checked = uiState.challengeModeEnabled,
+                        onCheckedChange = { viewModel.updateChallengeModeEnabled(it) }
+                    )
+                }
+            }
+
             // Sprint 12: Re-run onboarding / change grade
             Card(
                 modifier = Modifier.fillMaxWidth(),

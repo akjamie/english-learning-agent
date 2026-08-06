@@ -1,13 +1,16 @@
 package org.akj.lingo.learn.ui.weeklyplan
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.qualifiers.ApplicationContext
 import org.akj.lingo.learn.domain.model.AgentDecisionLog
 import org.akj.lingo.learn.domain.repository.AgentDecisionLogRepository
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.CefrMapper
 import org.akj.lingo.learn.domain.usecase.LingoLetterFallback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,11 +34,14 @@ data class WeeklyReportUiState(
     val shareBitmap: ByteArray? = null,
     // Sprint 12: "Lingo's letter" weekly parent digest
     val lingoLetter: String? = null,
+    // Sprint 19: estimated CEFR level label (e.g. "A1")
+    val cefrLabel: String? = null,
     val loadError: String? = null
 )
 
 @HiltViewModel
 class WeeklyReportViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val learningRecordRepository: LearningRecordRepository,
     private val weeklyPlanRepository: WeeklyPlanRepository,
     private val agentDecisionLogRepository: AgentDecisionLogRepository,
@@ -65,6 +71,11 @@ class WeeklyReportViewModel @Inject constructor(
                     weeklyRecords.map { it.accuracy }.average().toFloat()
                 } else 0f
 
+                val prefs = context.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
+                val grade = prefs.getString("grade", "Grade 4") ?: "Grade 4"
+                val diagnosticLevel = prefs.getString("diagnostic_level", "B") ?: "B"
+                val cefrLabel = CefrMapper.badge(CefrMapper.map(grade, diagnosticLevel))
+
                 _uiState.value = WeeklyReportUiState(
                     weeklyAccuracy = weeklyAccuracy,
                     monthlyAccuracy = monthlyAccuracy,
@@ -77,7 +88,8 @@ class WeeklyReportViewModel @Inject constructor(
                     topErrorWords = topErrors,
                     timeByTaskType = timeByType,
                     isLoading = false,
-                    lingoLetter = loadLingoLetter(weeklyAccuracy, weeklyRecords.size, topErrors)
+                    lingoLetter = loadLingoLetter(weeklyAccuracy, weeklyRecords.size, topErrors),
+                    cefrLabel = cefrLabel
                 )
             } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, loadError = "Couldn't load weekly report. Tap retry.")

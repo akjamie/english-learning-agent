@@ -83,13 +83,32 @@ private fun ReadAlongContent(
             .statusBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Progress indicator
-        Text(
-            text = "Read Aloud ${readAlongState.currentIndex + 1} / $total",
-            fontSize = 14.sp,
-            color = Color(0xFF7F8C8D),
-            modifier = Modifier.padding(top = 16.dp)
-        )
+        // Progress indicator + shadow mode pill
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Read Aloud ${readAlongState.currentIndex + 1} / $total",
+                fontSize = 14.sp,
+                color = Color(0xFF7F8C8D)
+            )
+            if (readAlongState.isShadowMode) {
+                Surface(
+                    color = Color(0xFF5C6FF2).copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "🦊 Shadow",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF5C6FF2),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -104,6 +123,19 @@ private fun ReadAlongContent(
         LingoAvatar(expression = lingoExpr, modifier = Modifier.size(80.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Countdown overlay for shadow mode
+        if (readAlongState.isCountdownActive) {
+            Text(
+                text = readAlongState.countdownValue.toString(),
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF5C6FF2),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         // Sentence card
         Card(
@@ -152,6 +184,19 @@ private fun ReadAlongContent(
                     Text(if (readAlongState.isPlayingDemo) "🔊 Playing..." else "🔊 Listen first", color = theme.primaryColor, fontWeight = FontWeight.Bold)
                 }
             }
+        }
+
+        // Shadow mode toggle
+        TextButton(
+            onClick = { viewModel.toggleShadowMode() },
+            enabled = !readAlongState.isEvaluating && !readAlongState.isCountdownActive,
+            modifier = Modifier.heightIn(min = 36.dp)
+        ) {
+            Text(
+                text = if (readAlongState.isShadowMode) "🦊 Exit Shadow Mode" else "🦊 Shadow Mode",
+                fontSize = 12.sp,
+                color = if (readAlongState.isShadowMode) Color(0xFF5C6FF2) else Color(0xFF7F8C8D)
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -211,6 +256,22 @@ private fun ReadAlongContent(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+        } else if (readAlongState.isShadowMode) {
+            Spacer(modifier = Modifier.weight(1f))
+            if (readAlongState.isRecording) {
+                Text(
+                    text = "🎤 Auto-recording...",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF7052)
+                )
+            } else if (readAlongState.isCountdownActive) {
+                Text(
+                    text = "Listen carefully...",
+                    fontSize = 14.sp,
+                    color = Color(0xFF7F8C8D)
+                )
             }
         } else {
             Spacer(modifier = Modifier.weight(1f))

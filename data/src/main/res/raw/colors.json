@@ -1,0 +1,28 @@
+{
+  "theme": "Colors",
+  "targetNewWords": ["red", "blue", "green", "yellow", "white", "black", "pink", "orange"],
+  "subtitleLines": [
+    {"id": 1, "startTimeMs": 0, "endTimeMs": 4000, "text": "Look at all the colors around us!", "newWords": ["color"]},
+    {"id": 2, "startTimeMs": 4000, "endTimeMs": 8000, "text": "The sky is blue and the sun is yellow.", "newWords": ["blue", "yellow"]},
+    {"id": 3, "startTimeMs": 8000, "endTimeMs": 12000, "text": "The grass is green. The flowers are red.", "newWords": ["green", "red"]},
+    {"id": 4, "startTimeMs": 12000, "endTimeMs": 16000, "text": "I like pink. My bag is pink.", "newWords": ["pink"]},
+    {"id": 5, "startTimeMs": 16000, "endTimeMs": 20000, "text": "Cats can be black or white or orange.", "newWords": ["black", "white", "orange"]}
+  ],
+  "readAlongSentences": [
+    {"id": 1, "text": "The sky is blue.", "chineseHint": "天空是蓝色的。"},
+    {"id": 2, "text": "I like red.", "chineseHint": "我喜欢红色。"},
+    {"id": 3, "text": "The grass is green.", "chineseHint": "草是绿色的。"}
+  ],
+  "gameQuestions": [
+    {"id": 1, "type": "DRAG_MATCH", "prompt": "Which word means '红色' (red)?", "options": ["red", "blue", "green", "yellow"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_IMAGE", "prompt": "Listen and choose the correct picture", "audioText": "green", "options": ["🟢 Green", "🔵 Blue", "🔴 Red", "🟡 Yellow"], "correctIndex": 0},
+    {"id": 3, "type": "DRAG_MATCH", "prompt": "Which word means '黄色' (yellow)?", "options": ["blue", "green", "yellow", "pink"], "correctIndex": 2}
+  ],
+  "quizQuestions": [
+    {"id": 1, "type": "IMAGE_CHOOSE_WORD", "question": "What color is this? 🔴", "options": ["red", "blue", "green", "yellow"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_WORD", "question": "Listen and choose the word you hear", "audioText": "blue", "options": ["red", "blue", "green", "black"], "correctIndex": 1},
+    {"id": 3, "type": "SPELL_FILL_BLANK", "question": "Fill in the missing letter: gr__n", "options": ["ee", "ea", "aa", "oo"], "correctIndex": 0, "isFromErrorBook": false},
+    {"id": 4, "type": "SENTENCE_ORDER", "question": "Put the words in the correct order", "options": ["is", "sky", "blue", "The"], "correctOrder": ["The", "sky", "is", "blue"]},
+    {"id": 5, "type": "READ_ALOUD", "question": "Read this sentence aloud", "audioText": "The sky is blue.", "isFromErrorBook": false}
+  ]
+}

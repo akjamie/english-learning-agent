@@ -48,4 +48,7 @@ class ConfigRepositoryImpl @Inject constructor(
 
     override fun getShadowDelayMs(): Int = prefs.getShadowDelayMs()
     override fun setShadowDelayMs(value: Int) = prefs.setShadowDelayMs(value)
+
+    override fun isChallengeModeEnabled(): Boolean = prefs.isChallengeModeEnabled()
+    override fun setChallengeModeEnabled(value: Boolean) = prefs.setChallengeModeEnabled(value)
 }

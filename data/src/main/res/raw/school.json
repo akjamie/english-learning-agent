@@ -1,0 +1,28 @@
+{
+  "theme": "School",
+  "targetNewWords": ["teacher", "student", "book", "desk", "chair", "pencil", "eraser", "schoolbag"],
+  "subtitleLines": [
+    {"id": 1, "startTimeMs": 0, "endTimeMs": 4000, "text": "Good morning! Welcome to school.", "newWords": ["morning", "welcome"]},
+    {"id": 2, "startTimeMs": 4000, "endTimeMs": 8000, "text": "The teacher is in the classroom.", "newWords": ["teacher", "classroom"]},
+    {"id": 3, "startTimeMs": 8000, "endTimeMs": 12000, "text": "I sit at my desk. I have a pencil and a book.", "newWords": ["desk", "pencil"]},
+    {"id": 4, "startTimeMs": 12000, "endTimeMs": 16000, "text": "The students read and write every day.", "newWords": ["student", "write"]},
+    {"id": 5, "startTimeMs": 16000, "endTimeMs": 20000, "text": "I put my books in my schoolbag.", "newWords": ["schoolbag"]}
+  ],
+  "readAlongSentences": [
+    {"id": 1, "text": "The teacher is kind.", "chineseHint": "老师很和蔼。"},
+    {"id": 2, "text": "I have a pencil.", "chineseHint": "我有一支铅笔。"},
+    {"id": 3, "text": "I like my school.", "chineseHint": "我喜欢我的学校。"}
+  ],
+  "gameQuestions": [
+    {"id": 1, "type": "DRAG_MATCH", "prompt": "Which word means '老师' (teacher)?", "options": ["teacher", "student", "book", "desk"], "correctIndex": 0},
+    {"id": 2, "type": "LISTEN_CHOOSE_IMAGE", "prompt": "Listen and choose the correct picture", "audioText": "book", "options": ["📖 Book", "✏️ Pencil", "🪑 Chair", "🎒 Schoolbag"], "correctIndex": 0},
+    {"id": 3, "type": "DRAG_MATCH", "prompt": "Which word means '铅笔' (pencil)?", "options": ["book", "desk", "pencil", "eraser"], "correctIndex": 2}
+  ],
+  "quizQuestions": [
+    {"id": 1, "type": "IMAGE_CHOOSE_WORD", "question": "What is this? ✏️", "options": ["book", "pencil", "chair", "eraser"], "correctIndex": 1},
+    {"id": 2, "type": "LISTEN_CHOOSE_WORD", "question": "Listen and choose the word you hear", "audioText": "teacher", "options": ["teacher", "student", "desk", "schoolbag"], "correctIndex": 0},
+    {"id": 3, "type": "SPELL_FILL_BLANK", "question": "Fill in the missing letter: boo_", "options": ["k", "t", "c", "p"], "correctIndex": 0, "isFromErrorBook": false},
+    {"id": 4, "type": "SENTENCE_ORDER", "question": "Put the words in the correct order", "options": ["a", "have", "I", "book"], "correctOrder": ["I", "have", "a", "book"]},
+    {"id": 5, "type": "READ_ALOUD", "question": "Read this sentence aloud", "audioText": "The teacher is kind.", "isFromErrorBook": false}
+  ]
+}

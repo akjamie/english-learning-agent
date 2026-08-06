@@ -43,6 +43,10 @@ data class DashboardUiState(
     // Sprint 10.5: offline-mode status for the Dashboard banner
     val isOfflineMode: Boolean = false,
     val hasPlan: Boolean = false,
+    // Sprint 19: intermediate challenge track indicator
+    val challengeModeEnabled: Boolean = false,
+    // Sprint 19: estimated CEFR level label (e.g. "A1")
+    val cefrLabel: String? = null,
     // Sprint 15: error state for retry UI
     val errorMessage: String? = null
 )
@@ -110,6 +114,13 @@ class DashboardViewModel @Inject constructor(
                     cardsUsedPreviously = makeupUsed
                 )
 
+                val profilePrefs = context.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
+                val grade = profilePrefs.getString("grade", "Grade 4") ?: "Grade 4"
+                val diagnosticLevel = profilePrefs.getString("diagnostic_level", "B") ?: "B"
+                val cefrLabel = org.akj.lingo.learn.domain.usecase.CefrMapper.badge(
+                    org.akj.lingo.learn.domain.usecase.CefrMapper.map(grade, diagnosticLevel)
+                )
+
                 _uiState.value = DashboardUiState(
                     streakDays = streak,
                     todayProgress = progress,
@@ -126,7 +137,9 @@ class DashboardViewModel @Inject constructor(
                     xpProgress = levelInfo.progressToNextLevel,
                     makeupCardsLeft = makeupState.cardsLeft,
                     isOfflineMode = configRepository.getAuthToken().length < 10,
-                    hasPlan = plan != null
+                    hasPlan = plan != null,
+                    challengeModeEnabled = configRepository.isChallengeModeEnabled(),
+                    cefrLabel = cefrLabel
                 )
 
                 // Fetch daily greeting in background

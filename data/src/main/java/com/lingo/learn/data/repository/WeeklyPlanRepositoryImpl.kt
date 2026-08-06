@@ -1,8 +1,10 @@
 package org.akj.lingo.learn.data.repository
 
+import org.akj.lingo.learn.data.content.OfflineContentStore
 import org.akj.lingo.learn.data.local.dao.PlanDao
 import org.akj.lingo.learn.data.local.entity.PlanEntity
 import org.akj.lingo.learn.domain.model.*
+import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.DayTaskSummary
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
@@ -15,7 +17,9 @@ import javax.inject.Singleton
 @Singleton
 class WeeklyPlanRepositoryImpl @Inject constructor(
     private val llmRepository: LlmRepository,
-    private val planDao: PlanDao
+    private val planDao: PlanDao,
+    private val offlineContentStore: OfflineContentStore,
+    private val configRepository: ConfigRepository
 ) : WeeklyPlanRepository {
 
     private val sessionBuilder = SessionBuilder()
@@ -155,6 +159,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
     ): LearningSession {
         val gradeBand = GradeBand.fromGrade(grade)
         val dayNumber = dayIndex.coerceIn(1, 7)
+        val challengeMode = configRepository.isChallengeModeEnabled()
 
         // Try to build from cached plan first
         val cachedPlan = planDao.getLatestPlan("WEEKLY")
@@ -164,7 +169,8 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
                 gradeBand = gradeBand,
                 dayIndex = dayNumber,
                 reviewQuestions = reviewQuestions,
-                sentenceLengthAdjustment = sentenceLengthAdjustment
+                sentenceLengthAdjustment = sentenceLengthAdjustment,
+                challengeMode = challengeMode
             )
             if (expanded != null) return expanded
         }
@@ -176,9 +182,23 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             gradeBand = gradeBand,
             dayIndex = dayNumber,
             reviewQuestions = reviewQuestions,
-            sentenceLengthAdjustment = sentenceLengthAdjustment
+            sentenceLengthAdjustment = sentenceLengthAdjustment,
+            challengeMode = challengeMode
         )
         if (expanded != null) return expanded
+
+        // Offline fallback: pre-built sessions from res/raw/ JSON files
+        val offlineSession = offlineContentStore.getSessionForDay(dayNumber)
+        if (offlineSession != null) {
+            return LearningSession(
+                theme = "Day $dayNumber: ${offlineSession.theme}",
+                subtitleLines = offlineSession.subtitleLines,
+                readAlongSentences = offlineSession.readAlongSentences,
+                gameQuestions = offlineSession.gameQuestions,
+                quizQuestions = offlineSession.quizQuestions,
+                targetNewWords = offlineSession.targetNewWords
+            )
+        }
 
         // Last resort: hardcoded sample content
         val sample = SampleLearningContent.createSchoolLifeSession()

@@ -23,7 +23,12 @@ class RoleplayScenarioBank @Inject constructor(
         zoo(),
         restaurant(),
         school(),
-        travel()
+        travel(),
+        doctor(),
+        supermarket(),
+        birthday(),
+        library(),
+        weather()
     )
 
     /** Returns the curated scenario for an id, falling back to the zoo one. */
@@ -129,5 +134,80 @@ class RoleplayScenarioBank @Inject constructor(
             Always be encouraging and cheerful!
         """.trimIndent(),
         openingLine = "Let's go on a trip! Where should we fly?"
+    )
+
+    private fun doctor() = RoleplayScenario(
+        id = "doctor",
+        title = "Doctor's Office",
+        emoji = "🏥",
+        description = "Visit the doctor!",
+        targetWords = listOf("doctor", "sick", "help", "medicine", "better"),
+        systemPrompt = """
+            You are Lingo Fox, a friendly doctor. The child is visiting for a check-up.
+            Keep answers very short (1-2 sentences), simple English for a 4th grader.
+            Guide the child to use: doctor, sick, help, medicine, better.
+            Always be warm and reassuring!
+        """.trimIndent(),
+        openingLine = "Hello! I am the doctor. How can I help you today?"
+    )
+
+    private fun supermarket() = RoleplayScenario(
+        id = "supermarket",
+        title = "Supermarket Shopping",
+        emoji = "🛒",
+        description = "Shop for groceries!",
+        targetWords = listOf("basket", "fruit", "bread", "cheap", "pay"),
+        systemPrompt = """
+            You are Lingo Fox shopping at a supermarket with the child.
+            Keep answers very short (1-2 sentences), simple English for a 4th grader.
+            Guide the child to use: basket, fruit, bread, cheap, pay.
+            Always be encouraging and cheerful!
+        """.trimIndent(),
+        openingLine = "Welcome to the supermarket! What should we buy first?"
+    )
+
+    private fun birthday() = RoleplayScenario(
+        id = "birthday",
+        title = "Birthday Party",
+        emoji = "🎂",
+        description = "Celebrate together!",
+        targetWords = listOf("cake", "present", "party", "candle", "happy"),
+        systemPrompt = """
+            You are Lingo Fox at a birthday party with the child.
+            Keep answers very short (1-2 sentences), simple English for a 4th grader.
+            Guide the child to use: cake, present, party, candle, happy.
+            Always be joyful and celebratory!
+        """.trimIndent(),
+        openingLine = "Happy birthday! Look at the cake. Do you want a present?"
+    )
+
+    private fun library() = RoleplayScenario(
+        id = "library",
+        title = "Library Visit",
+        emoji = "📚",
+        description = "Find a good book!",
+        targetWords = listOf("book", "read", "story", "quiet", "borrow"),
+        systemPrompt = """
+            You are Lingo Fox, a librarian. The child wants to borrow a book.
+            Keep answers very short (1-2 sentences), simple English for a 4th grader.
+            Guide the child to use: book, read, story, quiet, borrow.
+            Always be warm and encouraging!
+        """.trimIndent(),
+        openingLine = "Welcome to the library! What kind of story do you like?"
+    )
+
+    private fun weather() = RoleplayScenario(
+        id = "weather",
+        title = "Weather Talk",
+        emoji = "🌦️",
+        description = "Talk about the sky!",
+        targetWords = listOf("sunny", "rainy", "cloudy", "windy", "cold"),
+        systemPrompt = """
+            You are Lingo Fox talking about the weather with the child.
+            Keep answers very short (1-2 sentences), simple English for a 4th grader.
+            Guide the child to use: sunny, rainy, cloudy, windy, cold.
+            Always be cheerful and curious!
+        """.trimIndent(),
+        openingLine = "Look outside! Is it sunny or rainy today?"
     )
 }

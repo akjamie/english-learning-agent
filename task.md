@@ -410,17 +410,17 @@
 
 ---
 
-## 🔵 Sprint 19: 流利度突破 + 离线韧性 + 中级再激活 (v4.3.0) - [ ]
+## 🔵 Sprint 19: 流利度突破 + 离线韧性 + 中级再激活 (v4.3.0) - [x]
 
 > **主题依据**: 2026 年市场调研显示"流利度缺口"是中国 EdTech App 最大痛点；Shadowing（影子跟读）是经科学验证的流利度桥梁，竞品均无针对儿童的成熟实现；离线韧性可消除最具破坏力的 1 星评价类别；中级学习者（60+ 天）进入停滞期是 LTV 的关键挑战  
 > **预计总工作量**: ~6.5 天
 
-- [ ] **[Impl S19-001 🔴 P0]** **影子跟读模式 "Shadow the Fox"** — `PracticeScreen` 新增 🦊 Shadow Mode 切换按钮；激活后：Lingo 播放 TTS → 3-2-1 倒计时 → 麦克风自动开启 → 儿童同步跟读 → ASR 评分（与标准 Practice 同等评分逻辑）；Settings 可调节跟读延迟 (0ms / 250ms / 500ms)；头部显示 "🦊 Shadow Mode" Pill 标识 (`PracticeScreen.kt`, `LearningViewModel.kt`, `VoiceRecorder.kt`, `SettingsScreen.kt`)
-- [ ] **[Impl S19-002 🟡 P1]** **离线内容包 (5 预生成 Session)** — 在 `res/raw/` 中内置 5 个离线 JSON Session（动物 / 食物 / 颜色 / 学校 / 家庭）；`OfflineContentStore.kt` 管理离线资源加载；`SessionBuilder` 在 LLM 不可用时按 dayOfWeek 自动切换离线 Session；Dashboard 展示 "📶 Offline Mode" 琥珀色 Chip；离线 TTS 使用 `SystemTtsHelper` 设备本地语音 (`OfflineContentStore.kt`, `SessionBuilder.kt`, `DashboardScreen.kt`, `DashboardViewModel.kt`)
-- [ ] **[Impl S19-003 🟡 P1]** **中级"挑战轨道" (Level 2+ 再激活)** — 触发条件：`diagnosticLevel == "C"` 且累计完成 ≥30 次 Session；`SessionBuilder` 在挑战模式下增强 LLM Prompt（B1 级别词汇 + 10-12 词句型 + 1.1x TTS 语速）；Dashboard 一次性展示 "🔥 Challenge Mode Unlocked!" 横幅；Settings 可手动开/关挑战模式；学习界面顶部展示 "🔥" 标识 (`SessionBuilder.kt`, `DashboardScreen.kt`, `DashboardViewModel.kt`, `SecureConfigPrefs.kt`)
-- [ ] **[Impl S19-004 🟡 P1]** **5 个新角色扮演场景** — 在 `RoleplayScenarioBank.kt` 新增：🏥 Doctor's Office、🛒 Supermarket Shopping、🎂 Birthday Party、📚 Library Visit、🌦️ Weather Talk；每个场景包含目标词汇、离线安全脚本（6 轮对话）和 LLM 丰富化提示 (`RoleplayScenarioBank.kt`)
-- [ ] **[Impl S19-005 🟢 P2]** **CEFR 国际等级指示器** — 新增 `CefrMapper.kt` 纯函数（`(grade, diagnosticLevel) → CefrLabel`，含完整单元测试）；Dashboard XP 等级旁展示小型 CEFR 徽章（如 "A1 🌍"）；`WeeklyReportScreen` 新增 "Estimated CEFR Level: A1" 字段 (`CefrMapper.kt`, `DashboardScreen.kt`, `WeeklyReportScreen.kt`)
-- [ ] **[Impl S19-006 🟢 P2]** **可打印英语成长报告单** — `ReportCardScreen.kt` + `ReportCardViewModel.kt` 生成 A4 比例 (1240x1754) 完整报告单：儿童信息 + CEFR 等级 + 四大核心统计 + 前 5 掌握词 + 前 3 待强化词 + Lingo Fox LLM 鼓励评语；支持 PNG 导出 + 微信/小红书分享；Dashboard 家长区新增 "📄 成长报告" 入口 (`ReportCardScreen.kt`, `ReportCardViewModel.kt`, `DashboardScreen.kt`)
+- [x] **[Impl S19-001 🔴 P0]** **影子跟读模式 "Shadow the Fox"** — `PracticeScreen` 新增 🦊 Shadow Mode 切换按钮；激活后：Lingo 播放 TTS → 3-2-1 倒计时 → 麦克风自动开启 → 儿童同步跟读 → ASR 评分（与标准 Practice 同等评分逻辑）；Settings 可调节跟读延迟 (0ms / 250ms / 500ms)；头部显示 "🦊 Shadow Mode" Pill 标识 (`PracticeScreen.kt`, `LearningViewModel.kt`, `VoiceRecorder.kt`, `SettingsScreen.kt`)
+- [x] **[Impl S19-002 🟡 P1]** **离线内容包 (5 预生成 Session)** — 在 `res/raw/` 中内置 5 个离线 JSON Session（动物 / 食物 / 颜色 / 学校 / 家庭）；`OfflineContentStore.kt` 管理离线资源加载；`SessionBuilder` 在 LLM 不可用时按 dayOfWeek 自动切换离线 Session；Dashboard 展示 "📶 Offline Mode" 琥珀色 Chip；离线 TTS 使用 `SystemTtsHelper` 设备本地语音 (`OfflineContentStore.kt`, `SessionBuilder.kt`, `DashboardScreen.kt`, `DashboardViewModel.kt`)
+- [x] **[Impl S19-003 🟡 P1]** **中级"挑战轨道" (Level 2+ 再激活)** — 触发条件：`diagnosticLevel == "C"` 且累计完成 ≥30 次 Session；`SessionBuilder` 在挑战模式下增强 LLM Prompt（B1 级别词汇 + 10-12 词句型 + 1.1x TTS 语速）；Dashboard 一次性展示 "🔥 Challenge Mode Unlocked!" 横幅；Settings 可手动开/关挑战模式；学习界面顶部展示 "🔥" 标识 (`SessionBuilder.kt`, `DashboardScreen.kt`, `DashboardViewModel.kt`, `SecureConfigPrefs.kt`)
+- [x] **[Impl S19-004 🟡 P1]** **5 个新角色扮演场景** — 在 `RoleplayScenarioBank.kt` 新增：🏥 Doctor's Office、🛒 Supermarket Shopping、🎂 Birthday Party、📚 Library Visit、🌦️ Weather Talk；每个场景包含目标词汇、离线安全脚本（6 轮对话）和 LLM 丰富化提示 (`RoleplayScenarioBank.kt`)
+- [x] **[Impl S19-005 🟢 P2]** **CEFR 国际等级指示器** — 新增 `CefrMapper.kt` 纯函数（`(grade, diagnosticLevel) → CefrLabel`，含完整单元测试）；Dashboard XP 等级旁展示小型 CEFR 徽章（如 "A1 🌍"）；`WeeklyReportScreen` 新增 "Estimated CEFR Level: A1" 字段 (`CefrMapper.kt`, `DashboardScreen.kt`, `WeeklyReportScreen.kt`)
+- [x] **[Impl S19-006 🟢 P2]** **可打印英语成长报告单** — `ReportCardScreen.kt` + `ReportCardViewModel.kt` 生成 A4 比例 (1240x1754) 完整报告单：儿童信息 + CEFR 等级 + 四大核心统计 + 前 5 掌握词 + 前 3 待强化词 + Lingo Fox LLM 鼓励评语；支持 PNG 导出 + 微信/小红书分享；Dashboard 家长区新增 "📄 成长报告" 入口 (`ReportCardScreen.kt`, `ReportCardViewModel.kt`, `DashboardScreen.kt`)
 - [ ] **[Acceptance Test & Release]** 5-Gate 质量验收 → 发布 GitHub Release `v4.3.0`
 
 ---

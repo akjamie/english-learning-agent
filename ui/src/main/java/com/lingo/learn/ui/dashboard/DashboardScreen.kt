@@ -64,6 +64,7 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit = {},
     onRoleplayClick: () -> Unit = {},
     onUpdateLevel: () -> Unit = {},
+    onReportCardClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
@@ -222,6 +223,22 @@ fun DashboardScreen(
                     }
                 }
 
+                // Sprint 19: CEFR level badge
+                if (!uiState.cefrLabel.isNullOrEmpty()) {
+                    Surface(
+                        color = Color(0xFF5C6FF2).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            text = uiState.cefrLabel!!,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF5C6FF2),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
                 // XP progress
                 Column(modifier = Modifier.weight(1f)) {
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
@@ -290,6 +307,39 @@ fun DashboardScreen(
                     fontSize = 12.sp,
                     color = Color(0xFFE67E22),
                     lineHeight = 16.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                color = Color(0xFFFFF3E0),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "📶 Offline Mode",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE67E22),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
+
+        // Sprint 19: challenge track unlocked banner
+        if (uiState.challengeModeEnabled) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Text(
+                    text = "🔥 Challenge Mode Unlocked!",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE67E22)
                 )
             }
         }
@@ -443,6 +493,41 @@ fun DashboardScreen(
                     )
                     Text(
                         text = "Practice speaking with Lingo Fox!",
+                        fontSize = 14.sp,
+                        color = Color(0xFF7F8C8D)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Sprint 19: growth report card entry (parent area)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onReportCardClick() },
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("📄", fontSize = 32.sp)
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "Growth Report",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3E50)
+                    )
+                    Text(
+                        text = "Printable English growth report card for parents",
                         fontSize = 14.sp,
                         color = Color(0xFF7F8C8D)
                     )
