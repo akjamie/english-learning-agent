@@ -425,16 +425,16 @@
 
 ---
 
-## 🔴 Sprint 20: 核心用户路径重构与体验坚固化 (v4.4.0) - [ ]
+## 🔴 Sprint 20: 核心用户路径重构与体验坚固化 (v4.4.0) - [x] 实现完成，待验收
 
 > **主题依据**: 用户实测反馈——修复 5 大闭环体验硬伤：(1) 启动即需 Key 配置，(2) Onboarding 结束直通 AI 计划生成，(3) 单词/句子排版截断修复，(4) 错题本写入与展示修复，(5) 真实 TTS 音频播放与无声修复。  
 > **预计总工作量**: ~5 天
 
-- [ ] **[Impl S20-001 🔴 P0]** **首次启动 Key 配置门槛 (`ModelConfigGate`)** — App 启动及 Onboarding 开始前，检测 `prefs.getAuthToken()`；若为空或未配置，优先展示 "🧠 配置 Lingo 的 AI 大脑" 引导配置页（支持连通性测试）；避免未配置 Key 时使用假数据/假分数进行诊断和建计划 (`MainActivity.kt`, `OnboardingContainer.kt`, `ModelConfigGateScreen.kt`)
-- [ ] **[Impl S20-002 🔴 P0]** **Onboarding 结束直通 AI 计划生成与无计划卡片修复** — 诊断结果页点击 "生成我的 AI 计划 🪄" 后，跳转至 `PlanGeneratingScreen.kt` 全屏动画加载页（展示 LLM 计划生成进度）；计划生成完成后进入 Dashboard；若 Dashboard 检测到无计划，展示 "🪄 开启我的周计划" 明显引导卡片，而非占位假任务 (`DiagnosisResultScreen.kt`, `PlanGeneratingScreen.kt`, `DashboardScreen.kt`, `DashboardViewModel.kt`)
-- [ ] **[Impl S20-003 🔴 P0]** **学习流程文本截断与换行排版修复** — 针对 `PreTeachScreen` (闪卡)、`PracticeScreen` (句子框)、`QuizScreen` (选项/填空)、`WordHighlightText` 重新设计排版：引入 `AutoResizeText` 或自适应字号（根据文本长度动态缩放 16sp~26sp），取消固定宽高比例下的 `softWrap=false` 截断，保障 Mate 80 等各类屏高 DPI 下单词/句子完整整洁展示 (`PreTeachScreen.kt`, `PracticeScreen.kt`, `QuizScreen.kt`, `WordHighlightText.kt`, `AutoResizeText.kt`)
-- [ ] **[Impl S20-004 🔴 P0]** **错题本错题写入与展示完整修复** — 修复 `LearningViewModel` 在 Quiz 错题 (选择/填空/听写)、Game 错误、Practice 口语低分 (<60) 时 `vocabId` 提取逻辑（提取真实单词而非 `vocab_123` 或整句）；确保 `upsertError` 必定成功落库 Room；`ErrorBookViewModel` 增加进入页面自动刷新；`ErrorBookScreen` 展现清晰单词、错因标签与重练按钮 (`LearningViewModel.kt`, `ErrorBookRepositoryImpl.kt`, `ErrorBookViewModel.kt`, `ErrorBookScreen.kt`)
-- [ ] **[Impl S20-005 🔴 P0]** **TTS 声音播放与无声降级修复** — 修复 `TtsRepositoryImpl` 请求 Payload 适配火山引擎 Ark API (`/audio/tts` OpenAI 兼容格式)；修复 `SystemTtsHelper` 离线 TTS 在缺少英文语音包时的无声静默，在无声或引擎缺失时弹出 `Snackbar/Toast` 明确提示家长 ("⚠️ 设备的英文发音引擎未就绪，请先配置 API Key 或安装 TTS 语音包") (`TtsRepositoryImpl.kt`, `SystemTtsHelper.kt`, `LearningViewModel.kt`)
+- [x] **[Impl S20-001 🔴 P0]** **首次启动 Key 配置门槛 (`ModelConfigGate`)** — App 启动及 Onboarding 开始前，检测 `prefs.getAuthToken()`；若为空或未配置，优先展示 "🧠 配置 Lingo 的 AI 大脑" 引导配置页（支持连通性测试）；避免未配置 Key 时使用假数据/假分数进行诊断和建计划 (`MainActivity.kt`, `OnboardingContainer.kt`, `ModelConfigGateScreen.kt`)
+- [x] **[Impl S20-002 🔴 P0]** **Onboarding 结束直通 AI 计划生成与无计划卡片修复** — 诊断结果页点击 "生成我的 AI 计划 🪄" 后，跳转至 `PlanGeneratingScreen.kt` 全屏动画加载页（展示 LLM 计划生成进度）；计划生成完成后进入 Dashboard；若 Dashboard 检测到无计划，展示 "🪄 开启我的周计划" 明显引导卡片，而非占位假任务 (`DiagnosisResultScreen.kt`, `PlanGeneratingScreen.kt`, `DashboardScreen.kt`, `DashboardViewModel.kt`)
+- [x] **[Impl S20-003 🔴 P0]** **学习流程文本截断与换行排版修复** — 针对 `PreTeachScreen` (闪卡)、`PracticeScreen` (句子框)、`QuizScreen` (选项/填空)、`WordHighlightText` 重新设计排版：引入 `AutoResizeText` 或自适应字号（根据文本长度动态缩放 16sp~26sp），取消固定宽高比例下的 `softWrap=false` 截断，保障 Mate 80 等各类屏高 DPI 下单词/句子完整整洁展示 (`PreTeachScreen.kt`, `PracticeScreen.kt`, `QuizScreen.kt`, `WordHighlightText.kt`, `AutoResizeText.kt`)
+- [x] **[Impl S20-004 🔴 P0]** **错题本错题写入与展示完整修复** — 修复 `LearningViewModel` 在 Quiz 错题 (选择/填空/听写)、Game 错误、Practice 口语低分 (<60) 时 `vocabId` 提取逻辑（提取真实单词而非 `vocab_123` 或整句）；确保 `upsertError` 必定成功落库 Room；`ErrorBookViewModel` 增加进入页面自动刷新；`ErrorBookScreen` 展现清晰单词、错因标签与重练按钮 (`LearningViewModel.kt`, `ErrorBookRepositoryImpl.kt`, `ErrorBookViewModel.kt`, `ErrorBookScreen.kt`)
+- [x] **[Impl S20-005 🔴 P0]** **TTS 声音播放与无声降级修复** — 修复 `TtsRepositoryImpl` 请求 Payload 适配火山引擎 Ark API (`/audio/tts` OpenAI 兼容格式)；修复 `SystemTtsHelper` 离线 TTS 在缺少英文语音包时的无声静默，在无声或引擎缺失时弹出 `Snackbar/Toast` 明确提示家长 ("⚠️ 设备的英文发音引擎未就绪，请先配置 API Key 或安装 TTS 语音包") (`TtsRepositoryImpl.kt`, `SystemTtsHelper.kt`, `LearningViewModel.kt`)
 - [ ] **[Acceptance Test & Release]** 5-Gate 全量端到端体验验收 → 发布 GitHub Release `v4.4.0`
 
 

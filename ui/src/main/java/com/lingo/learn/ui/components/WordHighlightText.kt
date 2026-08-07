@@ -1,19 +1,21 @@
 package org.akj.lingo.learn.ui.components
 
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.domain.model.WordScore
-
-import androidx.compose.ui.text.style.TextAlign
 
 /**
  * Renders a sentence with word-level color highlighting based on pronunciation scores.
@@ -29,35 +31,51 @@ import androidx.compose.ui.text.style.TextAlign
 fun WordHighlightText(
     text: String,
     wordScores: List<WordScore>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    minFontSize: TextUnit = 16.sp,
+    maxFontSize: TextUnit = 22.sp,
+    maxLines: Int = 4
 ) {
     val words = text.split(" ").filter { it.isNotBlank() }
 
-    val annotated = buildAnnotatedString {
-        words.forEachIndexed { index, word ->
-            val score = wordScores.getOrNull(index)?.score ?: 85
-            val isCorrect = score >= 60
+    BoxWithConstraints(modifier = modifier) {
+        val fontSize = rememberFitTextSize(
+            text = text,
+            minFontSize = minFontSize,
+            maxFontSize = maxFontSize,
+            maxLines = maxLines,
+            fontWeight = FontWeight.Bold
+        )
 
-            val color = if (isCorrect) Color(0xFF52D68A) else Color(0xFFFFA726)
+        val annotated = remember(text, wordScores, fontSize) {
+            buildAnnotatedString {
+                words.forEachIndexed { index, word ->
+                    val score = wordScores.getOrNull(index)?.score ?: 85
+                    val isCorrect = score >= 60
 
-            if (index > 0) append(" ")
-            withStyle(
-                SpanStyle(
-                    color = color,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            ) {
-                append(word)
+                    val color = if (isCorrect) Color(0xFF52D68A) else Color(0xFFFFA726)
+
+                    if (index > 0) append(" ")
+                    withStyle(
+                        SpanStyle(
+                            color = color,
+                            fontSize = fontSize.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append(word)
+                    }
+                }
             }
         }
-    }
 
-    Text(
-        text = annotated,
-        modifier = modifier,
-        textAlign = TextAlign.Center,
-        softWrap = true,
-        lineHeight = 28.sp
-    )
+        Text(
+            text = annotated,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            softWrap = true,
+            maxLines = maxLines,
+            lineHeight = (fontSize + 8f).sp
+        )
+    }
 }

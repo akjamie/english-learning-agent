@@ -56,11 +56,9 @@ class TtsRepositoryImpl @Inject constructor(
         runCatching {
             val request = MinimaxTtsRequest(
                 model = ttsModel,
-                text = text,
-                voiceSetting = MinimaxVoiceSetting(
-                    voiceId = selectedVoice,
-                    speed = speed
-                )
+                input = text,
+                voice = selectedVoice,
+                speed = speed
             )
             val response = service.textToAudio(url, apiKey, groupIdParam, request)
             if (response.isSuccessful && response.body() != null) {

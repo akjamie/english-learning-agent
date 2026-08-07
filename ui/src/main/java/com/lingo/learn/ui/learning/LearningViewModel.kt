@@ -446,7 +446,9 @@ class LearningViewModel @Inject constructor(
         val token = configRepository.getAuthToken()
         if (token.length < 10) {
             // Not configured — use offline system TTS.
-            systemTtsHelper.speak(text, rate)
+            if (!systemTtsHelper.speak(text, rate)) {
+                showTtsUnavailableWarning()
+            }
             return
         }
         viewModelScope.launch {
@@ -459,8 +461,20 @@ class LearningViewModel @Inject constructor(
                 }
             }
             // Cloud TTS failed / unavailable — degrade gracefully to system TTS.
-            systemTtsHelper.speak(text, rate)
+            if (!systemTtsHelper.speak(text, rate)) {
+                showTtsUnavailableWarning()
+            }
         }
+    }
+
+    // Sprint 20: explicit parent-facing warning instead of silent no-op
+    // when the device has no English TTS engine or voice pack installed.
+    private fun showTtsUnavailableWarning() {
+        android.widget.Toast.makeText(
+            context,
+            "⚠️ 设备的英文发音引擎未就绪，请先配置 API Key 或安装 TTS 语音包",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
     }
 
     /** Plays a TTS audio file via MediaPlayer (fire-and-forget). */
@@ -567,8 +581,16 @@ class LearningViewModel @Inject constructor(
                 asrRepository.getOfflineFallbackResult(referenceText)
             }
             readAlongAttempts++
-            if (pronunciationResult.overallScore < 60) incrementNegativeSignal()
-            else resetNegativeSignal()
+            if (pronunciationResult.overallScore < 60) {
+                incrementNegativeSignal()
+                errorBookRepository.upsertError(
+                    extractMispronouncedWord(referenceText, pronunciationResult),
+                    "SPEAKING_MISPRONOUNCED",
+                    "SPEAK_ALOUD"
+                )
+            } else {
+                resetNegativeSignal()
+            }
             val aggregatedHints = (_readAlongState.value.phonemeHints + pronunciationResult.phonemeHints)
                 .distinctBy { it.phonemeLabel }
                 .take(2)
@@ -708,10 +730,15 @@ class LearningViewModel @Inject constructor(
             showComboEffect = showCombo
         )
 
-        val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "game_${question.id}"
+        val word = question.audioText
+            ?.takeIf { it.isSingleWord() }
+            ?: question.options.getOrNull(question.correctIndex) ?: question.prompt
         if (isCorrect) addXp("GAME")
         val responseMs = System.currentTimeMillis() - _gameState.value.questionStartMs
         viewModelScope.launch {
+            if (!isCorrect) {
+                errorBookRepository.upsertError(word, "GAME_WRONG_ANSWER", question.type.name)
+            }
             recordAttempt(word, "GAME", if (isCorrect) 1.0f else 0.0f)
             evaluateObservation(word, if (isCorrect) 100 else 0, question.type.name, attemptCount = 1, responseTimeMs = responseMs)
         }
@@ -766,7 +793,7 @@ class LearningViewModel @Inject constructor(
             lastAnswerCorrect = isCorrect
         )
 
-        val word = question.audioText ?: question.options.getOrNull(question.correctIndex) ?: "vocab_${question.id}"
+        val word = extractErrorWord(question)
         val responseMs = System.currentTimeMillis() - _quizState.value.questionStartMs
         viewModelScope.launch {
             if (!isCorrect) {
@@ -843,7 +870,7 @@ class LearningViewModel @Inject constructor(
             lastAnswerCorrect = score.isCorrect
         )
 
-        val word = question.audioText ?: expected
+        val word = extractErrorWord(question)
         viewModelScope.launch {
             if (!score.isCorrect) {
                 errorBookRepository.upsertError(word, "PRODUCTION_WRONG", question.type.name)
@@ -891,9 +918,13 @@ class LearningViewModel @Inject constructor(
             )
 
             if (!isCorrect) {
-                errorBookRepository.upsertError(referenceText, "SPEAKING_MISPRONOUNCED", "SPEAK_ALOUD")
+                errorBookRepository.upsertError(
+                    extractMispronouncedWord(referenceText, pronunciationResult),
+                    "SPEAKING_MISPRONOUNCED",
+                    "SPEAK_ALOUD"
+                )
             } else {
-                errorBookRepository.markCorrect(referenceText)
+                errorBookRepository.markCorrect(extractMispronouncedWord(referenceText, pronunciationResult))
             }
             recordAttempt(referenceText, "SPEAKING", pronunciationResult.overallScore / 100f)
             evaluateObservation(referenceText, pronunciationResult.overallScore, "SPEAKING", attemptCount = 1)
@@ -1123,6 +1154,68 @@ class LearningViewModel @Inject constructor(
     }
 
     //endregion
+
+    /**
+     * Extracts the real target word from a quiz question for the error book,
+     * instead of storing synthetic ids ("vocab_123") or a whole sentence.
+     * Priority: single-word correct option, single-word audioText, word
+     * embedded in the prompt, then the longest content word of the prompt.
+     */
+    private fun extractErrorWord(question: QuizQuestion): String {
+        // Phonics CVC_BUILD: the built word is the ordered letter tiles.
+        if (question.type == QuizQuestionType.CVC_BUILD && question.correctOrder.isNotEmpty()) {
+            return question.correctOrder.joinToString("")
+        }
+
+        // Choice-based questions carry the correct word in options.
+        question.options.getOrNull(question.correctIndex)
+            ?.takeIf { it.isSingleWord() }
+            ?.let { return it }
+
+        // Listen/spell questions carry the word in audioText.
+        question.audioText
+            ?.takeIf { it.isSingleWord() }
+            ?.let { return it }
+
+        // SPELL_FILL_BLANK: word embedded in the prompt, e.g. "Complete the word: s_chool".
+        Regex("word: (\\S+)").find(question.question)
+            ?.groupValues?.get(1)
+            ?.filter { it.isLetter() }
+            ?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+
+        // SENTENCE_ORDER: word quoted in the prompt, e.g. "Order: 'apple' in a sentence".
+        Regex("'([^']+)'").find(question.question)
+            ?.groupValues?.get(1)
+            ?.takeIf { it.isSingleWord() }
+            ?.let { return it }
+
+        // DICTATION / READ_ALOUD: fall back to the longest content word.
+        val contentWord = extractLongestWord(question.audioText ?: question.question)
+        return contentWord.ifBlank { question.question.take(24) }
+    }
+
+    private fun String.isSingleWord(): Boolean =
+        matches(Regex("^[A-Za-z][A-Za-z'-]*$"))
+
+    private fun extractLongestWord(sentence: String): String =
+        sentence.split(Regex("[^A-Za-z]+"))
+            .filter { it.isNotBlank() && it.length >= 2 }
+            .maxByOrNull { it.length }
+            ?: ""
+
+    /**
+     * Picks the worst-scoring word (below 60) from an ASR evaluation to store
+     * in the error book, falling back to the longest word of the reference.
+     */
+    private fun extractMispronouncedWord(referenceText: String, result: PronunciationResult): String {
+        val worstWord = result.wordScores
+            .filter { it.score < 60 }
+            .minByOrNull { it.score }
+            ?.word
+        if (!worstWord.isNullOrBlank() && worstWord.isSingleWord()) return worstWord
+        return extractLongestWord(referenceText).ifBlank { referenceText.take(24) }
+    }
 
     override fun onCleared() {
         super.onCleared()

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.domain.model.QuizQuestion
 import org.akj.lingo.learn.domain.model.QuizQuestionType
+import org.akj.lingo.learn.ui.components.AutoResizeText
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
 import org.akj.lingo.learn.ui.components.MicButton
@@ -204,12 +205,15 @@ private fun QuizQuestionCard(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
+            AutoResizeText(
                 text = question.question,
-                fontSize = 18.sp,
+                minFontSize = 14.sp,
+                maxFontSize = 20.sp,
+                maxLines = 3,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2C3E50),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -274,11 +278,14 @@ private fun QuizQuestionCard(
                 }
 
                 QuizQuestionType.SPELL_FILL_BLANK -> {
-                    Text(
+                    AutoResizeText(
                         text = question.question,
-                        fontSize = 28.sp,
+                        minFontSize = 16.sp,
+                        maxFontSize = 28.sp,
+                        maxLines = 2,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2C3E50)
+                        color = Color(0xFF2C3E50),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
@@ -381,10 +388,13 @@ private fun QuizQuestionCard(
                 }
 
                 QuizQuestionType.CVC_BUILD -> {
-                    Text(
+                    AutoResizeText(
                         text = "Listen: ${question.audioText ?: ""}",
-                        fontSize = 16.sp,
-                        color = Color(0xFF7F8C8D)
+                        minFontSize = 13.sp,
+                        maxFontSize = 16.sp,
+                        maxLines = 2,
+                        color = Color(0xFF7F8C8D),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
@@ -429,10 +439,13 @@ private fun QuizQuestionCard(
                 }
 
                 QuizQuestionType.ONSET_RIME -> {
-                    Text(
+                    AutoResizeText(
                         text = "Listen: ${question.audioText ?: ""}",
-                        fontSize = 16.sp,
-                        color = Color(0xFF7F8C8D)
+                        minFontSize = 13.sp,
+                        maxFontSize = 16.sp,
+                        maxLines = 2,
+                        color = Color(0xFF7F8C8D),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
@@ -452,11 +465,14 @@ private fun QuizQuestionCard(
                 }
 
                 QuizQuestionType.MINIMAL_PAIRS -> {
-                    Text(
+                    AutoResizeText(
                         text = question.question,
-                        fontSize = 16.sp,
+                        minFontSize = 14.sp,
+                        maxFontSize = 18.sp,
+                        maxLines = 3,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2C3E50)
+                        color = Color(0xFF2C3E50),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
@@ -566,12 +582,15 @@ private fun RowScope.QuizOptionButton(
             .semantics { contentDescription = "Answer: $text" },
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        AutoResizeText(
             text = text,
-            fontSize = 16.sp,
+            minFontSize = 13.sp,
+            maxFontSize = 16.sp,
+            maxLines = 2,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2C3E50),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

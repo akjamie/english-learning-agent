@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.akj.lingo.learn.ui.components.AutoResizeText
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 
 @Composable
@@ -99,14 +100,15 @@ fun PreTeachScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     if (engaged) {
                         // ESA: reveal the word only after the child matches it.
-                        Text(
+                        AutoResizeText(
                             text = currentWord,
-                            fontSize = 26.sp,
+                            minFontSize = 16.sp,
+                            maxFontSize = 26.sp,
+                            maxLines = 2,
                             fontWeight = FontWeight.Bold,
                             color = theme.primaryColor,
                             textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            softWrap = false
+                            modifier = Modifier.fillMaxWidth()
                         )
                     } else {
                         Text(

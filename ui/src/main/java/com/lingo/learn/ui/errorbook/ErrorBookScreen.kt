@@ -42,6 +42,11 @@ fun ErrorBookScreen(
     var selectedEntry by remember { mutableStateOf<ErrorBookEntry?>(null) }
     var showExplanationDialog by remember { mutableStateOf(false) }
 
+    // Sprint 20: refresh every time the tab re-enters composition.
+    // The ViewModel is Activity-scoped, so init{} alone would only
+    // load once per process and miss errors written during learning.
+    LaunchedEffect(Unit) { viewModel.loadErrors() }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -395,6 +400,26 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
                             }
                         )
                 )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Sprint 20: explicit retry affordance — makes the word due
+            // for the next daily review quiz instead of waiting for its
+            // Ebbinghaus schedule to elapse.
+            Button(
+                onClick = { viewModel.retryWord(entry.vocabId) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD449),
+                    contentColor = Color(0xFF2C3E50)
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            ) {
+                Text("🔁 Practice Again", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

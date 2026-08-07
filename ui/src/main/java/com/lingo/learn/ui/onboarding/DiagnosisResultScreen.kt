@@ -21,6 +21,7 @@ import org.akj.lingo.learn.ui.components.LingoExpression
 fun DiagnosisResultScreen(
     level: String, // "A", "B", "C"
     onStartLearning: () -> Unit,
+    onGeneratePlan: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val levelTitle = when (level) {
@@ -191,9 +192,9 @@ fun DiagnosisResultScreen(
             }
         }
 
-        // 4. Main action button
+        // 4. Main action: generate the AI weekly plan first
         Button(
-            onClick = onStartLearning,
+            onClick = onGeneratePlan,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
@@ -204,9 +205,26 @@ fun DiagnosisResultScreen(
             )
         ) {
             Text(
-                text = "Let's Go! 🚀",
+                text = "🪄 生成我的 AI 计划",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Secondary action: skip planning and start learning directly
+        TextButton(
+            onClick = onStartLearning,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+        ) {
+            Text(
+                text = "Let's Go! 🚀",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF7F8C8D)
             )
         }
     }

@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.ui.R
@@ -65,6 +66,7 @@ fun DashboardScreen(
     onRoleplayClick: () -> Unit = {},
     onUpdateLevel: () -> Unit = {},
     onReportCardClick: () -> Unit = {},
+    onGeneratePlan: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
@@ -380,86 +382,156 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 2. Main Daily Task Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            shape = RoundedCornerShape(32.dp)
-        ) {
-            Box(
+        if (uiState.hasPlan) {
+            // 2. Main Daily Task Card (only when a weekly plan exists)
+            Card(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(Color.White, Color(0xFFF9FAFF))
-                        )
-                    )
-                    .padding(32.dp)
+                    .fillMaxWidth()
+                    .weight(1f),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(32.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(Color.White, Color(0xFFF9FAFF))
+                            )
+                        )
+                        .padding(32.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.today_goal),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF7F8C8D)
-                    )
-
-                    // Progress ring containing Lingo mascot
-                    Box(
-                        modifier = Modifier.size(200.dp),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        ProgressRing(
-                            progress = todayProgress,
-                            modifier = Modifier.fillMaxSize(),
-                            strokeWidth = 14f,
-                            activeColor = gradeTheme.activeRingColor
-                        )
-                        LingoAvatar(
-                            expression = lingoExpr,
-                            modifier = Modifier.size(120.dp)
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = themeName,
-                            fontSize = 24.sp,
+                            text = stringResource(R.string.today_goal),
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2C3E50)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Est. time $taskDuration | Goal: $taskTarget",
-                            fontSize = 15.sp,
                             color = Color(0xFF7F8C8D)
                         )
-                    }
 
-                    // Action start learning button
-                    Button(
-                        onClick = onStartLearning,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp)
-                            .clip(RoundedCornerShape(24.dp)),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = gradeTheme.primaryColor,
-                            contentColor = gradeTheme.buttonContentColor
+                        // Progress ring containing Lingo mascot
+                        Box(
+                            modifier = Modifier.size(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ProgressRing(
+                                progress = todayProgress,
+                                modifier = Modifier.fillMaxSize(),
+                                strokeWidth = 14f,
+                                activeColor = gradeTheme.activeRingColor
+                            )
+                            LingoAvatar(
+                                expression = lingoExpr,
+                                modifier = Modifier.size(120.dp)
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = themeName,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2C3E50)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Est. time $taskDuration | Goal: $taskTarget",
+                                fontSize = 15.sp,
+                                color = Color(0xFF7F8C8D)
+                            )
+                        }
+
+                        // Action start learning button
+                        Button(
+                            onClick = onStartLearning,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .clip(RoundedCornerShape(24.dp)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = gradeTheme.primaryColor,
+                                contentColor = gradeTheme.buttonContentColor
+                            )
+                        ) {
+                            Text(
+                                text = if (todayProgress >= 1.0f) stringResource(R.string.completed_review) else stringResource(R.string.start_study),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            // 2b. Sprint 20: no weekly plan yet — prominent CTA card instead of
+            // a placeholder fake task, guiding the child to generate one.
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(32.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(Color.White, Color(0xFFFFF9E6))
+                            )
                         )
+                        .padding(32.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = if (todayProgress >= 1.0f) stringResource(R.string.completed_review) else stringResource(R.string.start_study),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                        LingoAvatar(
+                            expression = LingoExpression.HAPPY,
+                            modifier = Modifier.size(140.dp)
                         )
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "🪄 开启我的周计划",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2C3E50)
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Lingo 会为你生成专属的 7 天学习计划，每天 15 分钟，进步看得见！",
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp,
+                                color = Color(0xFF7F8C8D),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Button(
+                            onClick = onGeneratePlan,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .clip(RoundedCornerShape(24.dp)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = gradeTheme.primaryColor,
+                                contentColor = gradeTheme.buttonContentColor
+                            )
+                        ) {
+                            Text(
+                                text = "✨ 生成我的 AI 周计划",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

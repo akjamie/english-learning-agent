@@ -31,6 +31,8 @@ import org.akj.lingo.learn.ui.roleplay.RoleplayScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyPlanScreen
 import org.akj.lingo.learn.ui.weeklyplan.WeeklyReportScreen
 import org.akj.lingo.learn.ui.reportcard.ReportCardScreen
+import org.akj.lingo.learn.ui.modelconfiggate.ModelConfigGateScreen
+import org.akj.lingo.learn.ui.planning.PlanGeneratingScreen
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 import javax.inject.Inject
@@ -85,8 +87,22 @@ class MainActivity : ComponentActivity() {
                     var isRoleplayOpen by remember { mutableStateOf(false) }
                     var isAiGrowthNotesOpen by remember { mutableStateOf(false) }
                     var isReportCardOpen by remember { mutableStateOf(false) }
+                    // Sprint 20: AI plan generation screen state
+                    var isGeneratingPlan by remember { mutableStateOf(false) }
+                    var planGrade by remember { mutableStateOf(currentGrade) }
+                    var planLevel by remember { mutableStateOf("B") }
 
-                    if (!isOnboardingCompleted) {
+                    // Sprint 20: gate — require auth token before onboarding/main app
+                    var isAuthConfigured by remember { mutableStateOf(prefs.getAuthToken().length >= 10) }
+
+                    if (!isAuthConfigured) {
+                        ModelConfigGateScreen(
+                            onContinue = {
+                                // Token was saved during testConnection(); just flip the gate
+                                isAuthConfigured = true
+                            }
+                        )
+                    } else if (!isOnboardingCompleted) {
                         OnboardingContainer(
                             onFinished = { grade, textbook, level ->
                                 currentGrade = grade
@@ -100,6 +116,11 @@ class MainActivity : ComponentActivity() {
                                     // within-band difficulty tuning (A=beginner, C=advanced)
                                     .putString("diagnostic_level", level)
                                     .apply()
+                                // Sprint 20: first launch funnels into the AI plan
+                                // generation screen before the dashboard appears.
+                                planGrade = grade
+                                planLevel = level
+                                isGeneratingPlan = true
                             },
                             onOpenSettings = { currentTab = MainTab.SETTINGS }
                         )
@@ -113,6 +134,13 @@ class MainActivity : ComponentActivity() {
                                 onStartLearning = {
                                     appPrefs.edit().putString("diagnostic_level", rediagnosisResult).apply()
                                     isRediagnosing = false
+                                },
+                                onGeneratePlan = {
+                                    // Sprint 20: explicit "generate my AI plan" entry from
+                                    // the diagnosis result, feeding the new level in.
+                                    planGrade = currentGrade
+                                    planLevel = rediagnosisResult!!
+                                    isGeneratingPlan = true
                                 }
                             )
                         } else {
@@ -123,6 +151,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                    } else if (isGeneratingPlan) {
+                        PlanGeneratingScreen(
+                            grade = planGrade,
+                            diagnosticLevel = planLevel,
+                            onPlanGenerated = {
+                                isGeneratingPlan = false
+                            },
+                            onBack = { isGeneratingPlan = false }
+                        )
                     } else if (isLearning) {
                         LearningContainer(
                             grade = currentGrade,
@@ -190,7 +227,14 @@ class MainActivity : ComponentActivity() {
                                         onSettingsClick = { currentTab = MainTab.SETTINGS },
                                         onRoleplayClick = { isRoleplayOpen = true },
                                         onUpdateLevel = { isRediagnosing = true },
-                                        onReportCardClick = { isReportCardOpen = true }
+                                        onReportCardClick = { isReportCardOpen = true },
+                                        onGeneratePlan = {
+                                            // Sprint 20: dashboard no-plan CTA -> full-screen
+                                            // plan generation, using the persisted profile.
+                                            planGrade = currentGrade
+                                            planLevel = appPrefs.getString("diagnostic_level", "B") ?: "B"
+                                            isGeneratingPlan = true
+                                        }
                                     )
                                     MainTab.PLAN -> WeeklyPlanScreen(
                                         grade = currentGrade,

@@ -68,6 +68,19 @@ class ErrorBookViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(sortMode = mode, entries = sorted)
     }
 
+    // Sprint 20: make the word immediately due so the daily quiz
+    // review slot picks it up, then refresh the list.
+    fun retryWord(vocabId: String) {
+        viewModelScope.launch {
+            try {
+                errorBookRepository.retryErrorWord(vocabId)
+            } catch (_: Exception) {
+                // Best-effort: refresh still shows the current state.
+            }
+            loadErrors()
+        }
+    }
+
     private fun sortEntries(entries: List<ErrorBookEntry>, mode: ErrorBookSortMode): List<ErrorBookEntry> {
         return when (mode) {
             ErrorBookSortMode.PRIORITY -> entries.sortedByDescending { it.priorityScore }
@@ -82,6 +95,11 @@ class ErrorBookViewModel @Inject constructor(
         "LISTENING_WRONG" -> "Listening"
         "GRAMMAR_WRONG" -> "Grammar"
         "PRONUNCIATION_WRONG" -> "Pronunciation"
+        // Sprint 20: the types LearningViewModel actually writes today.
+        "QUIZ_WRONG_ANSWER" -> "Quiz"
+        "GAME_WRONG_ANSWER" -> "Game"
+        "PRODUCTION_WRONG" -> "Writing"
+        "SPEAKING_MISPRONOUNCED" -> "Speaking"
         else -> type
     }
 
@@ -90,6 +108,11 @@ class ErrorBookViewModel @Inject constructor(
         "LISTENING_WRONG" -> "👂"
         "GRAMMAR_WRONG" -> "📝"
         "PRONUNCIATION_WRONG" -> "🗣️"
+        // Sprint 20: the types LearningViewModel actually writes today.
+        "QUIZ_WRONG_ANSWER" -> "🎯"
+        "GAME_WRONG_ANSWER" -> "🎮"
+        "PRODUCTION_WRONG" -> "✍️"
+        "SPEAKING_MISPRONOUNCED" -> "🗣️"
         else -> "❓"
     }
 

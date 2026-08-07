@@ -79,5 +79,6 @@ Generated APKs:
 | **v4.1** | Sprint 17 | UX Polish & Emotional Bonding (Dashboard loading skeleton, Meet Lingo screen, Stage micro-celebrations, Recall bubble) | ✅ Released |
 | **v4.2** | Sprint 18 | Intelligence & Exam Prep (ErrorBook graduation observation, PEP Unit Test mode, Adaptive session length, Bedtime story) | ✅ Released |
 | **v4.3** | Sprint 19 | Fluency Breakthrough & Offline Resilience (Shadowing mode, Offline content pack, Challenge track, CEFR mapper, Growth report card) | ✅ Released |
+| **v4.4** | Sprint 20 | Core Path Hardening (First-launch Key gate, onboarding→AI plan funnel, adaptive text layout, Error Book write/display fix, real TTS playback) | 🚧 Implemented, in acceptance |
 
 > For complete detailed task checklists and backlog item status, see [task.md](file:///d:/workbench/sandbox/english-learning-agent/task.md).

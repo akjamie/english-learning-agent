@@ -107,6 +107,18 @@ class ErrorBookRepositoryImpl @Inject constructor(
         return errorBookDao.getErrorsInObservation().map { it.toDomain() }
     }
 
+    override suspend fun retryErrorWord(vocabId: String) {
+        val existing = errorBookDao.getErrorByVocabId(vocabId) ?: return
+        // Sprint 20: force the review timestamp to now so the word is
+        // picked up by getReviewQuestionsForQuiz on the next session start.
+        errorBookDao.update(
+            existing.copy(
+                nextReviewTimestamp = System.currentTimeMillis(),
+                lastModified = System.currentTimeMillis()
+            )
+        )
+    }
+
     override suspend fun getReviewQuestionsForQuiz(count: Int): List<QuizQuestion> {
         // Spaced repetition: only words that are due (scheduled timestamp passed) are reviewed.
         val now = System.currentTimeMillis()

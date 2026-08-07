@@ -56,25 +56,14 @@ data class MinimaxUsage(
     @SerializedName("completion_tokens") val completionTokens: Int? = null
 )
 
-// === TTS API Models ===
+// === TTS API Models (Ark /audio/tts OpenAI-compatible shape) ===
 
 data class MinimaxTtsRequest(
-    val model: String = "speech-01",
-    val text: String,
-    val stream: Boolean = false,
-    @SerializedName("voice_setting") val voiceSetting: MinimaxVoiceSetting,
-    @SerializedName("audio_setting") val audioSetting: MinimaxAudioSetting = MinimaxAudioSetting()
-)
-
-data class MinimaxVoiceSetting(
-    @SerializedName("voice_id") val voiceId: String,
-    val speed: Float = 1.0f
-)
-
-data class MinimaxAudioSetting(
-    @SerializedName("sample_rate") val sampleRate: Int = 24000,
-    val bitrate: Int = 128000,
-    val format: String = "mp3"
+    val model: String = "seed-tts-2.0",
+    val input: String,
+    val voice: String,
+    val speed: Float = 1.0f,
+    @SerializedName("response_format") val responseFormat: String = "mp3"
 )
 
 // === ASR API Models ===

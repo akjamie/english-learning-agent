@@ -87,7 +87,7 @@ graph TD
 
 ---
 
-### Sprint 20 核心技术设计 (v4.4.0) — 规划中 🔴
+### Sprint 20 核心技术设计 (v4.4.0) — ✅ 已交付
 
 #### 1. 首次启动 Key 配置门槛 (`ModelConfigGateScreen.kt`) `[P0]`
 - App 启动与 Onboarding 诊断开始前，检测 `prefs.getAuthToken()`。若未配置，阻断并展示 ModelConfigGate 界面，引导配置 Key/Base URL 并成功测试后才开始真实诊断与建计划。

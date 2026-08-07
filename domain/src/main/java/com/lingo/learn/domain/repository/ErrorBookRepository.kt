@@ -40,4 +40,11 @@ interface ErrorBookRepository {
      * and are being monitored before final graduation.
      */
     suspend fun getErrorsInObservation(): List<ErrorBookEntry>
+
+    /**
+     * Sprint 20: Mark a word immediately due for the next review quiz,
+     * so the child can re-practice it right away instead of waiting
+     * for its Ebbinghaus schedule.
+     */
+    suspend fun retryErrorWord(vocabId: String)
 }

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.domain.model.GameQuestion
 import org.akj.lingo.learn.domain.model.GameType
+import org.akj.lingo.learn.ui.components.AutoResizeText
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
 import org.akj.lingo.learn.ui.components.MicButton
@@ -164,9 +165,11 @@ private fun ReadAlongContent(
                         wordScores = pronunciationResult.wordScores
                     )
                 } else {
-                    Text(
+                    AutoResizeText(
                         text = currentSentence.text,
-                        fontSize = 20.sp,
+                        minFontSize = 16.sp,
+                        maxFontSize = 22.sp,
+                        maxLines = 3,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2C3E50),
                         textAlign = TextAlign.Center,
@@ -494,12 +497,15 @@ private fun RowScope.GameOptionButton(
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        AutoResizeText(
             text = text,
-            fontSize = 16.sp,
+            minFontSize = 13.sp,
+            maxFontSize = 16.sp,
+            maxLines = 2,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2C3E50),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

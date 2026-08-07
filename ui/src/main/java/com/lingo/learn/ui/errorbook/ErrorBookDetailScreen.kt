@@ -200,6 +200,11 @@ private fun FlipCardFront(entry: ErrorBookEntry) {
                     "LISTENING_WRONG" -> "👂 Listening"
                     "GRAMMAR_WRONG" -> "📝 Grammar"
                     "PRONUNCIATION_WRONG" -> "🗣️ Pronunciation"
+                    // Sprint 20: types LearningViewModel actually writes today.
+                    "QUIZ_WRONG_ANSWER" -> "🎯 Quiz"
+                    "GAME_WRONG_ANSWER" -> "🎮 Game"
+                    "PRODUCTION_WRONG" -> "✍️ Writing"
+                    "SPEAKING_MISPRONOUNCED" -> "🗣️ Speaking"
                     else -> entry.errorType
                 },
                 fontSize = 14.sp,
