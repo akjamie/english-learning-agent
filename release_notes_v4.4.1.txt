@@ -1,0 +1,14 @@
+## 🛠️ Lingo English v4.4.1 — AI Configuration Gate Fix
+
+### Mandatory Configuration Confirmation
+- The LLM/API configuration page now appears whenever the app launches.
+- Previously saved Base URL and API key values are prefilled securely.
+- Editing the URL or API key requires a successful connection test before continuing.
+
+### Why this fixes the issue
+- The startup route previously skipped configuration whenever a token had at least 10 characters.
+- Parents can now review and confirm the active AI configuration on every app start.
+
+### Verification
+- Debug APK compiled successfully.
+- The first-launch and subsequent-launch configuration flows were exercised on the LingoTest Android emulator.

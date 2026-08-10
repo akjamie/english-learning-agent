@@ -92,8 +92,10 @@ class MainActivity : ComponentActivity() {
                     var planGrade by remember { mutableStateOf(currentGrade) }
                     var planLevel by remember { mutableStateOf("B") }
 
-                    // Sprint 20: gate — require auth token before onboarding/main app
-                    var isAuthConfigured by remember { mutableStateOf(prefs.getAuthToken().length >= 10) }
+                    // The provider configuration is an explicit entry step on every
+                    // app launch. Credentials stay encrypted and are prefilled by the
+                    // gate, but the child cannot enter learning with this step skipped.
+                    var isAuthConfigured by remember { mutableStateOf(false) }
 
                     if (!isAuthConfigured) {
                         ModelConfigGateScreen(

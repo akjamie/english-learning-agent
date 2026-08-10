@@ -28,7 +28,19 @@ class ModelConfigGateViewModel @Inject constructor(
     private val llmRepository: LlmRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ModelConfigGateState())
+    private val savedBaseUrl = configRepository.getBaseUrl()
+    private val savedAuthToken = configRepository.getAuthToken()
+
+    private val _state = MutableStateFlow(
+        ModelConfigGateState(
+            baseUrl = savedBaseUrl.ifBlank { "https://ark.cn-beijing.volces.com/api/plan/v3" },
+            authToken = savedAuthToken,
+            // The setup page remains visible on every launch. Existing credentials
+            // are prefilled and may be confirmed; changing either field requires a
+            // fresh connection test before the user can continue.
+            isConfigured = savedBaseUrl.isNotBlank() && savedAuthToken.length >= 10
+        )
+    )
     val state: StateFlow<ModelConfigGateState> = _state.asStateFlow()
 
     fun updateBaseUrl(value: String) {
