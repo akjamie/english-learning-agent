@@ -33,6 +33,7 @@ fun AutoResizeText(
     minFontSize: TextUnit = 16.sp,
     maxFontSize: TextUnit = 26.sp,
     maxLines: Int = 2,
+    softWrap: Boolean = true,
     fontWeight: FontWeight = FontWeight.Normal,
     color: Color = Color.Unspecified,
     textAlign: TextAlign = TextAlign.Center,
@@ -56,7 +57,8 @@ fun AutoResizeText(
             textAlign = textAlign,
             lineHeight = lineHeight,
             maxLines = maxLines,
-            softWrap = true
+            softWrap = softWrap,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -93,6 +95,6 @@ internal fun BoxWithConstraintsScope.rememberFitTextSize(
             if (!layout.hasVisualOverflow && fitsHeight && fitsLines) break
             size -= 1f
         }
-        size.coerceAtLeast(minFontSize.value)
+        size.coerceAtLeast(10f)  // absolute floor: 10sp prevents text vanishing entirely
     }
 }

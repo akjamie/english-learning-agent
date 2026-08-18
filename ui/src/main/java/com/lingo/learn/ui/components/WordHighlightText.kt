@@ -75,7 +75,9 @@ fun WordHighlightText(
             textAlign = TextAlign.Center,
             softWrap = true,
             maxLines = maxLines,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             lineHeight = (fontSize + 8f).sp
         )
+
     }
 }
