@@ -66,6 +66,35 @@ data class MinimaxTtsRequest(
     @SerializedName("response_format") val responseFormat: String = "mp3"
 )
 
+// === Agent Plan TTS Models (openspeech unidirectional NDJSON shape) ===
+
+data class PlanTtsUser(
+    val uid: String = "lingo-android"
+)
+
+data class PlanTtsAudioParams(
+    val format: String = "mp3",
+    @SerializedName("sample_rate") val sampleRate: Int = 24000
+)
+
+data class PlanTtsReqParams(
+    val text: String,
+    val speaker: String,
+    @SerializedName("audio_params") val audioParams: PlanTtsAudioParams = PlanTtsAudioParams()
+)
+
+data class PlanTtsRequest(
+    val user: PlanTtsUser = PlanTtsUser(),
+    @SerializedName("req_params") val reqParams: PlanTtsReqParams
+)
+
+/** One NDJSON line of the plan TTS response; [data] holds a base64 MP3 chunk. */
+data class PlanTtsChunk(
+    val code: Int = 0,
+    val message: String? = null,
+    val data: String? = null
+)
+
 // === ASR API Models ===
 
 data class MinimaxAsrResponse(
