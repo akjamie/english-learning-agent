@@ -18,6 +18,9 @@ enum class OnboardingStep {
 @Composable
 fun OnboardingContainer(
     onFinished: (grade: String, textbook: String, level: String) -> Unit,
+    // Sprint 20: explicit "generate my AI plan" entry from the diagnosis
+    // result — plan generation is never automatic, it must be user-initiated.
+    onGeneratePlan: (grade: String, textbook: String, level: String) -> Unit = { _, _, _ -> },
     onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -79,6 +82,9 @@ fun OnboardingContainer(
                     level = calculatedLevel,
                     onStartLearning = {
                         onFinished(selectedGrade, selectedTextbook, calculatedLevel)
+                    },
+                    onGeneratePlan = {
+                        onGeneratePlan(selectedGrade, selectedTextbook, calculatedLevel)
                     }
                 )
             }

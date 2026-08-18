@@ -119,10 +119,13 @@ fun WeeklyPlanScreen(
                     ) {
                         Column {
                             Text(
-                                if (uiState.theme.isNotBlank()) uiState.theme else "Weekly Plan",
-                                fontSize = 18.sp,
+                                if (uiState.theme.isNotBlank()) "📅 Weekly Plan · ${uiState.theme} Theme"
+                                else "📅 Weekly Plan",
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF2C3E50)
+                                color = Color(0xFF2C3E50),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 viewModel.getFormattedDateRange(),
@@ -167,31 +170,58 @@ fun WeeklyPlanScreen(
             // Actions
             item {
                 Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        viewModel.generateNewPlan(grade, diagnosticLevel)
-                    },
-                    enabled = !uiState.isGenerating,
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFD449),
-                        contentColor = Color(0xFF2C3E50)
-                    )
-                ) {
-                    if (uiState.isGenerating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = Color(0xFF2C3E50)
+
+                if (uiState.days.isEmpty()) {
+                    // No plan yet: show full-width primary CTA
+                    Button(
+                        onClick = { viewModel.generateNewPlan(grade, diagnosticLevel) },
+                        enabled = !uiState.isGenerating,
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFD449),
+                            contentColor = Color(0xFF2C3E50)
                         )
-                        Spacer(Modifier.width(8.dp))
+                    ) {
+                        if (uiState.isGenerating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF2C3E50)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Text(
+                            if (uiState.isGenerating) "Generating..." else "✨ Generate Plan",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                     }
-                    Text(
-                        if (uiState.isGenerating) "Generating..." else if (uiState.days.isEmpty()) "✨ Generate Plan" else "🔄 Regenerate Plan",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                } else {
+                    // Plan exists: show subtle secondary TextButton so user knows it's optional
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        TextButton(
+                            onClick = { viewModel.generateNewPlan(grade, diagnosticLevel) },
+                            enabled = !uiState.isGenerating
+                        ) {
+                            if (uiState.isGenerating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color(0xFF7F8C8D)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                            }
+                            Text(
+                                if (uiState.isGenerating) "Regenerating..." else "🔄 Regenerate Plan",
+                                fontSize = 13.sp,
+                                color = Color(0xFF7F8C8D)
+                            )
+                        }
+                    }
                 }
 
                 uiState.generateError?.let { error ->

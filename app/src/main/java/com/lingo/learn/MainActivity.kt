@@ -105,21 +105,32 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else if (!isOnboardingCompleted) {
+                        // Sprint 20: shared onboarding completion — persists the
+                        // grade/textbook/level used by both exit paths below.
+                        val completeOnboarding: (String, String, String) -> Unit = { grade, textbook, level ->
+                            currentGrade = grade
+                            isOnboardingCompleted = true
+                            isLearning = false
+                            appPrefs.edit()
+                                .putBoolean("onboarding_completed", true)
+                                .putString("grade", grade)
+                                .putString("textbook", textbook)
+                                // Sprint 10.5: persist diagnostic level so it can drive
+                                // within-band difficulty tuning (A=beginner, C=advanced)
+                                .putString("diagnostic_level", level)
+                                .apply()
+                        }
                         OnboardingContainer(
                             onFinished = { grade, textbook, level ->
-                                currentGrade = grade
-                                isOnboardingCompleted = true
-                                isLearning = false
-                                appPrefs.edit()
-                                    .putBoolean("onboarding_completed", true)
-                                    .putString("grade", grade)
-                                    .putString("textbook", textbook)
-                                    // Sprint 10.5: persist diagnostic level so it can drive
-                                    // within-band difficulty tuning (A=beginner, C=advanced)
-                                    .putString("diagnostic_level", level)
-                                    .apply()
-                                // Sprint 20: first launch funnels into the AI plan
-                                // generation screen before the dashboard appears.
+                                // Sprint 20: "Let's Go!" does NOT auto-generate the
+                                // plan — the Dashboard shows the no-plan CTA card
+                                // instead, keeping plan generation user-initiated.
+                                completeOnboarding(grade, textbook, level)
+                            },
+                            onGeneratePlan = { grade, textbook, level ->
+                                // Sprint 20: explicit "generate my AI plan" entry from
+                                // the onboarding diagnosis result, feeding the new level in.
+                                completeOnboarding(grade, textbook, level)
                                 planGrade = grade
                                 planLevel = level
                                 isGeneratingPlan = true
