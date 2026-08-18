@@ -1,6 +1,8 @@
 package org.akj.lingo.learn.data.di
 
 import org.akj.lingo.learn.data.repository.*
+import org.akj.lingo.learn.data.remote.minimax.PlanAsrClient
+import org.akj.lingo.learn.data.remote.minimax.PlanAsrWsClient
 import org.akj.lingo.learn.domain.repository.*
 import dagger.Binds
 import dagger.Module
@@ -29,6 +31,12 @@ abstract class RepositoryModule {
     abstract fun bindAsrRepository(
         impl: AsrRepositoryImpl
     ): AsrRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPlanAsrClient(
+        impl: PlanAsrWsClient
+    ): PlanAsrClient
 
     @Binds
     @Singleton

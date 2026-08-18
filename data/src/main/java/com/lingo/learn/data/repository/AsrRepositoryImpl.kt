@@ -2,6 +2,8 @@ package org.akj.lingo.learn.data.repository
 
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.data.remote.minimax.MinimaxService
+import org.akj.lingo.learn.data.remote.minimax.Pcm16Decoder
+import org.akj.lingo.learn.data.remote.minimax.PlanAsrClient
 import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.model.WordScore
 import org.akj.lingo.learn.domain.provider.ProviderEndpoints
@@ -18,109 +20,122 @@ import javax.inject.Singleton
 @Singleton
 class AsrRepositoryImpl @Inject constructor(
     private val service: MinimaxService,
-    private val prefs: SecureConfigPrefs
+    private val prefs: SecureConfigPrefs,
+    private val planAsrClient: PlanAsrClient
 ) : AsrRepository {
 
     private val phonemeHintEngine = PhonemeHintEngine()
 
     override suspend fun evaluatePronunciation(audioFile: File, referenceText: String): Result<PronunciationResult> {
         val authToken = prefs.getAuthToken()
-        val apiKey = "Bearer $authToken"
+        val wsUrl = prefs.getAsrWsUrl()
+        val resourceId = prefs.getAsrResourceId()
+
+        if (authToken.length < 10) {
+            return Result.success(getOfflineFallbackResult(referenceText))
+        }
+
+        return runCatching {
+            val asrText = if (!wsUrl.isNullOrBlank()) {
+                val pcm16 = Pcm16Decoder.decode(audioFile)
+                planAsrClient.transcribe(pcm16, 16000, resourceId, authToken, wsUrl)
+            } else {
+                transcribeLegacy(audioFile)
+            }
+            return@runCatching scoreAgainstReference(referenceText, asrText)
+        }
+    }
+
+    private suspend fun transcribeLegacy(audioFile: File): String {
+        val apiKey = "Bearer ${prefs.getAuthToken()}"
         val groupId = prefs.getGroupId()
         val baseUrl = prefs.getBaseUrl()
         val url = ProviderEndpoints.asrUrl(baseUrl)
         val asrModel = prefs.getAsrModel()
-
-        // Downgrade to offline fallback if ASR credentials are not configured
-        if (authToken.length < 10) {
-            return Result.success(getOfflineFallbackResult(referenceText))
-        }
+        val resourceId = prefs.getAsrResourceId()
         val groupIdParam = groupId.takeIf { it.isNotBlank() }
-
-        return runCatching {
-            // Prepare multipart body
-            val requestFile = audioFile.asRequestBody("audio/mpeg".toMediaTypeOrNull())
-            val filePart = MultipartBody.Part.createFormData("file", audioFile.name, requestFile)
-            val modelPart = asrModel.toRequestBody("text/plain".toMediaTypeOrNull())
-
-            val response = service.audioToText(url, apiKey, groupIdParam, filePart, modelPart)
-            if (response.isSuccessful && response.body() != null) {
-                val asrText = response.body()!!.text
-
-                // Evaluate pronunciation by comparing ASR text and Reference text
-                val sanitizedReference = referenceText.lowercase().replace("[^a-z0-9 ]".toRegex(), "").trim()
-                val sanitizedAsr = asrText.lowercase().replace("[^a-z0-9 ]".toRegex(), "").trim()
-
-                val referenceWords = sanitizedReference.split("\\s+".toRegex()).filter { it.isNotEmpty() }
-                val asrWords = sanitizedAsr.split("\\s+".toRegex()).filter { it.isNotEmpty() }
-
-                val distance = calculateLevenshteinDistance(sanitizedReference, sanitizedAsr)
-                val maxLength = maxOf(sanitizedReference.length, sanitizedAsr.length)
-
-                val similarityPercent = if (maxLength == 0) 100 else {
-                    ((1.0 - distance.toDouble() / maxLength.toDouble()) * 100).toInt()
-                }
-
-                val finalScore = similarityPercent.coerceIn(0, 100)
-
-                // Score each reference word by its best match in ASR output
-                val wordScores = referenceWords.map { refWord ->
-                    val bestMatch = asrWords.minBy { calculateLevenshteinDistance(refWord, it) }
-                    val dist = calculateLevenshteinDistance(refWord, bestMatch)
-                    val maxLen = maxOf(refWord.length, bestMatch.length)
-                    val wordScore = if (maxLen == 0) 100
-                    else ((1.0 - dist.toDouble() / maxLen) * 100).toInt().coerceIn(0, 100)
-                    WordScore(word = refWord, score = wordScore)
-                }
-
-                val feedback = if (finalScore >= 80) {
-                    "Brilliant pronunciation! You matched the sentence almost perfectly."
-                } else {
-                    "Good try! Pay attention to the clarity of each word and try again."
-                }
-
-                // Run phoneme hint detection on top of ASR result.
-                // This catches common Chinese-learner substitutions that ASR may have
-                // silently normalised (e.g. child says "sink" → ASR returns "think").
-                val phonemeHints = phonemeHintEngine.detectHints(referenceText, asrText)
-
-                return@runCatching PronunciationResult(
-                    overallScore = finalScore,
-                    wordScores = wordScores,
-                    feedback = feedback,
-                    isFromFallback = false,
-                    phonemeHints = phonemeHints
-                )
-            }
+        val requestFile = audioFile.asRequestBody(audioContentType(audioFile))
+        val filePart = MultipartBody.Part.createFormData("file", audioFile.name, requestFile)
+        val modelPart = asrModel.toRequestBody("text/plain".toMediaTypeOrNull())
+        val response = service.audioToText(url, apiKey, resourceId, groupIdParam, filePart, modelPart)
+        if (!response.isSuccessful || response.body() == null) {
             throw Exception("MiniMax ASR failed: ${response.code()}")
-        }.recover {
-            getOfflineFallbackResult(referenceText)
+        }
+        return response.body()!!.text
+    }
+
+    private fun scoreAgainstReference(referenceText: String, asrText: String): PronunciationResult {
+        val sanitizedReference = referenceText.lowercase().replace("[^a-z0-9 ]".toRegex(), "").trim()
+        val sanitizedAsr = asrText.lowercase().replace("[^a-z0-9 ]".toRegex(), "").trim()
+
+        val referenceWords = sanitizedReference.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val asrWords = sanitizedAsr.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+
+        val distance = calculateLevenshteinDistance(sanitizedReference, sanitizedAsr)
+        val maxLength = maxOf(sanitizedReference.length, sanitizedAsr.length)
+
+        val similarityPercent = if (maxLength == 0) 100 else {
+            ((1.0 - distance.toDouble() / maxLength.toDouble()) * 100).toInt()
+        }
+
+        val finalScore = similarityPercent.coerceIn(0, 100)
+
+        val wordScores = referenceWords.map { refWord ->
+            val bestMatch = asrWords.minBy { calculateLevenshteinDistance(refWord, it) }
+            val dist = calculateLevenshteinDistance(refWord, bestMatch)
+            val maxLen = maxOf(refWord.length, bestMatch.length)
+            val wordScore = if (maxLen == 0) 100
+            else ((1.0 - dist.toDouble() / maxLen) * 100).toInt().coerceIn(0, 100)
+            WordScore(word = refWord, score = wordScore)
+        }
+
+        val feedback = if (finalScore >= 80) {
+            "Brilliant pronunciation! You matched the sentence almost perfectly."
+        } else {
+            "Good try! Pay attention to the clarity of each word and try again."
+        }
+
+        val phonemeHints = phonemeHintEngine.detectHints(referenceText, asrText)
+
+        return PronunciationResult(
+            overallScore = finalScore,
+            wordScores = wordScores,
+            feedback = feedback,
+            isFromFallback = false,
+            phonemeHints = phonemeHints
+        )
+    }
+
+    /**
+     * Maps the recorded file's extension to a valid multipart content type.
+     * VoiceRecorder produces `.m4a` (MPEG-4/AAC); mislabelling it as `audio/mpeg`
+     * (MP3) makes the ASR endpoint reject the upload and silently route to the
+     * offline fallback.
+     */
+    private fun audioContentType(audioFile: File): okhttp3.MediaType? {
+        return when (audioFile.extension.lowercase()) {
+            "m4a", "mp4", "aac" -> "audio/mp4".toMediaTypeOrNull()
+            "wav" -> "audio/wav".toMediaTypeOrNull()
+            "mp3", "mpeg" -> "audio/mpeg".toMediaTypeOrNull()
+            else -> "application/octet-stream".toMediaTypeOrNull()
         }
     }
 
     override suspend fun transcribeAudio(audioFile: File): Result<String> {
         val authToken = prefs.getAuthToken()
-        val apiKey = "Bearer $authToken"
-        val groupId = prefs.getGroupId()
-        val baseUrl = prefs.getBaseUrl()
-        val url = ProviderEndpoints.asrUrl(baseUrl)
-        val asrModel = prefs.getAsrModel()
-
         if (authToken.length < 10) {
             return Result.failure(Exception("ASR credentials not configured"))
         }
-        val groupIdParam = groupId.takeIf { it.isNotBlank() }
+        val wsUrl = prefs.getAsrWsUrl()
+        val resourceId = prefs.getAsrResourceId()
 
         return runCatching {
-            val requestFile = audioFile.asRequestBody("audio/mpeg".toMediaTypeOrNull())
-            val filePart = MultipartBody.Part.createFormData("file", audioFile.name, requestFile)
-            val modelPart = asrModel.toRequestBody("text/plain".toMediaTypeOrNull())
-
-            val response = service.audioToText(url, apiKey, groupIdParam, filePart, modelPart)
-            if (response.isSuccessful && response.body() != null) {
-                return@runCatching response.body()!!.text
+            if (!wsUrl.isNullOrBlank()) {
+                val pcm16 = Pcm16Decoder.decode(audioFile)
+                planAsrClient.transcribe(pcm16, 16000, resourceId, authToken, wsUrl)
+            } else {
+                transcribeLegacy(audioFile)
             }
-            throw Exception("MiniMax ASR failed: ${response.code()}")
         }
     }
 

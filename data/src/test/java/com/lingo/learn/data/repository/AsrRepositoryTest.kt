@@ -1,12 +1,20 @@
 package org.akj.lingo.learn.data.repository
 
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
+import org.akj.lingo.learn.data.remote.minimax.MinimaxAsrResponse
 import org.akj.lingo.learn.data.remote.minimax.MinimaxService
+import org.akj.lingo.learn.data.remote.minimax.PlanAsrClient
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 
 /**
  * Unit tests for [AsrRepositoryImpl], focusing on the offline fallback behavior
@@ -19,13 +27,15 @@ class AsrRepositoryTest {
 
     private lateinit var service: MinimaxService
     private lateinit var prefs: SecureConfigPrefs
+    private lateinit var planAsrClient: PlanAsrClient
     private lateinit var repository: AsrRepository
 
     @BeforeEach
     fun setup() {
-        service = Mockito.mock(MinimaxService::class.java)
+        service = mock<MinimaxService>()
         prefs = Mockito.mock(SecureConfigPrefs::class.java)
-        repository = AsrRepositoryImpl(service, prefs)
+        planAsrClient = mock<PlanAsrClient>()
+        repository = AsrRepositoryImpl(service, prefs, planAsrClient)
     }
 
     @Test
@@ -114,6 +124,62 @@ class AsrRepositoryTest {
 
             assertTrue(result.isSuccess)
             assertTrue(result.getOrThrow().isFromFallback)
+
+            audioFile.delete()
+        }
+    }
+
+    @Test
+    fun `evaluatePronunciation does NOT fabricate a fallback score when ASR call fails with credentials configured`() {
+        kotlinx.coroutines.runBlocking {
+            // Credentials are present, but the cloud ASR call fails (non-2xx).
+            Mockito.`when`(prefs.getAuthToken()).thenReturn("valid-token-0123456789")
+            Mockito.`when`(prefs.getGroupId()).thenReturn("group123")
+            Mockito.`when`(prefs.getBaseUrl()).thenReturn("https://example.com")
+            Mockito.`when`(prefs.getAsrModel()).thenReturn("volc.seedasr.sauc.duration")
+
+            val failed = retrofit2.Response.error<MinimaxAsrResponse>(
+                500,
+                okhttp3.ResponseBody.create(
+                    "application/json".toMediaTypeOrNull()!!,
+                    "{}"
+                )
+            )
+            whenever(service.audioToText(any(), any(), any(), anyOrNull(), any(), any())).thenReturn(failed)
+
+            val audioFile = java.io.File.createTempFile("test", ".m4a")
+            val result = repository.evaluatePronunciation(audioFile, "Hello world")
+
+            // The call must surface the failure, NOT return a fake success score.
+            assertTrue(result.isFailure)
+
+            audioFile.delete()
+        }
+    }
+
+    @Test
+    fun `evaluatePronunciation scores real ASR transcription with Levenshtein similarity`() {
+        kotlinx.coroutines.runBlocking {
+            Mockito.`when`(prefs.getAuthToken()).thenReturn("valid-token-0123456789")
+            Mockito.`when`(prefs.getGroupId()).thenReturn("group123")
+            Mockito.`when`(prefs.getBaseUrl()).thenReturn("https://example.com")
+            Mockito.`when`(prefs.getAsrModel()).thenReturn("volc.seedasr.sauc.duration")
+            Mockito.`when`(prefs.getAsrResourceId()).thenReturn("volc.seedasr.sauc.duration")
+
+            val ok = retrofit2.Response.success(MinimaxAsrResponse(text = "hello world", detailedInfo = null, baseResp = null))
+            whenever(service.audioToText(any(), any(), any(), anyOrNull(), any(), any())).thenReturn(ok)
+
+            val audioFile = java.io.File.createTempFile("test", ".m4a")
+            val result = repository.evaluatePronunciation(audioFile, "Hello world")
+
+            verify(service).audioToText(any(), any(), any(), anyOrNull(), any(), any())
+            if (result.isFailure) {
+                println("SUCCESS-PATH FAILURE: ${result.exceptionOrNull()}")
+            }
+            assertTrue(result.isSuccess)
+            val pronunciationResult = result.getOrThrow()
+            assertFalse(pronunciationResult.isFromFallback)
+            assertEquals(100, pronunciationResult.overallScore)
 
             audioFile.delete()
         }
