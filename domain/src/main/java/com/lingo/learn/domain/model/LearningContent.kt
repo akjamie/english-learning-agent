@@ -117,7 +117,11 @@ data class SessionSummary(
     val weeklyTotalDays: Int,
     val quizScore: Int,
     val quizTotal: Int,
-    val pronunciationScore: Int,
+    /**
+     * Average pronunciation score over successful ASR evaluations; null when no
+     * recording was evaluated (e.g. ASR unavailable during the session).
+     */
+    val pronunciationScore: Int?,
     /** Phoneme hints collected during the session for Parent Companion Card. */
     val phonemeHints: List<org.akj.lingo.learn.domain.usecase.PhonemeHintEngine.PhonemeHint> = emptyList()
 )

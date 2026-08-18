@@ -48,6 +48,8 @@ data class ReadAlongState(
     val isPlayingSelf: Boolean = false,
     val tempRecordingUri: String? = null,
     val result: PronunciationResult? = null,
+    /** Set when ASR credentials exist but the cloud ASR call failed; the recording is NOT scored. */
+    val asrErrorMessage: String? = null,
     val completedCount: Int = 0,
     val cumulativeScore: Int = 0,
     val evaluationsCount: Int = 0,
@@ -472,7 +474,7 @@ class LearningViewModel @Inject constructor(
     private fun showTtsUnavailableWarning() {
         android.widget.Toast.makeText(
             context,
-            "⚠️ 设备的英文发音引擎未就绪，请先配置 API Key 或安装 TTS 语音包",
+            "⚠️ English voice engine is not ready. Please configure your API Key or install a TTS voice pack.",
             android.widget.Toast.LENGTH_LONG
         ).show()
     }
@@ -558,7 +560,7 @@ class LearningViewModel @Inject constructor(
     /** Starts recording the child's voice for the current read-along sentence. */
     fun startRecording() {
         voiceRecorder.startRecording()
-        _readAlongState.value = _readAlongState.value.copy(isRecording = true, result = null)
+        _readAlongState.value = _readAlongState.value.copy(isRecording = true, result = null, asrErrorMessage = null)
     }
 
     /** Stops recording and triggers ASR pronunciation evaluation. */
@@ -577,8 +579,16 @@ class LearningViewModel @Inject constructor(
                 audioFile ?: java.io.File(""),
                 referenceText
             )
-            val pronunciationResult = result.getOrElse {
-                asrRepository.getOfflineFallbackResult(referenceText)
+            val pronunciationResult = result.getOrNull()
+            if (pronunciationResult == null) {
+                // ASR credentials exist but the cloud ASR call failed. Do NOT fabricate
+                // a score or record the attempt — surface the error so the parent/child
+                // can retry instead of being rewarded with a fake "85".
+                _readAlongState.value = _readAlongState.value.copy(
+                    isEvaluating = false,
+                    asrErrorMessage = "Voice check couldn't reach the ASR service. Please try again."
+                )
+                return@launch
             }
             readAlongAttempts++
             if (pronunciationResult.overallScore < 60) {
@@ -602,8 +612,12 @@ class LearningViewModel @Inject constructor(
                 evaluationsCount = _readAlongState.value.evaluationsCount + 1,
                 phonemeHints = aggregatedHints
             )
-            recordAttempt(referenceText, "SPEAKING", pronunciationResult.overallScore / 100f)
-            evaluateObservation(referenceText, pronunciationResult.overallScore, "SPEAKING", readAlongAttempts)
+            // Fallback results (offline estimate / ASR unavailable) must not be recorded
+            // as real attempts — they would corrupt streaks, observations and reports.
+            if (!pronunciationResult.isFromFallback) {
+                recordAttempt(referenceText, "SPEAKING", pronunciationResult.overallScore / 100f)
+                evaluateObservation(referenceText, pronunciationResult.overallScore, "SPEAKING", readAlongAttempts)
+            }
         }
     }
 
@@ -895,8 +909,16 @@ class LearningViewModel @Inject constructor(
                 audioFile ?: java.io.File(""),
                 referenceText
             )
-            val pronunciationResult = result.getOrElse {
-                asrRepository.getOfflineFallbackResult(referenceText)
+            val pronunciationResult = result.getOrNull()
+            if (pronunciationResult == null) {
+                // ASR credentials exist but the cloud ASR call failed. Do NOT fabricate
+                // a score or record the attempt — surface the error so the child can
+                // retry instead of being rewarded with a fake "85".
+                _readAlongState.value = _readAlongState.value.copy(
+                    isEvaluating = false,
+                    asrErrorMessage = "Voice check couldn't reach the ASR service. Please try again."
+                )
+                return@launch
             }
             val isCorrect = pronunciationResult.overallScore >= 60
 
@@ -934,14 +956,14 @@ class LearningViewModel @Inject constructor(
     /** Starts recording for a read-aloud quiz question. */
     fun startQuizRecording() {
         voiceRecorder.startRecording()
-        _readAlongState.value = _readAlongState.value.copy(isRecording = true, result = null)
+        _readAlongState.value = _readAlongState.value.copy(isRecording = true, result = null, asrErrorMessage = null)
     }
 
     /** Advances to the next quiz question or shows the result page. */
     fun nextQuizQuestion() {
         val current = _quizState.value
         val total = _session.value.quizQuestions.size
-        _readAlongState.value = _readAlongState.value.copy(result = null, isRecording = false)
+        _readAlongState.value = _readAlongState.value.copy(result = null, isRecording = false, asrErrorMessage = null)
 
         if (current.currentIndex < total - 1) {
             _quizState.value = current.copy(
@@ -1113,7 +1135,7 @@ class LearningViewModel @Inject constructor(
         val quizScore = _quizState.value.score
         val quizTotal = session.quizQuestions.size
         val readState = _readAlongState.value
-        val pronunciationScore = if (readState.evaluationsCount > 0) readState.cumulativeScore / readState.evaluationsCount else 85
+        val pronunciationScore = if (readState.evaluationsCount > 0) readState.cumulativeScore / readState.evaluationsCount else null
         val accuracy = if (quizTotal > 0) quizScore.toFloat() / quizTotal else 1.0f
 
         viewModelScope.launch {

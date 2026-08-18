@@ -114,7 +114,7 @@ fun TaskCompleteScreen(
                 )
                 StatCard(
                     title = "Pronunciation",
-                    value = "${s.pronunciationScore}",
+                    value = s.pronunciationScore?.toString() ?: "--",
                     icon = "🎤",
                     modifier = Modifier.weight(1f)
                 )
@@ -354,7 +354,7 @@ fun TaskCompleteScreen(
                             Text("📩", fontSize = 20.sp)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = "给爸爸妈妈的话",
+                                text = "A Note for Parents",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFFE67E22),
@@ -380,7 +380,7 @@ fun TaskCompleteScreen(
                                 }
                             } else {
                                 Text(
-                                    text = "🦊 今天小朋友学习很努力！如果正确率低于70%，可以在睡前一起回顾今天的单词，用慢速TTS重听一遍效果会更好哦！",
+                                    text = "🦊 Your child worked hard today! If accuracy is below 70%, review today's words together before bed — replaying them slowly with TTS really helps!",
                                     fontSize = 14.sp,
                                     color = Color(0xFF5D4037),
                                     lineHeight = 20.sp
@@ -402,7 +402,7 @@ fun TaskCompleteScreen(
 Lingo English — Today's Achievement
 📝 New Words: ${s.newWordsLearned}
 🏆 Quiz Score: ${s.quizScore}/${s.quizTotal}
-🎯 Pronunciation: ${s.pronunciationScore}/100
+🎯 Pronunciation: ${s.pronunciationScore?.toString() ?: "--"}/100
 🔥 Streak: ${s.streakDays} days
 📅 Day ${s.weeklyDayNumber}/${s.weeklyTotalDays}
             """.trimIndent()
