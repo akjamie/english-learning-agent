@@ -58,19 +58,24 @@ class SystemTtsHelper @Inject constructor(
     fun speak(text: String, rate: Float = 1.0f): Boolean {
         if (text.isBlank()) return false
 
-        if (!isEnglishVoiceAvailable.get()) return false
+        // Initialization is asynchronous. Queue the first request until the
+        // engine reports whether an English voice is available; otherwise the
+        // first offline pronunciation request can be dropped prematurely.
+        if (!isReady.get()) {
+            pendingSpeakRequest = Pair(text, rate)
+            return true
+        }
 
-        if (isReady.get()) {
+        if (isEnglishVoiceAvailable.get()) {
             tts?.apply {
                 stop()
                 setSpeechRate(rate)
                 speak(text, TextToSpeech.QUEUE_FLUSH, null, "lingo_tts_${System.currentTimeMillis()}")
             }
             return true
-        } else {
-            pendingSpeakRequest = Pair(text, rate)
-            return true
         }
+
+        return false
     }
 
     /**

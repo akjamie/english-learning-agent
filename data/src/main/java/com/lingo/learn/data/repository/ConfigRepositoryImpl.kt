@@ -31,6 +31,21 @@ class ConfigRepositoryImpl @Inject constructor(
     override fun getAsrModel(): String = prefs.getAsrModel()
     override fun setAsrModel(value: String) = prefs.setAsrModel(value)
 
+    override fun getTtsBaseUrl(): String = prefs.getTtsBaseUrl()
+    override fun setTtsBaseUrl(value: String) = prefs.setTtsBaseUrl(value)
+
+    override fun getTtsResourceId(): String = prefs.getTtsResourceId()
+    override fun setTtsResourceId(value: String) = prefs.setTtsResourceId(value)
+
+    override fun getTtsSpeaker(): String = prefs.getTtsSpeaker()
+    override fun setTtsSpeaker(value: String) = prefs.setTtsSpeaker(value)
+
+    override fun getAsrResourceId(): String = prefs.getAsrResourceId()
+    override fun setAsrResourceId(value: String) = prefs.setAsrResourceId(value)
+
+    override fun getAsrWsUrl(): String = prefs.getAsrWsUrl()
+    override fun setAsrWsUrl(value: String) = prefs.setAsrWsUrl(value)
+
     override fun getAsrScoreThreshold(): Int = prefs.getAsrScoreThreshold()
     override fun setAsrScoreThreshold(value: Int) = prefs.setAsrScoreThreshold(value)
 

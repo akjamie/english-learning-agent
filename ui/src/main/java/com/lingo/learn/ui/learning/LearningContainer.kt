@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -301,6 +302,7 @@ fun LearningContainer(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LearningJourneyHeader(
     currentStage: LearningStage,
@@ -335,9 +337,9 @@ fun LearningJourneyHeader(
             }
 
             // Stepper Map
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 stages.forEachIndexed { index, (stageItem, label) ->
                     val isPassed = currentStage.ordinal > stageItem.ordinal
@@ -366,7 +368,10 @@ fun LearningJourneyHeader(
                             text = label,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = textColor
+                            color = textColor,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

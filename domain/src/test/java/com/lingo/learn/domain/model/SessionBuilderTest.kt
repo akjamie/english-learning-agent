@@ -291,4 +291,34 @@ class SessionBuilderTest {
             assertNotEquals("s", correctOption, "The option must NOT be the first letter")
         }
     }
+
+    @Test
+    fun `difficulty coefficient drives subtitle chunk width`() {
+        // PRIMARY band base coefficient is 1.0 and maxWordsPerSentence is 8.
+        // A 9-word sentence: coefficient 1.3 -> 8 + 3 = 11 words per chunk (1 line),
+        // coefficient 0.7 -> 8 - 3 = 5 words per chunk (2 lines).
+        val template = """
+            {
+                "theme": "School Life",
+                "difficulty_coefficient": %s,
+                "days": [{
+                    "day": 1,
+                    "focus": "Vocabulary & Dialogue",
+                    "target_words": ["classroom", "teacher"],
+                    "reference_sentence": "The classroom is big and bright and clean today",
+                    "duration_minutes": 15
+                }]
+            }
+        """.trimIndent()
+
+        val easy = builder.expandPlanToSession(template.format("0.7"), GradeBand.PRIMARY, dayIndex = 1)
+        val hard = builder.expandPlanToSession(template.format("1.3"), GradeBand.PRIMARY, dayIndex = 1)
+
+        assertNotNull(easy)
+        assertNotNull(hard)
+        assertTrue(
+            easy!!.subtitleLines.size > hard!!.subtitleLines.size,
+            "Lower coefficient should split the sentence into more (shorter) subtitle lines"
+        )
+    }
 }

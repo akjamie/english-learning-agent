@@ -25,9 +25,9 @@ fun DiagnosisResultScreen(
     modifier: Modifier = Modifier
 ) {
     val levelTitle = when (level) {
-        "A" -> "Beginner Level (初级段)"
-        "B" -> "Intermediate Level (中级段)"
-        else -> "Advanced Level (高级段)"
+        "A" -> "Beginner Level"
+        "B" -> "Intermediate Level"
+        else -> "Advanced Level"
     }
 
     val levelDesc = when (level) {
@@ -205,7 +205,7 @@ fun DiagnosisResultScreen(
             )
         ) {
             Text(
-                text = "🪄 生成我的 AI 计划",
+                text = "🪄 Create My AI Weekly Plan",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )

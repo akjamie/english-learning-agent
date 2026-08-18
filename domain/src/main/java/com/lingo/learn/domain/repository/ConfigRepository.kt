@@ -25,6 +25,21 @@ interface ConfigRepository {
     fun getAsrModel(): String
     fun setAsrModel(value: String)
 
+    fun getTtsBaseUrl(): String
+    fun setTtsBaseUrl(value: String)
+
+    fun getTtsResourceId(): String
+    fun setTtsResourceId(value: String)
+
+    fun getTtsSpeaker(): String
+    fun setTtsSpeaker(value: String)
+
+    fun getAsrResourceId(): String
+    fun setAsrResourceId(value: String)
+
+    fun getAsrWsUrl(): String
+    fun setAsrWsUrl(value: String)
+
     fun getAsrScoreThreshold(): Int
     fun setAsrScoreThreshold(value: Int)
 

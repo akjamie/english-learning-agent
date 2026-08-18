@@ -50,7 +50,17 @@ class SessionBuilder(
             val focus = dayObj.optString("focus", "Vocabulary & Dialogue")
 
             val challengeBonus = if (challengeMode) 4 else 0
-            val adjustedMaxWords = (gradeBand.maxWordsPerSentence + sentenceLengthAdjustment + challengeBonus)
+
+            // The plan's difficulty_coefficient is band-relative (set from the
+            // diagnostic level, see WeeklyPlanRepositoryImpl): its delta vs the
+            // band base maps to ~1 word per 0.1 step, capped at ±3 words.
+            val planCoefficient = root
+                .optDouble("difficulty_coefficient", gradeBand.difficultyCoefficient.toDouble())
+                .toFloat()
+            val difficultyWords =
+                ((planCoefficient - gradeBand.difficultyCoefficient) * 10).toInt().coerceIn(-3, 3)
+
+            val adjustedMaxWords = (gradeBand.maxWordsPerSentence + sentenceLengthAdjustment + challengeBonus + difficultyWords)
                 .coerceAtLeast(4)
 
             val subtitles = generateSubtitles(referenceSentence, targetWords, gradeBand, adjustedMaxWords)

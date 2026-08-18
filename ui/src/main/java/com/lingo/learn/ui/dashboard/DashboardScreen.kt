@@ -3,7 +3,9 @@ package org.akj.lingo.learn.ui.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -142,6 +144,7 @@ fun DashboardScreen(
         modifier = modifier
             .fillMaxSize()
             .background(gradeTheme.surfaceColor)
+            .verticalScroll(rememberScrollState())
             .padding(24.dp)
             .statusBarsPadding()
             .navigationBarsPadding(),
@@ -387,7 +390,7 @@ fun DashboardScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .heightIn(min = 360.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 shape = RoundedCornerShape(32.dp)
@@ -473,7 +476,7 @@ fun DashboardScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .heightIn(min = 320.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 shape = RoundedCornerShape(32.dp)
@@ -500,14 +503,14 @@ fun DashboardScreen(
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "🪄 开启我的周计划",
+                                text = "🪄 Start My Weekly Plan",
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF2C3E50)
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "Lingo 会为你生成专属的 7 天学习计划，每天 15 分钟，进步看得见！",
+                                text = "Lingo creates a personalized 7-day learning plan for you — 15 minutes a day, with progress you can see!",
                                 fontSize = 14.sp,
                                 lineHeight = 20.sp,
                                 color = Color(0xFF7F8C8D),
@@ -527,7 +530,7 @@ fun DashboardScreen(
                             )
                         ) {
                             Text(
-                                text = "✨ 生成我的 AI 周计划",
+                                text = "✨ Create My AI Weekly Plan",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )

@@ -260,6 +260,23 @@ private fun ReadAlongContent(
                     )
                 }
             }
+        } else if (readAlongState.asrErrorMessage != null) {
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "⚠️ ${readAlongState.asrErrorMessage}",
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                color = Color(0xFFE67E22),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            // Mic stays available so the child can retry the recording.
+            MicButton(
+                isRecording = readAlongState.isRecording,
+                onPressDown = { viewModel.startRecording() },
+                onPressUp = { viewModel.stopRecording() }
+            )
         } else if (readAlongState.isShadowMode) {
             Spacer(modifier = Modifier.weight(1f))
             if (readAlongState.isRecording) {

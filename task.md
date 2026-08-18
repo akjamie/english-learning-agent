@@ -435,7 +435,7 @@
 - [x] **[Impl S20-003 🔴 P0]** **学习流程文本截断与换行排版修复** — 针对 `PreTeachScreen` (闪卡)、`PracticeScreen` (句子框)、`QuizScreen` (选项/填空)、`WordHighlightText` 重新设计排版：引入 `AutoResizeText` 或自适应字号（根据文本长度动态缩放 16sp~26sp），取消固定宽高比例下的 `softWrap=false` 截断，保障 Mate 80 等各类屏高 DPI 下单词/句子完整整洁展示 (`PreTeachScreen.kt`, `PracticeScreen.kt`, `QuizScreen.kt`, `WordHighlightText.kt`, `AutoResizeText.kt`)
 - [x] **[Impl S20-004 🔴 P0]** **错题本错题写入与展示完整修复** — 修复 `LearningViewModel` 在 Quiz 错题 (选择/填空/听写)、Game 错误、Practice 口语低分 (<60) 时 `vocabId` 提取逻辑（提取真实单词而非 `vocab_123` 或整句）；确保 `upsertError` 必定成功落库 Room；`ErrorBookViewModel` 增加进入页面自动刷新；`ErrorBookScreen` 展现清晰单词、错因标签与重练按钮 (`LearningViewModel.kt`, `ErrorBookRepositoryImpl.kt`, `ErrorBookViewModel.kt`, `ErrorBookScreen.kt`)
 - [x] **[Impl S20-005 🔴 P0]** **TTS 声音播放与无声降级修复** — 修复 `TtsRepositoryImpl` 请求 Payload 适配火山引擎 Ark API (`/audio/tts` OpenAI 兼容格式)；修复 `SystemTtsHelper` 离线 TTS 在缺少英文语音包时的无声静默，在无声或引擎缺失时弹出 `Snackbar/Toast` 明确提示家长 ("⚠️ 设备的英文发音引擎未就绪，请先配置 API Key 或安装 TTS 语音包") (`TtsRepositoryImpl.kt`, `SystemTtsHelper.kt`, `LearningViewModel.kt`)
-- [ ] **[Acceptance Test & Release]** 5-Gate 全量端到端体验验收 → 发布 GitHub Release `v4.4.0`
+- [x] **[Acceptance Test & Release]** 5-Gate 全量端到端体验验收 → 发布 GitHub Release `v4.4.0`
 
 
 

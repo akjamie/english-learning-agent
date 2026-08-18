@@ -235,7 +235,7 @@ private fun QuizQuestionCard(
                 }
             } else if (hintLevel > 0) {
                 val hintText = when (hintLevel) {
-                    1 -> "Translation: [中文翻译: ${question.audioText ?: question.options.getOrNull(question.correctIndex) ?: '?'}]"
+                    1 -> "Translation: [${question.audioText ?: question.options.getOrNull(question.correctIndex) ?: '?'}]"
                     2 -> "First letter: ${question.options.getOrNull(question.correctIndex)?.firstOrNull() ?: '?'}"
                     3 -> "Answer: ${question.options.getOrNull(question.correctIndex) ?: '?'}"
                     else -> ""
@@ -514,6 +514,16 @@ private fun QuizQuestionCard(
                             color = theme.primaryColor,
                             strokeWidth = 3.dp,
                             modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    if (readAlongState.asrErrorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "⚠️ ${readAlongState.asrErrorMessage}",
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            color = Color(0xFFE67E22),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
