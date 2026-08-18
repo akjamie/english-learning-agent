@@ -27,27 +27,27 @@ class CefrMapperTest {
     }
 
     @Test
-    fun `diagnostic A shifts one level up`() {
-        assertEquals(CefrLevel.A2, CefrMapper.map("Grade 4", "A"))
-        assertEquals(CefrLevel.B1, CefrMapper.map("Grade 7", "A"))
-        assertEquals(CefrLevel.B2, CefrMapper.map("Grade 10", "A"))
+    fun `diagnostic A shifts one level down`() {
+        assertEquals(CefrLevel.PRE_A1, CefrMapper.map("Grade 4", "A"))
+        assertEquals(CefrLevel.A1, CefrMapper.map("Grade 7", "A"))
+        assertEquals(CefrLevel.A2, CefrMapper.map("Grade 10", "A"))
     }
 
     @Test
-    fun `diagnostic C shifts one level down`() {
-        assertEquals(CefrLevel.PRE_A1, CefrMapper.map("Grade 4", "C"))
-        assertEquals(CefrLevel.A1, CefrMapper.map("Grade 7", "C"))
-        assertEquals(CefrLevel.A2, CefrMapper.map("Grade 10", "C"))
+    fun `diagnostic C shifts one level up`() {
+        assertEquals(CefrLevel.A2, CefrMapper.map("Grade 4", "C"))
+        assertEquals(CefrLevel.B1, CefrMapper.map("Grade 7", "C"))
+        assertEquals(CefrLevel.B2, CefrMapper.map("Grade 10", "C"))
     }
 
     @Test
     fun `B2 does not shift above the ceiling`() {
-        assertEquals(CefrLevel.B2, CefrMapper.map("Grade 12", "A"))
+        assertEquals(CefrLevel.B2, CefrMapper.map("Grade 12", "C"))
     }
 
     @Test
     fun `PRE_A1 does not shift below the floor`() {
-        assertEquals(CefrLevel.PRE_A1, CefrMapper.map("Grade 4", "C"))
+        assertEquals(CefrLevel.PRE_A1, CefrMapper.map("Grade 4", "A"))
     }
 
     @Test

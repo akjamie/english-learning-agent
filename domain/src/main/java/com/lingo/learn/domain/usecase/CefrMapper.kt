@@ -16,8 +16,12 @@ enum class CefrLevel(val label: String) {
  *
  * The grade band defines the base level (PRIMARY → A1, JUNIOR → A2,
  * SENIOR → B1) and the onboarding diagnostic level adjusts it:
- * "A" (advanced) bumps one level up, "C" (foundation) one level down,
+ * "A" (lowest diagnostic score band, beginner) shifts one level down,
+ * "C" (highest diagnostic score band, advanced) one level up,
  * "B" stays at the base. Unknown levels are treated as "B".
+ *
+ * This matches the app-wide convention (see DiagnosisScreen: score >= 80 -> "C",
+ * score < 50 -> "A"; MainActivity comment "A=beginner, C=advanced").
  */
 object CefrMapper {
 
@@ -29,8 +33,8 @@ object CefrMapper {
             GradeBand.SENIOR -> CefrLevel.B1
         }
         return when (diagnosticLevel.trim().uppercase()) {
-            "A" -> base.shiftUp()
-            "C" -> base.shiftDown()
+            "A" -> base.shiftDown()
+            "C" -> base.shiftUp()
             else -> base
         }
     }
