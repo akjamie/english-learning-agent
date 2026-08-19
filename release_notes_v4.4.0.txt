@@ -1,0 +1,20 @@
+## 🚀 What's New in v4.4.0
+
+### 1. First-Launch Model Configuration Gate (ModelConfigGate)
+- App launch and onboarding gate that checks API credentials before starting diagnosis; guides parents to enter base URL & API key with connection testing before starting onboarding.
+
+### 2. Onboarding to AI Plan Generation Funnel (PlanGeneratingScreen)
+- Replaces instant dashboard jump with a full-screen LLM plan generation progress state; adds a prominent '🪄 Create My AI Weekly Plan' CTA card on Dashboard if no plan exists.
+
+### 3. Adaptive Text Sizing & Word Truncation Fixes (AutoResizeText)
+- Introduces auto-scaling text composable (16sp~26sp) across PreTeach flashcards, Practice sentence boxes, Quiz options, and WordHighlightText to prevent word splitting or truncation on high-DPI screens.
+
+### 4. ErrorBook Persistence & Auto-Refresh Fixes
+- Corrects vocabId extraction in LearningViewModel to save clean target words instead of raw sentences or IDs; ensures 100% of quiz/game misses and low speaking scores (<60) insert into Room; adds auto-refresh on screen resume.
+
+### 5. TTS OpenAI Payload & Silent Failure Warning
+- Updates TtsRepositoryImpl to send OpenAI-compatible /audio/tts payloads for Volcengine Ark; adds user-facing warning Snackbar/Toast in SystemTtsHelper when Android system TTS lacks English voice packages.
+
+## 📦 Build Artifacts
+- app-release.apk (11.0 MB)
+- app-debug.apk (15.0 MB)
