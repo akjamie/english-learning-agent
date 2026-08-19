@@ -34,7 +34,10 @@ class LlmRepositoryImpl @Inject constructor(
 
         // 1. Check token budget
         if (isBudgetExceeded()) {
-            return if (taskType == "PING") {
+            // PLAN/DIAGNOSIS are core AI curriculum content — never silently
+            // substitute canned templates for them. Surface the failure so the
+            // UI can explain the budget state and offer retry.
+            return if (taskType == "PING" || taskType in STRICT_CONTENT_TASK_TYPES) {
                 Result.failure(Exception("Monthly token budget exceeded"))
             } else {
                 Result.success(getFallbackTemplate(taskType))
@@ -47,7 +50,7 @@ class LlmRepositoryImpl @Inject constructor(
         val groupIdParam = groupId.takeIf { it.isNotBlank() }
 
         val primaryResult = runCatching {
-            withTimeout(15000) {
+            withTimeout(timeoutFor(taskType)) {
                 val request = MinimaxChatRequest(
                     model = primaryModel,
                     messages = minimaxMessages,
@@ -96,7 +99,7 @@ class LlmRepositoryImpl @Inject constructor(
         }
         val fallbackModel = prefs.getFallbackModel()
         val fallbackResult = runCatching {
-            withTimeout(15000) {
+            withTimeout(timeoutFor(taskType)) {
                 val request = MinimaxChatRequest(
                     model = fallbackModel,
                     messages = minimaxMessages,
@@ -134,8 +137,9 @@ class LlmRepositoryImpl @Inject constructor(
             return Result.success(fallbackResult.getOrThrow())
         }
 
-        // 4. Fallback model also failed -> Use local template fallback
-        return if (taskType == "PING") {
+        // 4. Fallback model also failed. PLAN/DIAGNOSIS are the child's actual
+        // curriculum — never serve canned templates that look AI-generated.
+        return if (taskType == "PING" || taskType in STRICT_CONTENT_TASK_TYPES) {
             val error = fallbackResult.exceptionOrNull()?.message
                 ?: primaryResult.exceptionOrNull()?.message
                 ?: "Connection failed"
@@ -143,6 +147,19 @@ class LlmRepositoryImpl @Inject constructor(
         } else {
             Result.success(getFallbackTemplate(taskType))
         }
+    }
+
+    /** Task types whose output is the child's curriculum; must never degrade to canned content. */
+    private val STRICT_CONTENT_TASK_TYPES = setOf("PLAN", "DIAGNOSIS")
+
+    // PLAN/DIAGNOSIS requests ask the model for large JSON payloads (7-day plan with
+    // per-day rationale, 10-question diagnosis). Reasoning-heavy models regularly take
+    // 20-40s on these. The generic 15s budget was producing spurious timeouts that the
+    // UI surfaced as AI failures; the shortened budget below only applies to lightweight
+    // chat-style tasks.
+    private fun timeoutFor(taskType: String): Long = when (taskType) {
+        "PLAN", "DIAGNOSIS" -> 90_000L
+        else -> 15_000L
     }
 
     /**
@@ -179,74 +196,6 @@ class LlmRepositoryImpl @Inject constructor(
             "PING" -> "OK"
             "ROLEPLAY_SCENARIO" -> """{"system_prompt":"You are Lingo Fox, a friendly tutor. Keep answers short and simple.","opening_line":"Hi there! Let's talk!"}"""
             "LINGO_LETTER" -> "Great week! Your child made steady progress and kept the habit alive. One gentle focus: review the words from the error book together."
-            "PLAN" -> """{
-              "theme": "School Life",
-              "difficulty_coefficient": 1.0,
-              "days": [
-                {
-                  "day": 1,
-                  "focus": "Vocabulary Introduction",
-                  "target_words": ["apple", "school", "friend"],
-                  "reference_sentence": "I eat an apple with my friend at school.",
-                  "duration_minutes": 15
-                },
-                {
-                  "day": 2,
-                  "focus": "Grammar Practice",
-                  "target_words": ["teacher", "book"],
-                  "reference_sentence": "The teacher reads a book.",
-                  "duration_minutes": 15
-                },
-                {
-                  "day": 3,
-                  "focus": "Listening & Speaking",
-                  "target_words": ["hello", "goodbye"],
-                  "reference_sentence": "Hello! How are you?",
-                  "duration_minutes": 20
-                },
-                {
-                  "day": 4,
-                  "focus": "Reading Comprehension",
-                  "target_words": ["play", "learn"],
-                  "reference_sentence": "We play and learn together.",
-                  "duration_minutes": 15
-                },
-                {
-                  "day": 5,
-                  "focus": "Consolidation",
-                  "target_words": ["school", "friend", "play"],
-                  "reference_sentence": "I play with my friend.",
-                  "duration_minutes": 20
-                },
-                {
-                  "day": 6,
-                  "focus": "Weekly Quiz",
-                  "target_words": [],
-                  "reference_sentence": "Review week.",
-                  "duration_minutes": 10
-                },
-                {
-                  "day": 7,
-                  "focus": "Rest",
-                  "target_words": [],
-                  "reference_sentence": "Take a break!",
-                  "duration_minutes": 0
-                }
-              ]
-            }"""
-            "DIAGNOSIS" ->
-                """[
-                  {"id":1,"type":"LISTENING_EMOJI","title":"1. Listen and Choose","description":"Select the word you hear:","voicePrompt":"apple","options":["🍎 Apple","🍌 Banana","🐱 Cat"],"correctAnswer":"🍎 Apple"},
-                  {"id":2,"type":"VOCABULARY","title":"2. Vocabulary","description":"Choose opposite of 'Hot':","options":["Cold","Warm","Big"],"correctAnswer":"Cold"},
-                  {"id":3,"type":"PHONICS","title":"3. Letter Sound","description":"Which word starts with /p/?","options":["Pig","Big","Dig"],"correctAnswer":"Pig"},
-                  {"id":4,"type":"SORT_WORDS","title":"4. Sentence Building","description":"Arrange words into a sentence:","wordsForSort":["like","apples","I"],"correctAnswer":"I like apples"},
-                  {"id":5,"type":"VOCABULARY","title":"5. Grammar","description":"She ___ to school every day.","options":["walks","walked","walking"],"correctAnswer":"walks"},
-                  {"id":6,"type":"LISTENING_EMOJI","title":"6. Listen and Choose","description":"Select the animal:","voicePrompt":"cat","options":["🐶 Dog","🐱 Cat","🐰 Rabbit"],"correctAnswer":"🐱 Cat"},
-                  {"id":7,"type":"VOCABULARY","title":"7. Antonym","description":"The rabbit is fast, but the turtle is ___","options":["slow","quick","tall"],"correctAnswer":"slow"},
-                  {"id":8,"type":"VOCABULARY","title":"8. Idiom","description":"What does 'A piece of cake' mean?","options":["Very easy","Delicious dessert","Hard problem"],"correctAnswer":"Very easy"},
-                  {"id":9,"type":"SORT_WORDS","title":"9. Sentence Ordering","description":"Arrange into sentence:","wordsForSort":["play","on","We","football","Sunday"],"correctAnswer":"We play football on Sunday"},
-                  {"id":10,"type":"SPEAK_ALOUD","title":"10. Read Aloud","description":"Read aloud:","voicePrompt":"Practice makes perfect every day."}
-                ]"""
             else -> "Well done! Let's keep moving forward!"
         }
     }

@@ -64,23 +64,30 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
             }
         """.trimIndent()
 
-        val llmResult = llmRepository.complete(prompt, taskType = "PLAN")
+        // A 7-day plan with per-day rationale is a long JSON payload — the default
+        // 500-token budget truncates it (observed: glm-5.2 spent it all on reasoning
+        // with empty content; the fallback was cut mid-day-6). Match the DIAGNOSIS
+        // budget so the full valid JSON survives.
+        val llmResult = llmRepository.complete(prompt, taskType = "PLAN", maxTokens = 1500)
         val now = System.currentTimeMillis()
 
-        // Sprint 10.5: when the LLM is unavailable, fall back to the grade-appropriate
-        // offline plan (real day cards) so users can still start learning.
-        // Previously the fallback had "days": [] which rendered an empty, unstartable plan.
-        val jsonStr = llmResult.getOrNull() ?: generateDefaultPlanJson(gradeBand, coefficient)
+        // The AI plan is the child's actual curriculum — propagate generation
+        // failures so the UI can explain and offer retry, never a canned plan.
+        val jsonStr = llmResult.getOrElse { return Result.failure(it) }
 
-        val themeName = try {
-            JSONObject(jsonStr).optString("theme", "Daily Life & School")
+        // PLAN is strict content: a response that isn't valid plan JSON must not
+        // be cached as a broken plan. Validate the shape before persisting so the
+        // caller sees a failure it can surface, not an empty "No plan yet" plan.
+        val parsedJson = try {
+            JSONObject(jsonStr).also { it.optJSONArray("days") ?: throw Exception("Missing days array") }
         } catch (e: Exception) {
-            "Daily Life & School"
+            return Result.failure(e)
         }
 
+        val themeName = parsedJson.optString("theme", "Daily Life & School")
+
         val rationaleSnapshot = try {
-            val planJson = JSONObject(jsonStr)
-            val daysArray = planJson.optJSONArray("days")
+            val daysArray = parsedJson.optJSONArray("days")
             if (daysArray != null) {
                 val rationaleJson = JSONObject()
                 val outDays = org.json.JSONArray()
