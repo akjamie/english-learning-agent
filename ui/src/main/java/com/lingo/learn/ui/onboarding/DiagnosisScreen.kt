@@ -33,7 +33,6 @@ import org.akj.lingo.learn.ui.R
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
 import org.akj.lingo.learn.ui.components.MicButton
-import org.akj.lingo.learn.ui.learning.SystemTtsHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -65,16 +64,13 @@ fun DiagnosisScreen(
     viewModel: DiagnosisViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
-    val ttsHelper = remember { SystemTtsHelper(context) }
-    DisposableEffect(Unit) {
-        onDispose { ttsHelper.shutdown() }
-    }
 
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
 
     val questions by viewModel.questions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val loadError by viewModel.loadError.collectAsState()
     val recordingState by viewModel.recordingState.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -129,6 +125,23 @@ fun DiagnosisScreen(
                 LingoAvatar(expression = LingoExpression.THINKING, modifier = Modifier.size(120.dp))
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("🦊 Lingo is preparing your quiz...", fontSize = 18.sp, color = Color(0xFF2C3E50), fontWeight = FontWeight.Bold)
+            }
+        }
+        return
+    }
+
+    if (loadError != null) {
+        Box(modifier = modifier.fillMaxSize().background(Color(0xFFFFFDF5)), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                LingoAvatar(expression = LingoExpression.SAD, modifier = Modifier.size(120.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("🦊 Could not load your quiz", fontSize = 18.sp, color = Color(0xFF2C3E50), fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(loadError.orEmpty(), fontSize = 14.sp, color = Color(0xFF7F8C8D), textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { viewModel.loadDiagnosticQuestions(grade) }) {
+                    Text("Retry")
+                }
             }
         }
         return
@@ -325,8 +338,7 @@ fun DiagnosisScreen(
                                             .background(if (isPlayingVoice) Color(0xFFFFECE5) else Color(0xFFFF7052))
                                             .clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                val prompt = q.voicePrompt ?: "apple"
-                                                ttsHelper.speak(prompt, 0.85f)
+                                                viewModel.speakPrompt(q.voicePrompt ?: "apple")
                                                 coroutineScope.launch {
                                                     isPlayingVoice = true
                                                     delay(1200)
@@ -424,6 +436,32 @@ fun DiagnosisScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(76.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isPlayingVoice) Color(0xFFFFECE5) else Color(0xFFFF7052))
+                                            .clickable {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                q.voicePrompt?.takeIf { it.isNotBlank() }?.let { viewModel.speakPrompt(it) }
+                                                coroutineScope.launch {
+                                                    isPlayingVoice = false
+                                                    delay(600)
+                                                    isPlayingVoice = true
+                                                    delay(1200)
+                                                    isPlayingVoice = false
+                                                }
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (isPlayingVoice) "🔊" else "🔈",
+                                            fontSize = 30.sp
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
                                     Text(
                                         text = q.voicePrompt ?: "",
                                         fontSize = 24.sp,

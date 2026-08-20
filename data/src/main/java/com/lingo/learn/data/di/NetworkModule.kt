@@ -25,7 +25,10 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(logging)
             .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
+            // Socket read timeout is the outer safety net; per-task budgets live in
+            // LlmRepositoryImpl.timeoutFor(). PLAN/DIAGNOSIS allow up to 90s there,
+            // so the socket must outlive that or it kills long LLM JSON responses.
+            .readTimeout(120, TimeUnit.SECONDS)
             .build()
     }
 

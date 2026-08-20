@@ -1,0 +1,29 @@
+## 🚀 What's New in v4.5.0 (Agent Plan Voice Channels & UX Polish)
+
+### 1. Agent Plan LLM Channel for Plan Generation
+- Plan generation now routes through the Agent Plan LLM API (glm-5.2) with the Lingo v5 system prompt and an explicit TTS/ASR gateway block, replacing the legacy chat channel.
+
+### 2. Plan TTS Voice Channel (seed-tts-2.0)
+- New NDJSON synthesis pipeline (`POST /api/v3/plan/tts/unidirectional`) streaming base64 audio lines with X-Api-Key / X-Api-Resource-Id headers; synthesized MP3 is cached in `cache/tts/` for offline replay, with fallback to the legacy Ark channel.
+
+### 3. Plan ASR WebSocket Channel
+- Real-time WebSocket transcription over `bigmodel_async` with binary frame protocol and PCM16 decoding; transcribed text is normalized before Levenshtein scoring, and the legacy split path is preserved.
+
+### 4. Voice Endpoint Configuration in ModelConfigGate
+- The first-launch gate now exposes TTS/ASR plan URLs, resource IDs and API keys, plus a test-voice playback to validate channels before onboarding.
+
+### 5. Honest ASR Error Handling (No Fabricated Scores)
+- Pronunciation score became nullable: a failed transcription is never reported as a low grade; Practice/Quiz surfaces an explicit error state and Task Complete shows '--' when no score exists.
+
+### 6. Text Layout & TTS Robustness Fixes
+- AutoResizeText gains a selectable overload and soft-wrap variants for long reference sentences; WordHighlightText supports maxLines/contentColor and renders low scores first; LearningContainer chips wrap within the stepper; SystemTtsHelper serializes utterances during slow engine init.
+
+### 7. CEFR Mapping & Difficulty Slope Corrections
+- CEFR mapper now shifts low bands down and high bands up (matching the diagnosis convention), removes the highSchool diagnostic level, and casts subLevel explicitly; plan difficulty coefficient applies consistently.
+
+### 8. Plan Funnel & Dashboard Polish
+- Diagnosis result CTA, plan generation retry with snackbar guidance, weekly plan per-day rationale annotation with loading/success CTA states, theme-backed titles, and English labels throughout the funnel.
+
+## 📦 Build Artifacts
+- app-release.apk (9.17 MB)
+- app-debug.apk (13.39 MB)

@@ -82,13 +82,12 @@ class LlmRepositoryImplTest {
     }
 
     @Test
-    fun `complete returns fallback template when budget exceeded`() = runBlocking {
+    fun `complete fails for strict content when budget exceeded`() = runBlocking {
         whenever(prefs.getMonthlyTokenLimit()).thenReturn(0)
 
         val result = repository.complete("Hello", "PLAN")
 
-        assertTrue(result.isSuccess)
-        assertTrue(result.getOrThrow().contains("theme"))
+        assertTrue(result.isFailure)
     }
 
     @Test
@@ -144,7 +143,7 @@ class LlmRepositoryImplTest {
     }
 
     @Test
-    fun `complete returns local template when both models fail`() = runBlocking {
+    fun `complete fails for strict content when both models fail`() = runBlocking {
         val error1: Response<MinimaxChatResponse> = Response.error(500, okhttp3.ResponseBody.create(null, "Error"))
         val error2: Response<MinimaxChatResponse> = Response.error(503, okhttp3.ResponseBody.create(null, "Unavailable"))
         whenever(service.chatCompletion(any(), any(), any(), any()))
@@ -153,8 +152,7 @@ class LlmRepositoryImplTest {
 
         val result = repository.complete("Hello", "PLAN")
 
-        assertTrue(result.isSuccess)
-        assertTrue(result.getOrThrow().contains("theme"))
+        assertTrue(result.isFailure)
     }
 
     @Test
