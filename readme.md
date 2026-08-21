@@ -83,5 +83,6 @@ Generated APKs:
 | **v4.4.1** | Sprint 20 | Hotfix (visible AI configuration confirmation required before proceeding) | ✅ Released |
 | **v4.5** | Sprint 20.5 | Agent Plan Voice Channels + UX Polish (LLM plan API wiring, plan TTS NDJSON synthesis with MP3 cache, plan ASR WebSocket transcription, voice endpoint gate fields, CEFR mapping fix, ASR error surfacing, text layout fixes) | ✅ Released |
 | **v4.5.1** | Sprint 20.5 | Hotfix (strict AI content: no canned fallbacks for eval questions & plans, real token budget for plan generation, task-aware timeouts, eval-question voice) | ✅ Released |
+| **v4.5.2** | Sprint 20.5 | UX & Reliability Fix Pack (all diagnostic question types render & are tappable, plan errors retryable with friendly messages, weekly-plan accuracy fix, English parent tips, report/error-book layout polish, structured session journey stepper) | ✅ Released |
 
 > For complete detailed task checklists and backlog item status, see [task.md](file:///d:/workbench/sandbox/english-learning-agent/task.md).

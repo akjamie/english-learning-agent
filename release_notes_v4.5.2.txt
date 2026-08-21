@@ -1,0 +1,26 @@
+## 🛠️ Lingo English v4.5.2 — UX & Reliability Fix Pack
+
+### 1. All Diagnostic Question Types Now Render Properly
+- Fixed the AI quiz so every question type the model emits shows usable, tappable UI. Previously, types the app didn't recognize silently degraded to a bare word list. Now:
+  - **Match / word-choice options** render as visible tappable cards with a light background and border (no more "4 words with no background").
+  - **Sort-the-words** questions lay the word bank out in a wrapping grid instead of cramming all words into one line.
+  - **Letter-completion** (e.g. "h_istory") shows the blanked word and letter chips to pick the missing letter.
+  - **Listen-and-type** shows a speaker button that plays the sentence plus a text field for the answer.
+- The generation prompt now documents the per-type JSON schema, and the parser fuzzy-maps model synonyms (SORT/ARRANGE, LETTER/BLANK, LISTEN+TYPE/DICTATION) instead of falling back to a plain word list.
+
+### 2. Plan Creation Errors Are Understandable & Retryable
+- Plan generation retries start clean (spinner on, stale error cleared), and failures show a friendly classified message (network / auth / config / timeout / parse) instead of raw exception text.
+
+### 3. Weekly Plan Accuracy Was Being Misread
+- The weekly-plan generator was sending the LLM a 0–1 accuracy as "1%" instead of the real percentage (e.g. 75%). Now multiplied by 100 before formatting.
+
+### 4. Language & Layout Polish
+- Task-complete parent phoneme tips now show in English when the app language is English (were hardcoded to Chinese).
+- Weekly report stat cards split the emoji, label, and value so long labels no longer wrap and cards stay equal height.
+- Error Book "Type" line ellipsizes long error-type names instead of wrapping one character per line.
+
+### 5. Session Journey Header Is Now a Structured Stepper
+- The in-session stage menu (Warm-up → Immersion → Practice → Quiz → Win) was five chips in a wrapping row that looked scattered and changed height between stages. Rebuilt as a fixed single-row stepper with indicator circles (✓ done, current, upcoming), connector lines, and stable height.
+
+### Verification
+- Full unit test suite green: 422 tests, 0 failures. Debug APK builds clean.
