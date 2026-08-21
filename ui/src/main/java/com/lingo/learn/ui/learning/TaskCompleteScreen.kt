@@ -371,7 +371,7 @@ fun TaskCompleteScreen(
                             if (hasPhonemeHints) {
                                 s.phonemeHints.forEach { hint ->
                                     Text(
-                                        text = "${hint.emoji} ${hint.tipChinese}",
+                                        text = "${hint.emoji} ${hint.tipEnglish}",
                                         fontSize = 14.sp,
                                         color = Color(0xFF5D4037),
                                         lineHeight = 20.sp

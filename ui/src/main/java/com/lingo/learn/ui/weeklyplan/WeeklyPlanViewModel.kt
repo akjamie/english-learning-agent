@@ -101,7 +101,7 @@ class WeeklyPlanViewModel @Inject constructor(
             }
             val result = weeklyPlanRepository.generateAndCacheWeeklyPlan(
                 grade = grade,
-                accuracy = accuracy.toInt(),
+                accuracy = (accuracy * 100).toInt(),
                 weakCategories = weakCategories.ifEmpty { listOf("Vocabulary", "Pronunciation") },
                 completedMilestones = completedMilestones,
                 difficultyAdjustment = difficultyAdjustment

@@ -71,9 +71,17 @@ class DiagnosisViewModel @Inject constructor(
 
                 IMPORTANT: Generate HIGHLY RANDOMIZED and DIVERSE questions. Do not use the same questions every time.
                 Mix up the vocabulary, grammar points, and scenarios completely.
-                
-                Include question types: LISTENING_EMOJI, VOCABULARY, PHONICS, SORT_WORDS, SPEAK_ALOUD.
-                Return raw valid JSON array ONLY (no markdown, no backticks):
+
+                Use ONLY these question types (the app renders exactly these):
+                - LISTENING_EMOJI: "voicePrompt" is the word spoken, "options" are emoji choices, "correctAnswer" matches one option.
+                - VOCABULARY: simple word choice, "options" are plain word choices, "correctAnswer" matches one option.
+                - PHONICS: sound phonics choice, "options" are word choices, "correctAnswer" matches one option.
+                - SORT_WORDS: child taps words in order; provide "wordsForSort" (the full bank, 3-5 words) and "correctAnswer" as the words space-separated in the correct order (e.g. "I see a cat").
+                - SPEAK_ALOUD: pronunciation; "voicePrompt" is the sentence to read aloud, no options needed.
+                - CHOOSE_LETTER: letter completion; "wordWithBlank" shows the word with one letter replaced by "_" (e.g. "h_istory"), "options" are single letters, "correctAnswer" is the missing letter.
+                - LISTEN_AND_TYPE: "voicePrompt" is the dictated sentence, "correctAnswer" is the exact sentence, no options needed.
+
+                Return raw valid JSON array ONLY (no markdown, no backticks). Each object uses only the fields its type needs:
                 [
                   {
                     "id": 1,
@@ -83,6 +91,14 @@ class DiagnosisViewModel @Inject constructor(
                     "voicePrompt": "apple",
                     "options": ["🍎 Apple", "🍌 Banana", "🐱 Cat"],
                     "correctAnswer": "🍎 Apple"
+                  },
+                  {
+                    "id": 2,
+                    "type": "SORT_WORDS",
+                    "title": "2. Arrange the Words",
+                    "description": "Tap the words in the right order:",
+                    "wordsForSort": ["I", "a", "see", "cat"],
+                    "correctAnswer": "I see a cat"
                   }
                 ]
             """.trimIndent()
@@ -263,8 +279,7 @@ class DiagnosisViewModel @Inject constructor(
             val list = mutableListOf<DiagnosticQuestion>()
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
-                val typeStr = obj.optString("type", "VOCABULARY")
-                val qType = try { QuestionType.valueOf(typeStr) } catch (e: Exception) { QuestionType.VOCABULARY }
+                val qType = parseQuestionType(obj.optString("type", "VOCABULARY"))
 
                 val optionsArray = obj.optJSONArray("options")
                 val optionsList = mutableListOf<String>()
@@ -281,6 +296,8 @@ class DiagnosisViewModel @Inject constructor(
                         wordsList.add(wordsArray.getString(j))
                     }
                 }
+                // SORT_WORDS without an explicit bank reuses the options as the sort bank.
+                val sortWords = wordsList.ifEmpty { optionsList }
 
                 list.add(
                     DiagnosticQuestion(
@@ -291,13 +308,28 @@ class DiagnosisViewModel @Inject constructor(
                         voicePrompt = if (obj.isNull("voicePrompt")) null else obj.optString("voicePrompt", ""),
                         options = optionsList,
                         correctAnswer = obj.optString("correctAnswer", ""),
-                        wordsForSort = wordsList
+                        wordsForSort = sortWords,
+                        wordWithBlank = if (obj.isNull("wordWithBlank")) null else obj.optString("wordWithBlank", "")
                     )
                 )
             }
             list
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    /** Maps LLM-emitted type names to the app enum, tolerating synonyms. */
+    private fun parseQuestionType(raw: String): QuestionType {
+        val normalized = raw.trim().uppercase().replace(" ", "_")
+        return when {
+            normalized.contains("SORT") || normalized.contains("ARRANGE") -> QuestionType.SORT_WORDS
+            normalized.contains("LETTER") || normalized.contains("BLANK") || normalized.contains("COMPLETE") -> QuestionType.CHOOSE_LETTER
+            normalized.contains("LISTEN") && normalized.contains("TYPE") || normalized.contains("DICTATION") -> QuestionType.LISTEN_AND_TYPE
+            normalized.contains("SPEAK") || normalized.contains("SAY") || normalized.contains("PRONOUNC") -> QuestionType.SPEAK_ALOUD
+            normalized.contains("PHONICS") || normalized.contains("SOUND") -> QuestionType.PHONICS
+            normalized.contains("EMOJI") || normalized.contains("LISTEN") -> QuestionType.LISTENING_EMOJI
+            else -> try { QuestionType.valueOf(raw.trim().uppercase()) } catch (e: Exception) { QuestionType.VOCABULARY }
         }
     }
 
