@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -44,7 +45,8 @@ data class DiagnosticQuestion(
     val voicePrompt: String? = null,
     val options: List<String> = emptyList(),
     val correctAnswer: String = "",
-    val wordsForSort: List<String> = emptyList()
+    val wordsForSort: List<String> = emptyList(),
+    val wordWithBlank: String? = null
 )
 
 enum class QuestionType {
@@ -52,10 +54,12 @@ enum class QuestionType {
     VOCABULARY,
     PHONICS,
     SORT_WORDS,
-    SPEAK_ALOUD
+    SPEAK_ALOUD,
+    CHOOSE_LETTER,
+    LISTEN_AND_TYPE
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun DiagnosisScreen(
     grade: String = "Grade 3",
@@ -154,6 +158,7 @@ fun DiagnosisScreen(
 
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var sortedWords by remember { mutableStateOf<List<String>>(emptyList()) }
+    var typedSentence by remember { mutableStateOf("") }
     var isRecording by remember { mutableStateOf(false) }
     var isEvaluated by remember { mutableStateOf(false) }
     var evaluationScore by remember { mutableStateOf(0) }
@@ -194,6 +199,7 @@ fun DiagnosisScreen(
     fun resetQuestionState() {
         selectedOption = null
         sortedWords = emptyList()
+        typedSentence = ""
         isRecording = false
         isEvaluated = false
         evaluationScore = 0
@@ -406,16 +412,15 @@ fun DiagnosisScreen(
 
                                     Text("Tap words below to arrange:", fontSize = 13.sp, color = Color.Gray)
 
-                                    // Available words options
-                                    Row(
+                                    // Available words options — FlowRow so 4-5 words wrap instead of cramming one line
+                                    FlowRow(
                                         horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
                                         availableWords.forEach { word ->
                                             Box(
                                                 modifier = Modifier
-                                                    .weight(1f)
                                                     .height(52.dp)
                                                     .clip(RoundedCornerShape(12.dp))
                                                     .background(Color(0xFFFFD449))
@@ -429,6 +434,105 @@ fun DiagnosisScreen(
                                             }
                                         }
                                     }
+                                }
+                            }
+                            QuestionType.CHOOSE_LETTER -> {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    val blankWord = q.wordWithBlank
+                                        ?: q.correctAnswer.ifBlank { "_____" }
+                                        ?: "_____"
+                                    Text(
+                                        text = blankWord,
+                                        fontSize = 30.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2C3E50),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        q.options.forEach { letter ->
+                                            val isSelected = letter == selectedOption
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(56.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (isSelected) Color(0xFF5C6FF2) else Color.White)
+                                                    .border(
+                                                        width = 2.dp,
+                                                        color = if (isSelected) Color(0xFF5C6FF2) else Color(0xFFE0E0E0),
+                                                        shape = CircleShape
+                                                    )
+                                                    .clickable {
+                                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                        selectedOption = letter
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = letter,
+                                                    fontSize = 22.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (isSelected) Color.White else Color(0xFF2C3E50)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            QuestionType.LISTEN_AND_TYPE -> {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(76.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isPlayingVoice) Color(0xFFFFECE5) else Color(0xFFFF7052))
+                                            .clickable {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                viewModel.speakPrompt(q.voicePrompt ?: q.correctAnswer)
+                                                coroutineScope.launch {
+                                                    isPlayingVoice = true
+                                                    delay(1200)
+                                                    isPlayingVoice = false
+                                                }
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (isPlayingVoice) "🔊" else "🔈",
+                                            fontSize = 34.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "Type what you hear:",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF7F8C8D)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = typedSentence,
+                                        onValueChange = { typedSentence = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text("Type the sentence here...", fontSize = 14.sp, color = Color(0xFFB0B8C4)) },
+                                        textStyle = TextStyle(fontSize = 16.sp, color = Color(0xFF2C3E50)),
+                                        singleLine = false,
+                                        maxLines = 2,
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Color(0xFF5C6FF2),
+                                            unfocusedBorderColor = Color(0xFFE0E0E0)
+                                        )
+                                    )
                                 }
                             }
                             QuestionType.SPEAK_ALOUD -> {
@@ -566,6 +670,7 @@ fun DiagnosisScreen(
             } else {
                 val isAnswered = when (currentQuestion.type) {
                     QuestionType.SORT_WORDS -> sortedWords.size == currentQuestion.wordsForSort.size
+                    QuestionType.LISTEN_AND_TYPE -> typedSentence.trim().isNotEmpty()
                     else -> selectedOption != null
                 }
 
@@ -574,6 +679,7 @@ fun DiagnosisScreen(
                         if (answerState == null) {
                             val userAns = when (currentQuestion.type) {
                                 QuestionType.SORT_WORDS -> sortedWords.joinToString(" ")
+                                QuestionType.LISTEN_AND_TYPE -> typedSentence.trim()
                                 else -> selectedOption ?: ""
                             }
                             val isCorrect = userAns.trim().equals(currentQuestion.correctAnswer.trim(), ignoreCase = true)
@@ -640,10 +746,10 @@ fun ChoiceGroup(
                     .fillMaxWidth()
                     .height(56.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (isSelected) Color(0xFFECEFFF) else Color.White)
+                    .background(if (isSelected) Color(0xFFECEFFF) else Color(0xFFF4F6FA))
                     .border(
                         width = 1.5.dp,
-                        color = if (isSelected) Color(0xFF5C6FF2) else Color(0xFFE0E0E0),
+                        color = if (isSelected) Color(0xFF5C6FF2) else Color(0xFFD0D6DE),
                         shape = RoundedCornerShape(14.dp)
                     )
                     .clickable { onOptionSelected(option) }

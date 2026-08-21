@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -171,9 +172,9 @@ fun WeeklyReportScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatCard("🔥 Streak", "${uiState.streakDays} days", modifier = Modifier.weight(1f))
-                StatCard("📚 Sessions", "${uiState.totalSessions}", modifier = Modifier.weight(1f))
-                StatCard("📖 Words", "${uiState.totalWordsLearned}", modifier = Modifier.weight(1f))
+                StatCard("🔥", "Streak", "${uiState.streakDays} days", modifier = Modifier.weight(1f))
+                StatCard("📚", "Sessions", "${uiState.totalSessions}", modifier = Modifier.weight(1f))
+                StatCard("📖", "Words", "${uiState.totalWordsLearned}", modifier = Modifier.weight(1f))
             }
 
             // Sprint 19: estimated CEFR level
@@ -387,7 +388,7 @@ fun WeeklyReportScreen(
 }
 
 @Composable
-private fun StatCard(emoji: String, value: String, modifier: Modifier = Modifier) {
+private fun StatCard(emoji: String, label: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -400,7 +401,22 @@ private fun StatCard(emoji: String, value: String, modifier: Modifier = Modifier
         ) {
             Text(emoji, fontSize = 24.sp)
             Spacer(Modifier.height(4.dp))
-            Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                color = Color(0xFF7F8C8D),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2C3E50),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

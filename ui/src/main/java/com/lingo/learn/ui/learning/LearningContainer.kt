@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -321,61 +322,133 @@ fun LearningJourneyHeader(
         color = Color.White,
         shadowElevation = 2.dp
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Exit Learning",
-                    tint = Color(0xFF2C3E50)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClose) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Exit Learning",
+                        tint = Color(0xFF2C3E50)
+                    )
+                }
+                Text(
+                    text = "Today's Journey",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2C3E50),
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
 
-            // Stepper Map
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Single-row stepper: equal-width steps joined by connector lines.
+            // Fixed single row (no wrapping) so the header height never changes
+            // between stages and the track reads as structured progress.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.Top
             ) {
                 stages.forEachIndexed { index, (stageItem, label) ->
                     val isPassed = currentStage.ordinal > stageItem.ordinal
                     val isCurrent = currentStage == stageItem
 
-                    val chipColor = when {
-                        isCurrent -> theme.primaryColor
-                        isPassed -> Color(0xFF2ECC71)
-                        else -> Color(0xFFECEFF1)
-                    }
-
-                    val textColor = when {
-                        isCurrent -> theme.buttonContentColor
-                        isPassed -> Color.White
-                        else -> Color(0xFF7F8C8D)
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(chipColor)
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
+                    if (index > 0) {
+                        // Connector segment between previous and current step.
+                        val segmentPassed = currentStage.ordinal > stages[index - 1].first.ordinal
+                        Box(
+                            modifier = Modifier
+                                .width(10.dp)
+                                .padding(top = 9.dp)
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(if (segmentPassed) Color(0xFF2ECC71) else Color(0xFFE4E8EC))
                         )
                     }
+
+                    JourneyStep(
+                        label = label,
+                        isPassed = isPassed,
+                        isCurrent = isCurrent,
+                        theme = theme,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun JourneyStep(
+    label: String,
+    isPassed: Boolean,
+    isCurrent: Boolean,
+    theme: GradeTheme,
+    modifier: Modifier = Modifier
+) {
+    val circleColor = when {
+        isCurrent -> theme.primaryColor
+        isPassed -> Color(0xFF2ECC71)
+        else -> Color(0xFFE4E8EC)
+    }
+    val contentColor = when {
+        isCurrent -> theme.buttonContentColor
+        isPassed -> Color.White
+        else -> Color(0xFF9AA5B1)
+    }
+    val labelColor = when {
+        isCurrent || isPassed -> Color(0xFF2C3E50)
+        else -> Color(0xFF9AA5B1)
+    }
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(circleColor),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isPassed) {
+                Text(
+                    text = "✓",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = contentColor
+                )
+            } else {
+                Text(
+                    text = if (isCurrent) "•" else "·",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = contentColor
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(3.dp))
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = if (isCurrent || isPassed) FontWeight.Bold else FontWeight.Medium,
+            color = labelColor,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

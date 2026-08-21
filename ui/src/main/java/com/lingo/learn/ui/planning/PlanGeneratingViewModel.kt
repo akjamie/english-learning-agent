@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.classifyError
+import org.akj.lingo.learn.domain.usecase.userFacingError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,9 @@ class PlanGeneratingViewModel @Inject constructor(
     val state: StateFlow<PlanGeneratingState> = _state.asStateFlow()
 
     fun generatePlan(grade: String, diagnosticLevel: String) {
+        // Reset the whole state so a retry starts clean: spinner on,
+        // previous error cleared, success flag cleared.
+        _state.value = PlanGeneratingState(progressText = "Preparing your AI tutor...")
         viewModelScope.launch {
             try {
                 val accuracy = try { learningRecordRepository.getMonthlyAccuracy() } catch (_: Exception) { 75f }
@@ -69,13 +74,13 @@ class PlanGeneratingViewModel @Inject constructor(
                 } else {
                     _state.value = _state.value.copy(
                         isGenerating = false,
-                        errorMessage = "Failed to generate plan: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+                        errorMessage = userFacingError(classifyError(result.exceptionOrNull()))
                     )
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isGenerating = false,
-                    errorMessage = "Error: ${e.localizedMessage ?: "Unknown error"}"
+                    errorMessage = userFacingError(classifyError(e))
                 )
             }
         }
