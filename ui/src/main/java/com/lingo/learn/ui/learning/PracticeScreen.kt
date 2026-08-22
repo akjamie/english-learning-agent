@@ -277,6 +277,14 @@ private fun ReadAlongContent(
                 onPressDown = { viewModel.startRecording() },
                 onPressUp = { viewModel.stopRecording() }
             )
+            // If the ASR service is unreachable, don't trap the child on this
+            // sentence — a Skip lets them move on without a fabricated score.
+            TextButton(
+                onClick = { viewModel.nextReadAlongSentence() },
+                modifier = Modifier.heightIn(min = 40.dp)
+            ) {
+                Text("Skip this one", fontSize = 13.sp, color = Color(0xFF7F8C8D))
+            }
         } else if (readAlongState.isShadowMode) {
             Spacer(modifier = Modifier.weight(1f))
             if (readAlongState.isRecording) {

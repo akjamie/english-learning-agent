@@ -1,0 +1,10 @@
+## 🛠️ Lingo English v4.5.4 — Answer Layout & Read-Along Resilience Fix Pack
+
+### 1. Answer Words No Longer Break Mid-Word
+- Long answer options in the quiz and game grids (e.g. "celebrate", "tradition") could wrap mid-word as "celebrat\ne". Auto-resizing text now treats a single word as a single unit: it shrinks the font until the whole word fits on one line instead of breaking it across two.
+
+### 2. Read-Along Can't Be Trapped by a Down ASR Service
+- In the read-along practice stage, if the voice-check service is unreachable the child previously saw the error + the mic retry button but no way to move on — they could be stuck on one sentence indefinitely. A "Skip this one" button now lets them advance to the next sentence (or into the games) without a fabricated score. The mic stays available to retry. Quiz read-aloud questions already had a no-penalty Skip, so they were unaffected.
+
+### Verification
+- Full unit test suite green: 422 tests, 0 failures. Debug APK builds clean.
