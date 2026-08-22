@@ -3,6 +3,7 @@ package org.akj.lingo.learn.data.remote.minimax
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -178,7 +179,7 @@ class PlanAsrWsClient @Inject constructor(
         resourceId: String,
         apiKey: String,
         wsUrl: String
-    ): String = suspendCancellableCoroutine { cont ->
+    ): String = withTimeout(ASR_WS_TIMEOUT_MS) { suspendCancellableCoroutine { cont ->
         val requestId = UUID.randomUUID().toString()
         val request = Request.Builder()
             .url(wsUrl)
@@ -301,5 +302,10 @@ class PlanAsrWsClient @Inject constructor(
             .build()
             .newWebSocket(request, listener)
         cont.invokeOnCancellation { ws.cancel() }
-    }
+    } }
 }
+
+// Overall deadline for a single ASR WebSocket round-trip. The socket pings every
+// 20s but never closes on its own; a dead/half-open connection would otherwise
+// hang the "evaluating" state indefinitely.
+private const val ASR_WS_TIMEOUT_MS = 30_000L

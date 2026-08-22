@@ -129,6 +129,11 @@ fun DiagnosisScreen(
                 LingoAvatar(expression = LingoExpression.THINKING, modifier = Modifier.size(120.dp))
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("🦊 Lingo is preparing your quiz...", fontSize = 18.sp, color = Color(0xFF2C3E50), fontWeight = FontWeight.Bold)
+                val loadingStatus by viewModel.loadingStatus.collectAsState()
+                if (loadingStatus.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(loadingStatus, fontSize = 13.sp, color = Color(0xFF7F8C8D))
+                }
             }
         }
         return
