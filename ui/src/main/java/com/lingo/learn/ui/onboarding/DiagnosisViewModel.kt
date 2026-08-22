@@ -45,6 +45,9 @@ class DiagnosisViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _loadingStatus = MutableStateFlow("")
+    val loadingStatus: StateFlow<String> = _loadingStatus.asStateFlow()
+
     private val _loadError = MutableStateFlow<String?>(null)
     val loadError: StateFlow<String?> = _loadError.asStateFlow()
 
@@ -60,6 +63,24 @@ class DiagnosisViewModel @Inject constructor(
     fun loadDiagnosticQuestions(grade: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _loadError.value = null
+            _loadingStatus.value = "Talking to Lingo's teacher…"
+            // Rotate staged status messages while the LLM composes the quiz, so the
+            // (legitimately 20-40s) generation never looks like a hang.
+            val statusTicker = viewModelScope.launch {
+                val stages = listOf(
+                    "Talking to Lingo's teacher…",
+                    "Picking words just for you…",
+                    "Writing your questions…",
+                    "Almost ready…"
+                )
+                var i = 1
+                while (true) {
+                    delay(8000)
+                    _loadingStatus.value = stages[i % stages.size]
+                    i++
+                }
+            }
             val band = GradeBand.fromGrade(grade)
             val prompt = """
                 You are an English curriculum assessment expert for ${band.displayName} students.
@@ -119,6 +140,8 @@ class DiagnosisViewModel @Inject constructor(
                     _questions.value = emptyList()
                     _loadError.value = userFacingError(classifyError(e))
                 }
+            statusTicker.cancel()
+            _loadingStatus.value = ""
             _isLoading.value = false
         }
     }

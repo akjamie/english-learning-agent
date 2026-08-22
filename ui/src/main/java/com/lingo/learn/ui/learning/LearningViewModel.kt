@@ -586,7 +586,7 @@ class LearningViewModel @Inject constructor(
                 // can retry instead of being rewarded with a fake "85".
                 _readAlongState.value = _readAlongState.value.copy(
                     isEvaluating = false,
-                    asrErrorMessage = "Voice check couldn't reach the ASR service. Please try again."
+                    asrErrorMessage = asrFailureMessage(result.exceptionOrNull())
                 )
                 return@launch
             }
@@ -916,7 +916,7 @@ class LearningViewModel @Inject constructor(
                 // retry instead of being rewarded with a fake "85".
                 _readAlongState.value = _readAlongState.value.copy(
                     isEvaluating = false,
-                    asrErrorMessage = "Voice check couldn't reach the ASR service. Please try again."
+                    asrErrorMessage = asrFailureMessage(result.exceptionOrNull())
                 )
                 return@launch
             }
@@ -1243,5 +1243,24 @@ class LearningViewModel @Inject constructor(
         super.onCleared()
         systemTtsHelper.shutdown()
         voiceRecorder.cancelRecording()
+    }
+
+    /**
+     * Maps an ASR cloud-call failure to a user-facing message that tells the
+     * parent/child *why* the voice check failed, so they can distinguish a wrong
+     * API key or bad config from a plain network drop.
+     */
+    private fun asrFailureMessage(t: Throwable?): String {
+        val msg = t?.message?.lowercase() ?: return "Voice check couldn't reach the ASR service. Please try again."
+        return when {
+            msg.contains("not configured") || msg.contains("missing") -> "Voice check isn't configured. Check the ASR settings in Settings."
+            msg.contains("401") || msg.contains("unauthorized") || msg.contains("403") || msg.contains("api key") || msg.contains("auth") ->
+                "Voice check authentication failed — check your API key in Settings."
+            msg.contains("timeout") || msg.contains("timed out") -> "The voice check timed out. Please try again."
+            msg.contains("server error code") -> "The voice check service hit an error. Please try again."
+            msg.contains("unable to resolve") || msg.contains("network") || msg.contains("connect") || msg.contains("socket") || msg.contains("eof") ->
+                "Voice check couldn't reach the network. Check your connection and try again."
+            else -> "Voice check couldn't reach the ASR service. Please try again."
+        }
     }
 }
