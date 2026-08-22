@@ -82,6 +82,9 @@ internal fun BoxWithConstraintsScope.rememberFitTextSize(
     val maxWidthPx = constraints.maxWidth
     val maxHeightPx = constraints.maxHeight
     return remember(text, maxWidthPx, maxHeightPx, maxLines, minFontSize, maxFontSize, fontWeight, lineHeight) {
+        // A single word (no whitespace) must fit on ONE line — a lineCount > 1
+        // means the word was broken mid-word ("celebrat\ne"), so keep shrinking.
+        val singleWord = text.none { it.isWhitespace() }
         var size = maxFontSize.value
         while (size > minFontSize.value) {
             val layout = textMeasurer.measure(
@@ -91,7 +94,7 @@ internal fun BoxWithConstraintsScope.rememberFitTextSize(
                 overflow = TextOverflow.Visible
             )
             val fitsHeight = maxHeightPx == Constraints.Infinity || layout.size.height <= maxHeightPx
-            val fitsLines = layout.lineCount <= maxLines
+            val fitsLines = if (singleWord) layout.lineCount <= 1 else layout.lineCount <= maxLines
             if (!layout.hasVisualOverflow && fitsHeight && fitsLines) break
             size -= 1f
         }
