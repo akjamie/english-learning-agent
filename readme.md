@@ -43,6 +43,45 @@ All AI channels (LLM, TTS, ASR) share unified Base URL and Auth Token credential
 
 ---
 
+## 🤖 Agent System
+
+Lingo English runs a family of specialized AI agents, each with a typed contract (structured input context, JSON/rule output, `taskType`, and token budget). They share one unified LLM harness (see below) but differ in *when to trust the model* vs. *when to use deterministic rules*.
+
+### Agent Roster
+
+| Agent | Where | Kind | Contract |
+|---|---|---|---|
+| **Weekly Plan Generator** | `WeeklyPlanRepositoryImpl` | LLM (`PLAN`) | 7-day plan JSON with per-day `rationale`; strict content (no canned plan) |
+| **Diagnostic Quiz Generator** | `DiagnosisViewModel` | LLM (`DIAGNOSIS`) | 10-question JSON across 7 question types; parser fuzzy-maps model synonyms |
+| **Pronunciation Evaluator** | `AsrRepositoryImpl` | Deterministic (ASR + Levenshtein) | Word-level score 0-100; no fabricated score when ASR fails |
+| **Explanation Agent (Error Book)** | `ExplanationAgentUseCase` | LLM (`EXPLAIN`) | <100-word kid-friendly word explanation from error history |
+| **Daily Encourager** | `DailyEncouragerUseCase` | LLM (`ENCOURAGEMENT`) | <40-char gamified greeting with 1 emoji |
+| **Observation Agent** | `ObservationTriggerEngine` | Rule-based (longitudinal) | Cross-time insight vs last 7 days of records; template messages |
+| **Roleplay Scenario Agent** | `RoleplayScenarioBank` | LLM (`ROLEPLAY_SCENARIO`) + curated offline bank | Scenario `system_prompt` + `opening_line`; offline-safe fallback |
+| **Weekly Lingo Letter** | `WeeklyReportViewModel` | LLM (`LINGO_LETTER`) + template fallback | ≤60-word parent digest of the week |
+| **On-demand Quiz Hint** | `LearningViewModel` | LLM | 1-sentence guided hint without giving away the answer |
+| **Anomaly Diagnoser** | `DiagnoseAnomalyUseCase` | Bounded-autonomy rules | Maps learning summary to 1 of 5 categories; **defers to parent when confidence < 0.6** |
+| **Decision Transparency Layer** | `AgentDecisionLog` | Persistence | Every significant agent judgment logged for the "why" surfaces |
+
+Supporting engines: `SpacedRepetitionScheduler` (Ebbinghaus 1/3/7/14d), `PhonicsModule` (CVC blending), `ProductionTaskScorer` (SPELLING/DICTATION/SENTENCE_WRITING), `AdaptiveDifficultyEngine` (sentence length ±3), `XpRewardSystem` + `DailyGoalTracker` + `MakeupCardManager`.
+
+### Unified LLM Harness (`LlmRepositoryImpl`)
+
+- One `complete(prompt, taskType, maxTokens)` entry point; every agent routes through it.
+- **Task-aware timeouts**: PLAN/DIAGNOSIS get up to 90s (reasoning-heavy JSON), lighter tasks get shorter budgets; OkHttp socket read timeout 120s as the outer safety net.
+- **Model fallback**: primary `glm-5.2` → fallback `deepseek-v4-flash` on failure.
+- **Shared credentials** via `SecureConfigPrefs` (Base URL + Auth Token for LLM/TTS/ASR).
+
+### Design Principles
+
+1. **Strict AI content — no fake results.** Evaluation questions, plans, and voice scores never silently degrade to canned/offline content that *looks* AI-generated. On real failure the app surfaces an error with a Retry, so a child is never rewarded with a fabricated score or plan.
+2. **Deterministic where it matters.** Pronunciation, production tasks, and spaced-repetition scheduling are rule-scored — the pedagogically critical and latency-sensitive paths never depend on model flakiness.
+3. **Template-first, LLM-enriched.** Observation messages and roleplay scripts ship curated, offline-safe templates; the LLM enriches when available, and a failed call keeps the curated version.
+4. **Bounded autonomy.** The anomaly diagnoser only acts when confident (≥0.6); otherwise the parent decides from raw evidence.
+5. **Transparency by design.** `AgentDecisionLog` feeds the plan "Why this arrangement?", the weekly "What Lingo adjusted", and the AI Growth Notes timeline — the judgment process is visible, not a spinner.
+
+---
+
 ## 🛠️ How to Build and Run
 
 The project includes a pre-configured Gradle Wrapper (v8.13) and OpenJDK 21 setup (`D:\system\jdk21`).
