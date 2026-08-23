@@ -9,15 +9,18 @@ import org.junit.jupiter.api.Test
  */
 class RoleplayScenarioBankTest {
 
-    private val llmRepository = object : LlmRepository {
-        override suspend fun complete(prompt: String, taskType: String, maxTokens: Int): Result<String> =
-            Result.failure(Exception("not configured"))
+    private val bank = RoleplayScenarioBank(
+        StructuredLlmUseCase(
+            llmRepository = object : LlmRepository {
+                override suspend fun complete(prompt: String, taskType: String, maxTokens: Int): Result<String> =
+                    Result.failure(Exception("not configured"))
 
-        override suspend fun chat(messages: List<org.akj.lingo.learn.domain.model.ChatMessage>, taskType: String, maxTokens: Int): Result<String> =
-            Result.failure(Exception("not configured"))
-    }
-
-    private val bank = RoleplayScenarioBank(llmRepository)
+                override suspend fun chat(messages: List<org.akj.lingo.learn.domain.model.ChatMessage>, taskType: String, maxTokens: Int): Result<String> =
+                    Result.failure(Exception("not configured"))
+            },
+            jsonValidator = AgentJsonValidator()
+        )
+    )
 
     @Test
     fun `curated scenarios includes all nine scenes`() {

@@ -16,10 +16,10 @@ import org.akj.lingo.learn.domain.model.GradeBand
 import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.repository.ConfigRepository
-import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.TtsRepository
 import org.akj.lingo.learn.domain.usecase.classifyError
 import org.akj.lingo.learn.domain.usecase.userFacingError
+import org.akj.lingo.learn.domain.usecase.StructuredLlmUseCase
 import org.akj.lingo.learn.ui.learning.SystemTtsHelper
 import org.akj.lingo.learn.ui.learning.VoiceRecorder
 import org.json.JSONArray
@@ -31,7 +31,7 @@ import android.content.Context
 @HiltViewModel
 class DiagnosisViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val llmRepository: LlmRepository,
+    private val structuredLlmUseCase: StructuredLlmUseCase,
     private val asrRepository: AsrRepository,
     private val voiceRecorder: VoiceRecorder,
     private val systemTtsHelper: SystemTtsHelper,
@@ -125,7 +125,7 @@ class DiagnosisViewModel @Inject constructor(
             """.trimIndent()
 
             _loadError.value = null
-            llmRepository.complete(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
+            structuredLlmUseCase.completeJson(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
                 .onSuccess { json ->
                     val generatedList = parseQuestionsJson(json)
                     if (generatedList.isNotEmpty()) {

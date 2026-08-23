@@ -2,7 +2,6 @@ package org.akj.lingo.learn.domain.usecase
 
 import org.akj.lingo.learn.domain.model.ChatMessage
 import org.akj.lingo.learn.domain.model.RoleplayScenario
-import org.akj.lingo.learn.domain.repository.LlmRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +14,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class RoleplayScenarioBank @Inject constructor(
-    private val llmRepository: LlmRepository
+    private val structuredLlmUseCase: StructuredLlmUseCase
 ) {
 
     /** All curated scenarios, in display order. */
@@ -57,7 +56,7 @@ class RoleplayScenarioBank @Inject constructor(
             }
         """.trimIndent()
 
-        val result = llmRepository.complete(prompt, taskType = "ROLEPLAY_SCENARIO", maxTokens = 300)
+        val result = structuredLlmUseCase.completeJson(prompt, taskType = "ROLEPLAY_SCENARIO", maxTokens = 300)
         val json = result.getOrNull() ?: return null
         return try {
             val obj = org.json.JSONObject(json)

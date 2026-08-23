@@ -9,6 +9,7 @@ import org.akj.lingo.learn.domain.repository.DayTaskSummary
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.SessionBuilder
+import org.akj.lingo.learn.domain.usecase.StructuredLlmUseCase
 import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 @Singleton
 class WeeklyPlanRepositoryImpl @Inject constructor(
     private val llmRepository: LlmRepository,
+    private val structuredLlmUseCase: StructuredLlmUseCase,
     private val planDao: PlanDao,
     private val offlineContentStore: OfflineContentStore,
     private val configRepository: ConfigRepository
@@ -68,7 +70,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         // 500-token budget truncates it (observed: glm-5.2 spent it all on reasoning
         // with empty content; the fallback was cut mid-day-6). Match the DIAGNOSIS
         // budget so the full valid JSON survives.
-        val llmResult = llmRepository.complete(prompt, taskType = "PLAN", maxTokens = 1500)
+        val llmResult = structuredLlmUseCase.completeJson(prompt, taskType = "PLAN", maxTokens = 1500)
         val now = System.currentTimeMillis()
 
         // The AI plan is the child's actual curriculum — propagate generation
