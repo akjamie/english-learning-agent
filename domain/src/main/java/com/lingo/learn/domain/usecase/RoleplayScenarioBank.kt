@@ -14,7 +14,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class RoleplayScenarioBank @Inject constructor(
-    private val structuredLlmUseCase: StructuredLlmUseCase
+    private val structuredLlmUseCase: StructuredLlmUseCase,
+    private val promptRegistry: AgentPromptRegistry
 ) {
 
     /** All curated scenarios, in display order. */
@@ -40,21 +41,15 @@ class RoleplayScenarioBank @Inject constructor(
      * the caller keeps the curated offline-safe script.
      */
     suspend fun enrichWithLlm(scenario: RoleplayScenario, grade: String): RoleplayScenario? {
-        val prompt = """
-            You are Lingo, a friendly fox tutor running an English roleplay session with a child
-            (grade $grade).
-
-            --- Scenario ---
-            Setting: ${scenario.title} (${scenario.id})
-            Today's vocabulary: ${scenario.targetWords.joinToString()}
-
-            --- Output Format ---
-            Output a raw JSON object ONLY, no markdown:
-            {
-              "system_prompt": "full system prompt for the scenario (short, playful, max 5 lines)",
-              "opening_line": "Lingo's first greeting line (max 8 words)"
-            }
-        """.trimIndent()
+        val prompt = promptRegistry.render(
+            "ROLEPLAY_SCENARIO",
+            mapOf(
+                "grade" to grade,
+                "title" to scenario.title,
+                "id" to scenario.id,
+                "target_words" to scenario.targetWords.joinToString()
+            )
+        )
 
         val result = structuredLlmUseCase.completeJson(prompt, taskType = "ROLEPLAY_SCENARIO", maxTokens = 300)
         val json = result.getOrNull() ?: return null

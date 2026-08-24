@@ -11,6 +11,7 @@ import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.GamificationRepository
 import org.akj.lingo.learn.domain.repository.TtsRepository
 import org.akj.lingo.learn.domain.usecase.AdaptiveDifficultyEngine
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import org.akj.lingo.learn.domain.usecase.DailyGoalTracker
 import org.akj.lingo.learn.domain.usecase.MakeupCardManager
 import org.akj.lingo.learn.domain.usecase.Observation
@@ -111,6 +112,7 @@ class LearningViewModel @Inject constructor(
     private val observationTriggerEngine: ObservationTriggerEngine,
     private val agentDecisionLogRepository: AgentDecisionLogRepository,
     private val adaptiveDifficultyEngine: AdaptiveDifficultyEngine,
+    private val promptRegistry: AgentPromptRegistry,
     private val xpRewardSystem: XpRewardSystem,
     private val dailyGoalTracker: DailyGoalTracker,
     private val makeupCardManager: MakeupCardManager,
@@ -831,7 +833,13 @@ class LearningViewModel @Inject constructor(
             _quizState.value = current.copy(isGeneratingHint = true)
             viewModelScope.launch {
                 val correctAnswer = question.options.getOrNull(question.correctIndex) ?: question.audioText ?: ""
-                val prompt = "You are Lingo Fox, a friendly English tutor. The child is stuck on a quiz question: '${question.question}'. The correct answer is: '$correctAnswer'. Give a very short, simple, 1-sentence hint that guides them but doesn't give away the direct answer."
+                val prompt = promptRegistry.render(
+                    "HINT",
+                    mapOf(
+                        "question" to question.question,
+                        "answer" to correctAnswer
+                    )
+                )
                 val result = llmRepository.complete(prompt, "HINT")
                 
                 result.onSuccess { hint ->

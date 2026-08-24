@@ -3,6 +3,7 @@ package org.akj.lingo.learn.ui.settings
 import org.akj.lingo.learn.domain.model.ChatMessage
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -88,7 +89,7 @@ class SettingsViewModelTest {
         config: FakeConfigRepository = FakeConfigRepository(),
         llm: FakeLlmRepository = FakeLlmRepository()
     ): Pair<SettingsViewModel, FakeConfigRepository> {
-        val vm = SettingsViewModel(config, llm)
+        val vm = SettingsViewModel(config, llm, AgentPromptRegistry())
         return Pair(vm, config)
     }
 

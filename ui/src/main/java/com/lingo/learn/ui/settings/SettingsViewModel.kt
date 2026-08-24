@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,8 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val configRepository: ConfigRepository,
-    private val llmRepository: LlmRepository
+    private val llmRepository: LlmRepository,
+    private val promptRegistry: AgentPromptRegistry
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -160,7 +162,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val result = llmRepository.complete(
-                    prompt = "Hello! Please reply 'OK' to confirm API connection.",
+                    prompt = promptRegistry.render("PING", emptyMap()),
                     taskType = "PING"
                 )
                 if (result.isSuccess) {

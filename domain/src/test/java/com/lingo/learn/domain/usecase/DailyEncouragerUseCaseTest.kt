@@ -28,7 +28,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `prompt includes student name`() = runTest {
         val fake = CapturingLlmRepository()
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         useCase.invoke(name = "Emma", streak = 5)
         assertTrue(fake.lastPrompt!!.contains("Emma"))
     }
@@ -36,7 +36,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `prompt includes streak count`() = runTest {
         val fake = CapturingLlmRepository()
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         useCase.invoke(name = "Tom", streak = 12)
         assertTrue(fake.lastPrompt!!.contains("12"))
         assertTrue(fake.lastPrompt!!.contains("streak"))
@@ -45,7 +45,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `uses ENCOURAGEMENT task type`() = runTest {
         val fake = CapturingLlmRepository()
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         useCase.invoke(name = "Lily", streak = 3)
         assertEquals("ENCOURAGEMENT", fake.lastTaskType)
     }
@@ -53,7 +53,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `sets maxTokens to 60`() = runTest {
         val fake = CapturingLlmRepository()
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         useCase.invoke(name = "Jack", streak = 0)
         assertEquals(60, fake.lastMaxTokens)
     }
@@ -61,7 +61,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `prompt includes tone rules`() = runTest {
         val fake = CapturingLlmRepository()
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         useCase.invoke(name = "Mia", streak = 7)
         val prompt = fake.lastPrompt!!
         assertTrue(prompt.contains("Enthusiastic"))
@@ -72,7 +72,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `returns LLM success result`() = runTest {
         val fake = CapturingLlmRepository(result = Result.success("Keep going!"))
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         val result = useCase.invoke(name = "Sam", streak = 10)
         assertTrue(result.isSuccess)
         assertEquals("Keep going!", result.getOrNull())
@@ -81,7 +81,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `returns LLM failure result`() = runTest {
         val fake = CapturingLlmRepository(result = Result.failure(Exception("Network error")))
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         val result = useCase.invoke(name = "Sam", streak = 10)
         assertTrue(result.isFailure)
         assertEquals("Network error", result.exceptionOrNull()!!.message)
@@ -90,7 +90,7 @@ class DailyEncouragerUseCaseTest {
     @Test
     fun `handles zero streak`() = runTest {
         val fake = CapturingLlmRepository()
-        val useCase = DailyEncouragerUseCase(fake)
+        val useCase = DailyEncouragerUseCase(fake, AgentPromptRegistry())
         useCase.invoke(name = "NewUser", streak = 0)
         assertTrue(fake.lastPrompt!!.contains("0"))
     }

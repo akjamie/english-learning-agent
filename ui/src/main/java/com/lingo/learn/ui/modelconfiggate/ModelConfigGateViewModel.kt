@@ -6,6 +6,7 @@ import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.TtsRepository
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,7 +39,8 @@ data class ModelConfigGateState(
 class ModelConfigGateViewModel @Inject constructor(
     private val configRepository: ConfigRepository,
     private val llmRepository: LlmRepository,
-    private val ttsRepository: TtsRepository
+    private val ttsRepository: TtsRepository,
+    private val promptRegistry: AgentPromptRegistry
 ) : ViewModel() {
 
     private val savedBaseUrl = configRepository.getBaseUrl()
@@ -102,7 +104,7 @@ class ModelConfigGateViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val result = llmRepository.complete(
-                    prompt = "Hello! Please reply 'OK' to confirm API connection.",
+                    prompt = promptRegistry.render("PING", emptyMap()),
                     taskType = "PING"
                 )
                 if (result.isSuccess) {

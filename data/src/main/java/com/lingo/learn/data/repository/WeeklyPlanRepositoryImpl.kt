@@ -8,6 +8,7 @@ import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.DayTaskSummary
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import org.akj.lingo.learn.domain.usecase.SessionBuilder
 import org.akj.lingo.learn.domain.usecase.StructuredLlmUseCase
 import org.json.JSONObject
@@ -19,6 +20,7 @@ import javax.inject.Singleton
 class WeeklyPlanRepositoryImpl @Inject constructor(
     private val llmRepository: LlmRepository,
     private val structuredLlmUseCase: StructuredLlmUseCase,
+    private val promptRegistry: AgentPromptRegistry,
     private val planDao: PlanDao,
     private val offlineContentStore: OfflineContentStore,
     private val configRepository: ConfigRepository
@@ -39,32 +41,17 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         // grade AND the child's measured level.
         val baseCoefficient = gradeBand.difficultyCoefficient
         val coefficient = (baseCoefficient + difficultyAdjustment).coerceIn(0.6f, 2.0f)
-        val prompt = """
-            You are the curriculum planner for Lingo English. 
-            Your task is to generate a personalized 7-day English learning plan for a student in $grade using default textbook.
-
-            --- Student Learning History ---
-            - Average Accuracy: $accuracy%
-            - Weak Word Categories: ${weakCategories.joinToString()}
-            - Completed Milestones: ${completedMilestones.joinToString()}
-
-            --- Constraints & Output Format ---
-            You must output a raw, valid JSON object ONLY. Do not write markdown blocks like ```json or any prefix text. The JSON must match the following structure:
-            {
-              "theme": "Unit theme name",
-              "difficulty_coefficient": $coefficient,
-              "days": [
-                {
-                  "day": 1,
-                  "focus": "Vocabulary / Grammar / Dialogue",
-                  "target_words": ["word1", "word2"],
-                  "reference_sentence": "Standard practice sentence of the day",
-                  "duration_minutes": ${gradeBand.defaultDurationMinutes},
-                  "rationale": "One sentence explaining WHY this day's content was arranged this way, referencing the student's specific learning history (e.g., 'Your listening accuracy was 72% last week, so today focuses on listening-intensive vocabulary')"
-                }
-              ]
-            }
-        """.trimIndent()
+        val prompt = promptRegistry.render(
+            "PLAN",
+            mapOf(
+                "grade" to grade,
+                "accuracy" to accuracy.toString(),
+                "weak_categories" to weakCategories.joinToString(),
+                "milestones" to completedMilestones.joinToString(),
+                "coefficient" to coefficient.toString(),
+                "duration" to gradeBand.defaultDurationMinutes.toString()
+            )
+        )
 
         // A 7-day plan with per-day rationale is a long JSON payload — the default
         // 500-token budget truncates it (observed: glm-5.2 spent it all on reasoning

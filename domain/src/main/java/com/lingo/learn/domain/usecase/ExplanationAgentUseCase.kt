@@ -12,7 +12,8 @@ import javax.inject.Inject
  * word and under which question types (listening vs spelling vs speaking).
  */
 class ExplanationAgentUseCase @Inject constructor(
-    private val llmRepository: LlmRepository
+    private val llmRepository: LlmRepository,
+    private val promptRegistry: AgentPromptRegistry
 ) {
     suspend operator fun invoke(word: String, errorType: String, grade: String): Result<String> {
         return invoke(word = word, errorType = errorType, grade = grade, errorHistoryJson = null)
@@ -39,19 +40,14 @@ class ExplanationAgentUseCase @Inject constructor(
                 and address that specific weak spot in your explanation.
             """.trimIndent()
         }
-        val prompt = """
-            You are Lingo, a friendly fox tutor. The child asks: "Why can't I remember the word "$word"?"
-            Explain the word "$word" to a $grade child in a way that makes it stick.
-            $historySection
-
-            --- Guidelines ---
-            1. Use encouraging, warm, and simple English.
-            2. Provide one clear example sentence suitable for children.
-            3. Highlight a quick mnemonic trick or spelling tip (e.g., "hear has an 'ear' inside it").
-            4. If the child's history shows a specific weak skill (e.g., listening vs spelling),
-               give one targeted tip for that skill.
-            5. Keep the explanation under 100 words. Do not be overly academic.
-        """.trimIndent()
+        val prompt = promptRegistry.render(
+            "EXPLAIN",
+            mapOf(
+                "word" to word,
+                "grade" to grade,
+                "history_section" to historySection
+            )
+        )
 
         return llmRepository.complete(prompt = prompt, taskType = "EXPLAIN", maxTokens = 150)
     }

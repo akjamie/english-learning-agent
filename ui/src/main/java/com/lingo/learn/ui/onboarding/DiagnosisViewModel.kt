@@ -17,6 +17,7 @@ import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.repository.AsrRepository
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.TtsRepository
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import org.akj.lingo.learn.domain.usecase.classifyError
 import org.akj.lingo.learn.domain.usecase.userFacingError
 import org.akj.lingo.learn.domain.usecase.StructuredLlmUseCase
@@ -32,6 +33,7 @@ import android.content.Context
 class DiagnosisViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val structuredLlmUseCase: StructuredLlmUseCase,
+    private val promptRegistry: AgentPromptRegistry,
     private val asrRepository: AsrRepository,
     private val voiceRecorder: VoiceRecorder,
     private val systemTtsHelper: SystemTtsHelper,
@@ -82,47 +84,16 @@ class DiagnosisViewModel @Inject constructor(
                 }
             }
             val band = GradeBand.fromGrade(grade)
-            val prompt = """
-                You are an English curriculum assessment expert for ${band.displayName} students.
-                Generate 10 grade-appropriate English diagnostic questions for a student in $grade.
-
-                Difficulty coefficient: ${band.difficultyCoefficient}
-                Vocabulary range: ${band.defaultVocabularyRange}
-                Max words per sentence: ${band.maxWordsPerSentence}
-
-                IMPORTANT: Generate HIGHLY RANDOMIZED and DIVERSE questions. Do not use the same questions every time.
-                Mix up the vocabulary, grammar points, and scenarios completely.
-
-                Use ONLY these question types (the app renders exactly these):
-                - LISTENING_EMOJI: "voicePrompt" is the word spoken, "options" are emoji choices, "correctAnswer" matches one option.
-                - VOCABULARY: simple word choice, "options" are plain word choices, "correctAnswer" matches one option.
-                - PHONICS: sound phonics choice, "options" are word choices, "correctAnswer" matches one option.
-                - SORT_WORDS: child taps words in order; provide "wordsForSort" (the full bank, 3-5 words) and "correctAnswer" as the words space-separated in the correct order (e.g. "I see a cat").
-                - SPEAK_ALOUD: pronunciation; "voicePrompt" is the sentence to read aloud, no options needed.
-                - CHOOSE_LETTER: letter completion; "wordWithBlank" shows the word with one letter replaced by "_" (e.g. "h_istory"), "options" are single letters, "correctAnswer" is the missing letter.
-                - LISTEN_AND_TYPE: "voicePrompt" is the dictated sentence, "correctAnswer" is the exact sentence, no options needed.
-
-                Return raw valid JSON array ONLY (no markdown, no backticks). Each object uses only the fields its type needs:
-                [
-                  {
-                    "id": 1,
-                    "type": "LISTENING_EMOJI",
-                    "title": "1. Listen and Choose",
-                    "description": "Select the word you hear:",
-                    "voicePrompt": "apple",
-                    "options": ["🍎 Apple", "🍌 Banana", "🐱 Cat"],
-                    "correctAnswer": "🍎 Apple"
-                  },
-                  {
-                    "id": 2,
-                    "type": "SORT_WORDS",
-                    "title": "2. Arrange the Words",
-                    "description": "Tap the words in the right order:",
-                    "wordsForSort": ["I", "a", "see", "cat"],
-                    "correctAnswer": "I see a cat"
-                  }
-                ]
-            """.trimIndent()
+            val prompt = promptRegistry.render(
+                "DIAGNOSIS",
+                mapOf(
+                    "band" to band.displayName,
+                    "grade" to grade,
+                    "coefficient" to band.difficultyCoefficient.toString(),
+                    "vocabulary_range" to band.defaultVocabularyRange,
+                    "max_words" to band.maxWordsPerSentence.toString()
+                )
+            )
 
             _loadError.value = null
             structuredLlmUseCase.completeJson(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)

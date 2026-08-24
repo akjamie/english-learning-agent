@@ -19,7 +19,8 @@ class RoleplayScenarioBankTest {
                     Result.failure(Exception("not configured"))
             },
             jsonValidator = AgentJsonValidator()
-        )
+        ),
+        AgentPromptRegistry()
     )
 
     @Test

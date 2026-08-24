@@ -10,6 +10,7 @@ import org.akj.lingo.learn.domain.repository.ErrorBookRepository
 import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import org.akj.lingo.learn.domain.usecase.CefrMapper
 import org.akj.lingo.learn.domain.usecase.LingoLetterFallback
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,7 +47,8 @@ class WeeklyReportViewModel @Inject constructor(
     private val weeklyPlanRepository: WeeklyPlanRepository,
     private val agentDecisionLogRepository: AgentDecisionLogRepository,
     private val errorBookRepository: ErrorBookRepository,
-    private val llmRepository: LlmRepository
+    private val llmRepository: LlmRepository,
+    private val promptRegistry: AgentPromptRegistry
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyReportUiState())
@@ -106,20 +108,15 @@ class WeeklyReportViewModel @Inject constructor(
         sessions: Int,
         topErrorWords: List<String>
     ): String? {
-        val prompt = """
-            You are Lingo, the fox tutor. Summarize this week's learning for a parent about their child.
-
-            --- This Week's Data ---
-            Weekly accuracy: ${(weeklyAccuracy * 100).toInt()}%
-            Sessions completed: $sessions
-            Weak areas: ${_uiState.value.weakCategories.joinToString()}
-            Words to review: ${topErrorWords.joinToString()}
-
-            --- Guidelines ---
-            1. 3-4 short sentences, warm and specific (reference actual numbers/words).
-            2. Lead with progress, then ONE gentle area to practice.
-            3. Max 60 words. Frame as growth, never as grades.
-        """.trimIndent()
+        val prompt = promptRegistry.render(
+            "LINGO_LETTER",
+            mapOf(
+                "accuracy_pct" to (weeklyAccuracy * 100).toInt().toString(),
+                "sessions" to sessions.toString(),
+                "weak_categories" to _uiState.value.weakCategories.joinToString(),
+                "top_error_words" to topErrorWords.joinToString()
+            )
+        )
         val result = llmRepository.complete(prompt, taskType = "LINGO_LETTER", maxTokens = 120)
         return result.getOrNull() ?: LingoLetterFallback.digest(weeklyAccuracy, sessions, topErrorWords)
     }
