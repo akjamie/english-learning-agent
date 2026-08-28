@@ -3,10 +3,9 @@ package org.akj.lingo.learn.ui.weeklyplan
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.model.Plan
-import org.akj.lingo.learn.domain.repository.ErrorBookRepository
-import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.ExplainDecisionUseCase
+import org.akj.lingo.learn.domain.usecase.StudentContextService
 import org.akj.lingo.learn.domain.usecase.classifyError
 import org.akj.lingo.learn.domain.usecase.userFacingError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,8 +44,7 @@ data class WeeklyPlanUiState(
 class WeeklyPlanViewModel @Inject constructor(
     private val weeklyPlanRepository: WeeklyPlanRepository,
     private val explainDecisionUseCase: ExplainDecisionUseCase,
-    private val learningRecordRepository: LearningRecordRepository,
-    private val errorBookRepository: ErrorBookRepository
+    private val studentContextService: StudentContextService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyPlanUiState())
@@ -82,29 +80,13 @@ class WeeklyPlanViewModel @Inject constructor(
     fun generateNewPlan(grade: String = "Grade 4", diagnosticLevel: String = "B") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isGenerating = true, generateError = null)
-            // Sprint 10.5: diagnostic level tunes difficulty within the grade band.
-            // A (beginner) lowers, C (advanced) raises the plan's difficulty coefficient.
-            val difficultyAdjustment = when (diagnosticLevel.uppercase()) {
-                "A" -> -0.2f
-                "C" -> 0.2f
-                else -> 0f
-            }
-            // Sprint 14: fetch real learning metrics instead of hardcoded values.
-            val accuracy = try { learningRecordRepository.getMonthlyAccuracy() } catch (_: Exception) { 75f }
-            val weakCategories = try { learningRecordRepository.getWeakCategories() } catch (_: Exception) { emptyList() }
-            val streakDays = try { learningRecordRepository.getStreakDays() } catch (_: Exception) { 0 }
-            val errorCount = try { errorBookRepository.getErrorCount() } catch (_: Exception) { 0 }
-            val completedMilestones = buildList {
-                if (streakDays > 0) add("${streakDays}-day streak")
-                if (errorCount > 0) add("$errorCount words in error book")
-                if (isEmpty()) add("First week starting")
-            }
+            val context = studentContextService.load(grade, diagnosticLevel)
             val result = weeklyPlanRepository.generateAndCacheWeeklyPlan(
                 grade = grade,
-                accuracy = (accuracy * 100).toInt(),
-                weakCategories = weakCategories.ifEmpty { listOf("Vocabulary", "Pronunciation") },
-                completedMilestones = completedMilestones,
-                difficultyAdjustment = difficultyAdjustment
+                accuracy = context.accuracyPercent,
+                weakCategories = context.weakCategories.ifEmpty { listOf("Vocabulary", "Pronunciation") },
+                completedMilestones = context.completedMilestones,
+                difficultyAdjustment = context.difficultyAdjustment
             )
             result.onSuccess { plan ->
                 val rationales = explainDecisionUseCase.allDayRationales(plan).toMap()

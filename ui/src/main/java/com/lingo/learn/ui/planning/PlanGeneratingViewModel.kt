@@ -2,9 +2,8 @@ package org.akj.lingo.learn.ui.planning
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import org.akj.lingo.learn.domain.repository.ErrorBookRepository
-import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
+import org.akj.lingo.learn.domain.usecase.StudentContextService
 import org.akj.lingo.learn.domain.usecase.classifyError
 import org.akj.lingo.learn.domain.usecase.userFacingError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,8 +24,7 @@ data class PlanGeneratingState(
 @HiltViewModel
 class PlanGeneratingViewModel @Inject constructor(
     private val weeklyPlanRepository: WeeklyPlanRepository,
-    private val learningRecordRepository: LearningRecordRepository,
-    private val errorBookRepository: ErrorBookRepository
+    private val studentContextService: StudentContextService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlanGeneratingState())
@@ -38,18 +36,7 @@ class PlanGeneratingViewModel @Inject constructor(
         _state.value = PlanGeneratingState(progressText = "Preparing your AI tutor...")
         viewModelScope.launch {
             try {
-                val accuracy = try { learningRecordRepository.getMonthlyAccuracy() } catch (_: Exception) { 75f }
-                val weakCategories = try { learningRecordRepository.getWeakCategories() } catch (_: Exception) { emptyList() }
-                val streakDays = try { learningRecordRepository.getStreakDays() } catch (_: Exception) { 0 }
-                val errorCount = try { errorBookRepository.getErrorCount() } catch (_: Exception) { 0 }
-                val completedMilestones = buildList {
-                    if (streakDays > 0) add("${streakDays}-day streak")
-                    if (errorCount > 0) add("$errorCount words in error book")
-                }
-
-                val difficultyAdjustment = when (diagnosticLevel.uppercase()) {
-                    "A" -> -0.2f; "C" -> 0.2f; else -> 0f
-                }
+                val context = studentContextService.load(grade, diagnosticLevel)
 
                 _state.value = _state.value.copy(progressText = "Analyzing your learning data...")
                 delay(600)
@@ -57,10 +44,10 @@ class PlanGeneratingViewModel @Inject constructor(
                 _state.value = _state.value.copy(progressText = "Generating your personalized weekly plan...")
                 val result = weeklyPlanRepository.generateAndCacheWeeklyPlan(
                     grade = grade,
-                    accuracy = (accuracy * 100).toInt(),
-                    weakCategories = weakCategories,
-                    completedMilestones = completedMilestones,
-                    difficultyAdjustment = difficultyAdjustment
+                    accuracy = context.accuracyPercent,
+                    weakCategories = context.weakCategories,
+                    completedMilestones = context.completedMilestones,
+                    difficultyAdjustment = context.difficultyAdjustment
                 )
                 delay(400)
 

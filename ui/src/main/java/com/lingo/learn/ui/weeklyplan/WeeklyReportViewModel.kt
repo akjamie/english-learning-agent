@@ -11,8 +11,8 @@ import org.akj.lingo.learn.domain.repository.LearningRecordRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.repository.WeeklyPlanRepository
 import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
-import org.akj.lingo.learn.domain.usecase.CefrMapper
 import org.akj.lingo.learn.domain.usecase.LingoLetterFallback
+import org.akj.lingo.learn.domain.usecase.StudentContextService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +48,8 @@ class WeeklyReportViewModel @Inject constructor(
     private val agentDecisionLogRepository: AgentDecisionLogRepository,
     private val errorBookRepository: ErrorBookRepository,
     private val llmRepository: LlmRepository,
-    private val promptRegistry: AgentPromptRegistry
+    private val promptRegistry: AgentPromptRegistry,
+    private val studentContextService: StudentContextService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeeklyReportUiState())
@@ -61,37 +62,34 @@ class WeeklyReportViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val weeklyRecords = learningRecordRepository.getWeeklyRecords()
-                val monthlyAccuracy = learningRecordRepository.getMonthlyAccuracy()
-                val streak = learningRecordRepository.getStreakDays()
-                val weakCats = learningRecordRepository.getWeakCategories()
                 val plan = weeklyPlanRepository.getLatestCachedPlan()
                 val adjustments = loadAdjustments()
                 val topErrors = loadTopErrorWords()
                 val timeByType = buildTimeDistribution(weeklyRecords)
 
+                val prefs = context.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
+                val grade = prefs.getString("grade", "Grade 4") ?: "Grade 4"
+                val diagnosticLevel = prefs.getString("diagnostic_level", "B") ?: "B"
+                val studentContext = studentContextService.load(grade, diagnosticLevel)
+
                 val weeklyAccuracy = if (weeklyRecords.isNotEmpty()) {
                     weeklyRecords.map { it.accuracy }.average().toFloat()
                 } else 0f
 
-                val prefs = context.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
-                val grade = prefs.getString("grade", "Grade 4") ?: "Grade 4"
-                val diagnosticLevel = prefs.getString("diagnostic_level", "B") ?: "B"
-                val cefrLabel = CefrMapper.badge(CefrMapper.map(grade, diagnosticLevel))
-
                 _uiState.value = WeeklyReportUiState(
                     weeklyAccuracy = weeklyAccuracy,
-                    monthlyAccuracy = monthlyAccuracy,
-                    streakDays = streak,
+                    monthlyAccuracy = studentContext.accuracyFraction,
+                    streakDays = studentContext.streakDays,
                     totalSessions = weeklyRecords.size,
                     totalWordsLearned = (weeklyRecords.size * 3).coerceAtLeast(0),
-                    weakCategories = weakCats,
+                    weakCategories = studentContext.weakCategories,
                     themeName = plan?.theme ?: "No active plan",
                     agentAdjustments = adjustments,
                     topErrorWords = topErrors,
                     timeByTaskType = timeByType,
                     isLoading = false,
                     lingoLetter = loadLingoLetter(weeklyAccuracy, weeklyRecords.size, topErrors),
-                    cefrLabel = cefrLabel
+                    cefrLabel = studentContext.cefrLabel
                 )
             } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, loadError = "Couldn't load weekly report. Tap retry.")
