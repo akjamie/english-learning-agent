@@ -1,6 +1,8 @@
 package org.akj.lingo.learn.data.repository
 
+import org.akj.lingo.learn.data.local.dao.LlmTraceDao
 import org.akj.lingo.learn.data.local.dao.TokenUsageLogDao
+import org.akj.lingo.learn.data.local.entity.LlmTraceEntity
 import org.akj.lingo.learn.data.local.entity.TokenUsageLogEntity
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.data.remote.minimax.*
@@ -15,7 +17,8 @@ import javax.inject.Singleton
 class LlmRepositoryImpl @Inject constructor(
     private val service: MinimaxService,
     private val prefs: SecureConfigPrefs,
-    private val tokenUsageLogDao: TokenUsageLogDao
+    private val tokenUsageLogDao: TokenUsageLogDao,
+    private val llmTraceDao: LlmTraceDao
 ) : LlmRepository {
     override suspend fun complete(prompt: String, taskType: String, maxTokens: Int): Result<String> {
         return chat(listOf(ChatMessage(role = "user", content = prompt)), taskType, maxTokens)
@@ -49,44 +52,12 @@ class LlmRepositoryImpl @Inject constructor(
         val minimaxMessages = messages.map { MinimaxMessage(role = it.role, content = it.content) }
         val groupIdParam = groupId.takeIf { it.isNotBlank() }
 
-        val primaryResult = runCatching {
-            withTimeout(timeoutFor(taskType)) {
-                val request = MinimaxChatRequest(
-                    model = primaryModel,
-                    messages = minimaxMessages,
-                    maxTokens = maxTokens
-                )
-                val response = service.chatCompletion(url, apiKey, groupIdParam, request)
-                if (response.isSuccessful && response.body() != null) {
-                    val body = response.body()!!
-                    val content = tryParseResponse(body)
-                    if (content != null) {
-                        // Record usage - handle both OpenAI and Claude usage formats
-                        val usage = body.usage
-                        val totalTokens = usage?.totalTokens
-                            ?: (usage?.inputTokens ?: usage?.promptTokens ?: 0) +
-                                (usage?.outputTokens ?: usage?.completionTokens ?: 0)
-                        if (totalTokens > 0) {
-                            tokenUsageLogDao.insertLog(
-                                TokenUsageLogEntity(
-                                    timestamp = System.currentTimeMillis(),
-                                    taskType = taskType,
-                                    model = "primary",
-                                    inputTokens = usage?.inputTokens ?: usage?.promptTokens ?: 0,
-                                    outputTokens = usage?.outputTokens ?: usage?.completionTokens ?: 0,
-                                    totalTokens = totalTokens
-                                )
-                            )
-                        }
-                        return@withTimeout content
-                    }
-                }
-                throw Exception("Primary model request failed: ${response.code()}")
-            }
-        }
+        val primaryResult = attemptModel(
+            url, apiKey, groupIdParam, primaryModel, "primary", minimaxMessages, maxTokens, taskType
+        )
 
         if (primaryResult.isSuccess) {
-            return Result.success(primaryResult.getOrThrow())
+            return Result.success(primaryResult.getOrThrow().content)
         }
 
         // For PING/connection-test requests, don't attempt fallback.
@@ -98,43 +69,12 @@ class LlmRepositoryImpl @Inject constructor(
             return Result.failure(Exception(primaryError))
         }
         val fallbackModel = prefs.getFallbackModel()
-        val fallbackResult = runCatching {
-            withTimeout(timeoutFor(taskType)) {
-                val request = MinimaxChatRequest(
-                    model = fallbackModel,
-                    messages = minimaxMessages,
-                    maxTokens = maxTokens
-                )
-                val response = service.chatCompletion(url, apiKey, groupIdParam, request)
-                if (response.isSuccessful && response.body() != null) {
-                    val body = response.body()!!
-                    val content = tryParseResponse(body)
-                    if (content != null) {
-                        val usage = body.usage
-                        val totalTokens = usage?.totalTokens
-                            ?: (usage?.inputTokens ?: usage?.promptTokens ?: 0) +
-                                (usage?.outputTokens ?: usage?.completionTokens ?: 0)
-                        if (totalTokens > 0) {
-                            tokenUsageLogDao.insertLog(
-                                TokenUsageLogEntity(
-                                    timestamp = System.currentTimeMillis(),
-                                    taskType = taskType,
-                                    model = "fallback",
-                                    inputTokens = usage?.inputTokens ?: usage?.promptTokens ?: 0,
-                                    outputTokens = usage?.outputTokens ?: usage?.completionTokens ?: 0,
-                                    totalTokens = totalTokens
-                                )
-                            )
-                        }
-                        return@withTimeout content
-                    }
-                }
-                throw Exception("Fallback model request failed: ${response.code()}")
-            }
-        }
+        val fallbackResult = attemptModel(
+            url, apiKey, groupIdParam, fallbackModel, "fallback", minimaxMessages, maxTokens, taskType
+        )
 
         if (fallbackResult.isSuccess) {
-            return Result.success(fallbackResult.getOrThrow())
+            return Result.success(fallbackResult.getOrThrow().content)
         }
 
         // 4. Fallback model also failed. PLAN/DIAGNOSIS are the child's actual
@@ -147,6 +87,87 @@ class LlmRepositoryImpl @Inject constructor(
         } else {
             Result.success(getFallbackTemplate(taskType))
         }
+    }
+
+    /** Outcome of one model attempt (content + token counts for the trace). */
+    private data class ModelAttempt(
+        val content: String,
+        val inputTokens: Int,
+        val outputTokens: Int,
+        val totalTokens: Int
+    )
+
+    /**
+     * Runs one model call with the task timeout, records the aggregate token
+     * usage (existing behavior) and a per-call [LlmTraceEntity] for the Settings
+     * debug panel: latency, success, tokens, and a result fingerprint.
+     */
+    private suspend fun attemptModel(
+        url: String,
+        apiKey: String,
+        groupIdParam: String?,
+        model: String,
+        modelLabel: String,
+        minimaxMessages: List<MinimaxMessage>,
+        maxTokens: Int,
+        taskType: String
+    ): Result<ModelAttempt> {
+        val startedAt = System.currentTimeMillis()
+        val result = runCatching {
+            withTimeout(timeoutFor(taskType)) {
+                val request = MinimaxChatRequest(
+                    model = model,
+                    messages = minimaxMessages,
+                    maxTokens = maxTokens
+                )
+                val response = service.chatCompletion(url, apiKey, groupIdParam, request)
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+                    val content = tryParseResponse(body)
+                    if (content != null) {
+                        // Record usage - handle both OpenAI and Claude usage formats
+                        val usage = body.usage
+                        val inputTokens = usage?.inputTokens ?: usage?.promptTokens ?: 0
+                        val outputTokens = usage?.outputTokens ?: usage?.completionTokens ?: 0
+                        val totalTokens = usage?.totalTokens ?: (inputTokens + outputTokens)
+                        return@withTimeout ModelAttempt(content, inputTokens, outputTokens, totalTokens)
+                    }
+                }
+                throw Exception("${modelLabel.replaceFirstChar { it.uppercase() }} model request failed: ${response.code()}")
+            }
+        }
+
+        val durationMs = System.currentTimeMillis() - startedAt
+        val attempt = result.getOrNull()
+
+        if (attempt != null && attempt.totalTokens > 0) {
+            tokenUsageLogDao.insertLog(
+                TokenUsageLogEntity(
+                    timestamp = startedAt,
+                    taskType = taskType,
+                    model = modelLabel,
+                    inputTokens = attempt.inputTokens,
+                    outputTokens = attempt.outputTokens,
+                    totalTokens = attempt.totalTokens
+                )
+            )
+        }
+
+        llmTraceDao.insertTrace(
+            LlmTraceEntity(
+                timestamp = startedAt,
+                taskType = taskType,
+                model = modelLabel,
+                success = result.isSuccess,
+                durationMs = durationMs,
+                inputTokens = attempt?.inputTokens ?: 0,
+                outputTokens = attempt?.outputTokens ?: 0,
+                totalTokens = attempt?.totalTokens ?: 0,
+                detail = if (result.isSuccess) attempt!!.content.hashCode().toString()
+                else (result.exceptionOrNull()?.message ?: "").take(200)
+            )
+        )
+        return result
     }
 
     /** Task types whose output is the child's curriculum; must never degrade to canned content. */

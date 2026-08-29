@@ -16,9 +16,10 @@ import org.akj.lingo.learn.data.local.entity.*
         TtsCacheEntity::class,
         AgentDecisionLogEntity::class,
         GamificationStateEntity::class,
-        ConversationHistoryEntity::class
+        ConversationHistoryEntity::class,
+        LlmTraceEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -31,4 +32,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun agentDecisionLogDao(): AgentDecisionLogDao
     abstract fun gamificationStateDao(): GamificationStateDao
     abstract fun conversationHistoryDao(): ConversationHistoryDao
+    abstract fun llmTraceDao(): LlmTraceDao
 }

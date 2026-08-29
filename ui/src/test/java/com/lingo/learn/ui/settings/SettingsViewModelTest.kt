@@ -1,13 +1,35 @@
 package org.akj.lingo.learn.ui.settings
 
 import org.akj.lingo.learn.domain.model.ChatMessage
+import org.akj.lingo.learn.domain.model.LlmTrace
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.repository.LlmTraceRepository
 import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
+
+    @BeforeEach
+    fun setUpMainDispatcher() {
+        // SettingsViewModel launches loadLlmTraces() in init via viewModelScope,
+        // which dispatches to Dispatchers.Main — provide a test dispatcher.
+        Dispatchers.setMain(StandardTestDispatcher())
+    }
+
+    @AfterEach
+    fun tearDownMainDispatcher() {
+        Dispatchers.resetMain()
+    }
 
     private class FakeConfigRepository : ConfigRepository {
         private var _baseUrl = "https://ark.cn-beijing.volces.com/api/plan/v3"
@@ -85,11 +107,18 @@ class SettingsViewModelTest {
         override suspend fun chat(messages: List<ChatMessage>, taskType: String, maxTokens: Int): Result<String> = result
     }
 
+    private class FakeLlmTraceRepository(
+        private val traces: List<LlmTrace> = emptyList()
+    ) : LlmTraceRepository {
+        override suspend fun getRecentTraces(limit: Int): List<LlmTrace> = traces
+    }
+
     private fun createViewModel(
         config: FakeConfigRepository = FakeConfigRepository(),
-        llm: FakeLlmRepository = FakeLlmRepository()
+        llm: FakeLlmRepository = FakeLlmRepository(),
+        traces: List<LlmTrace> = emptyList()
     ): Pair<SettingsViewModel, FakeConfigRepository> {
-        val vm = SettingsViewModel(config, llm, AgentPromptRegistry())
+        val vm = SettingsViewModel(config, llm, AgentPromptRegistry(), FakeLlmTraceRepository(traces))
         return Pair(vm, config)
     }
 

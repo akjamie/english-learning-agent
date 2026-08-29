@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -542,6 +543,70 @@ fun SettingsScreen(
                     )
                 ) {
                     Text("💾 Save Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Sprint 21: LLM call trace debug panel
+            if (uiState.tracesLoaded) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F8FF)),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🛰️ LLM Call Traces", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                            TextButton(onClick = { viewModel.loadLlmTraces() }) {
+                                Text("Refresh", fontSize = 12.sp, color = Color(0xFF5C6FF2))
+                            }
+                        }
+                        if (uiState.llmTraces.isEmpty()) {
+                            Text(
+                                text = "No LLM calls recorded yet. They appear here as the app talks to the model.",
+                                fontSize = 13.sp,
+                                color = Color(0xFF7F8C8D)
+                            )
+                        } else {
+                            uiState.llmTraces.forEach { trace ->
+                                val isSuccess = trace.success
+                                val statusColor = if (isSuccess) Color(0xFF2ECC71) else Color(0xFFFF7052)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "${trace.taskType} · ${trace.model}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF2C3E50),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "${trace.durationMs}ms · ${trace.totalTokens}tokens",
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF7F8C8D)
+                                        )
+                                    }
+                                    Text(
+                                        text = if (isSuccess) "✓" else "✗",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = statusColor
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

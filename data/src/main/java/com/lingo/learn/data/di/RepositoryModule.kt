@@ -85,4 +85,10 @@ abstract class RepositoryModule {
     abstract fun bindWidgetContentRepository(
         impl: WidgetContentRepositoryImpl
     ): WidgetContentRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLlmTraceRepository(
+        impl: LlmTraceRepositoryImpl
+    ): LlmTraceRepository
 }

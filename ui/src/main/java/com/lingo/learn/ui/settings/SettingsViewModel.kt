@@ -3,8 +3,10 @@ package org.akj.lingo.learn.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import org.akj.lingo.learn.domain.provider.ProviderEndpoints
+import org.akj.lingo.learn.domain.model.LlmTrace
 import org.akj.lingo.learn.domain.repository.ConfigRepository
 import org.akj.lingo.learn.domain.repository.LlmRepository
+import org.akj.lingo.learn.domain.repository.LlmTraceRepository
 import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +35,10 @@ data class SettingsUiState(
     val reminderEnabled: Boolean = true,
     val reminderHour: Int = 18,
     val shadowDelayMs: Int = 250,
-    val challengeModeEnabled: Boolean = false
+    val challengeModeEnabled: Boolean = false,
+    // Sprint 21: recent LLM call traces for the debug panel
+    val llmTraces: List<LlmTrace> = emptyList(),
+    val tracesLoaded: Boolean = false
 )
 
 /**
@@ -43,7 +48,8 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val configRepository: ConfigRepository,
     private val llmRepository: LlmRepository,
-    private val promptRegistry: AgentPromptRegistry
+    private val promptRegistry: AgentPromptRegistry,
+    private val llmTraceRepository: LlmTraceRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -51,6 +57,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadSettings()
+        loadLlmTraces()
     }
 
     fun loadSettings() {
@@ -149,6 +156,18 @@ class SettingsViewModel @Inject constructor(
 
     fun updateChallengeModeEnabled(value: Boolean) {
         _uiState.update { it.copy(challengeModeEnabled = value, isSaved = false) }
+    }
+
+    /** Sprint 21: loads the most recent LLM call traces for the debug panel. */
+    fun loadLlmTraces() {
+        viewModelScope.launch {
+            val traces = try {
+                llmTraceRepository.getRecentTraces(limit = 20)
+            } catch (_: Exception) {
+                emptyList()
+            }
+            _uiState.update { it.copy(llmTraces = traces, tracesLoaded = true) }
+        }
     }
 
     fun testApiConnection() {

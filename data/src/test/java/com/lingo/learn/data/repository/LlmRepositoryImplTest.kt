@@ -1,5 +1,6 @@
 package org.akj.lingo.learn.data.repository
 
+import org.akj.lingo.learn.data.local.dao.LlmTraceDao
 import org.akj.lingo.learn.data.local.dao.TokenUsageLogDao
 import org.akj.lingo.learn.data.prefs.SecureConfigPrefs
 import org.akj.lingo.learn.data.remote.minimax.*
@@ -22,6 +23,7 @@ class LlmRepositoryImplTest {
     private lateinit var service: MinimaxService
     private lateinit var prefs: SecureConfigPrefs
     private lateinit var tokenUsageLogDao: TokenUsageLogDao
+    private lateinit var llmTraceDao: LlmTraceDao
     private lateinit var repository: LlmRepositoryImpl
 
     private val baseUrl = "https://ark.cn-beijing.volces.com"
@@ -37,7 +39,8 @@ class LlmRepositoryImplTest {
         service = Mockito.mock(MinimaxService::class.java)
         prefs = Mockito.mock(SecureConfigPrefs::class.java)
         tokenUsageLogDao = Mockito.mock(TokenUsageLogDao::class.java)
-        repository = LlmRepositoryImpl(service, prefs, tokenUsageLogDao)
+        llmTraceDao = Mockito.mock(LlmTraceDao::class.java)
+        repository = LlmRepositoryImpl(service, prefs, tokenUsageLogDao, llmTraceDao)
 
         whenever(prefs.getBaseUrl()).thenReturn(baseUrl)
         whenever(prefs.getAuthToken()).thenReturn(authToken)
@@ -48,6 +51,7 @@ class LlmRepositoryImplTest {
         runBlocking {
             whenever(tokenUsageLogDao.getMonthlyTotalTokens(any())).thenReturn(0)
             whenever(tokenUsageLogDao.insertLog(any())).thenReturn(Unit)
+            whenever(llmTraceDao.insertTrace(any())).thenReturn(Unit)
         }
     }
 

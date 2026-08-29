@@ -81,12 +81,34 @@ object DatabaseModule {
             }
         }
 
+        // Sprint 21: per-call LLM trace table for the Settings debug panel.
+        // A fresh table needs its own migration so existing installs don't fall
+        // through to the destructive fallback and lose the child's data.
+        val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `llm_trace` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `taskType` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `success` INTEGER NOT NULL,
+                        `durationMs` INTEGER NOT NULL,
+                        `inputTokens` INTEGER NOT NULL,
+                        `outputTokens` INTEGER NOT NULL,
+                        `totalTokens` INTEGER NOT NULL,
+                        `detail` TEXT NOT NULL
+                    )
+                """)
+            }
+        }
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "english_learning_agent_db"
         )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7)
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -114,4 +136,7 @@ object DatabaseModule {
 
     @Provides
     fun provideConversationHistoryDao(db: AppDatabase): ConversationHistoryDao = db.conversationHistoryDao()
+
+    @Provides
+    fun provideLlmTraceDao(db: AppDatabase): LlmTraceDao = db.llmTraceDao()
 }
