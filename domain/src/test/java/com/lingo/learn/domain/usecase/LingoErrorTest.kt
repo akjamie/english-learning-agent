@@ -36,6 +36,13 @@ class LingoErrorTest {
     }
 
     @Test
+    fun `rate limit errors map to RATE_LIMIT`() {
+        assertEquals(LingoErrorType.RATE_LIMIT, classifyError(Exception("HTTP 429 Too Many Requests")))
+        assertEquals(LingoErrorType.RATE_LIMIT, classifyError(Exception("Primary model request failed: 429")))
+        assertEquals(LingoErrorType.RATE_LIMIT, classifyError(Exception("Rate limit exceeded")))
+    }
+
+    @Test
     fun `null and unknown map to UNKNOWN`() {
         assertEquals(LingoErrorType.UNKNOWN, classifyError(null))
         assertEquals(LingoErrorType.UNKNOWN, classifyError(Exception("random failure")))
@@ -46,6 +53,7 @@ class LingoErrorTest {
         assertTrue(userFacingError(LingoErrorType.NETWORK).contains("Network"))
         assertTrue(userFacingError(LingoErrorType.CONFIG).contains("Settings"))
         assertTrue(userFacingError(LingoErrorType.AUTH).contains("API key"))
+        assertTrue(userFacingError(LingoErrorType.RATE_LIMIT).contains("Too many requests"))
         assertTrue(userFacingError(LingoErrorType.TIMEOUT).contains("timed out"))
         assertTrue(userFacingError(LingoErrorType.UNKNOWN).isNotBlank())
     }
