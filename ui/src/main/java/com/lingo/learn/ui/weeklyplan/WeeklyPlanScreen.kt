@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import org.akj.lingo.learn.ui.R
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +63,7 @@ fun WeeklyPlanScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("📅", fontSize = 22.sp)
                     Spacer(Modifier.width(8.dp))
-                    Text("Weekly Plan", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                    Text(stringResource(R.string.weekly_plan_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
                 }
             },
             navigationIcon = {
@@ -71,7 +73,7 @@ fun WeeklyPlanScreen(
             },
             actions = {
                 TextButton(onClick = onViewReport) {
-                    Text("📊 Report", fontWeight = FontWeight.Bold, color = Color(0xFF5C6FF2))
+                    Text(stringResource(R.string.view_report), fontWeight = FontWeight.Bold, color = Color(0xFF5C6FF2))
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFFFFDF5))

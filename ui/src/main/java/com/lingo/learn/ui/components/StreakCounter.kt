@@ -15,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.res.stringResource
+import org.akj.lingo.learn.ui.R
+
 @Composable
 fun StreakCounter(
     streakDays: Int,
@@ -54,7 +57,7 @@ fun StreakCounter(
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-            text = "$streakDays Days",
+            text = stringResource(R.string.streak_days, streakDays),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = contentColor

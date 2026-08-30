@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import org.akj.lingo.learn.ui.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.akj.lingo.learn.domain.model.ErrorBookEntry
 import kotlin.math.roundToInt
@@ -60,7 +62,7 @@ fun ErrorBookScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("📝", fontSize = 22.sp)
                     Spacer(Modifier.width(8.dp))
-                    Text("Error Book", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                    Text(stringResource(R.string.error_book_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
                 }
             },
             navigationIcon = {

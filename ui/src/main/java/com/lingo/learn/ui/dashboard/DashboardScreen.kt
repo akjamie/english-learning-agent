@@ -307,24 +307,11 @@ fun DashboardScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Text(
-                    text = "⚠️ Offline mode — AI features need a model configured in Settings. Cached plan & practice still work.",
+                    text = stringResource(R.string.offline_mode_banner),
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     fontSize = 12.sp,
                     color = Color(0xFFE67E22),
                     lineHeight = 16.sp
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                color = Color(0xFFFFF3E0),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = "📶 Offline Mode",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFE67E22),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }
         }
@@ -340,7 +327,7 @@ fun DashboardScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Text(
-                    text = "🔥 Challenge Mode Unlocked!",
+                    text = stringResource(R.string.challenge_unlocked_banner),
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,

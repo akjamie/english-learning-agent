@@ -1,4 +1,4 @@
-﻿package org.akj.lingo.learn
+package org.akj.lingo.learn
 
 import android.content.Context
 import android.content.res.Configuration
@@ -33,6 +33,8 @@ import org.akj.lingo.learn.ui.weeklyplan.WeeklyReportScreen
 import org.akj.lingo.learn.ui.reportcard.ReportCardScreen
 import org.akj.lingo.learn.ui.modelconfiggate.ModelConfigGateScreen
 import org.akj.lingo.learn.ui.planning.PlanGeneratingScreen
+import androidx.compose.ui.res.stringResource
+import org.akj.lingo.learn.ui.R
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 import javax.inject.Inject
@@ -47,7 +49,7 @@ class MainActivity : ComponentActivity() {
         val context = try {
             val langPrefs = base.getSharedPreferences("lingo_lang_prefs", Context.MODE_PRIVATE)
             val lang = langPrefs.getString("app_language", "en") ?: "en"
-            val locale = when (lang) { "zh" -> Locale.CHINESE else -> Locale.ENGLISH }
+            val locale = when (lang) { "zh" -> Locale.SIMPLIFIED_CHINESE else -> Locale.ENGLISH }
             val config = Configuration(base.resources.configuration)
             config.setLocale(locale)
             base.createConfigurationContext(config)
@@ -216,7 +218,12 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     val tabs = listOf(MainTab.HOME, MainTab.PLAN, MainTab.ERROR_BOOK, MainTab.SETTINGS)
                                     val icons = listOf("🏠", "📅", "📖", "⚙️")
-                                    val labels = listOf("Home", "Plan", "Error Book", "Settings")
+                                    val labels = listOf(
+                                        stringResource(R.string.tab_home),
+                                        stringResource(R.string.tab_plan),
+                                        stringResource(R.string.tab_error_book),
+                                        stringResource(R.string.tab_settings)
+                                    )
                                     
                                     tabs.forEachIndexed { index, tab ->
                                         NavigationBarItem(

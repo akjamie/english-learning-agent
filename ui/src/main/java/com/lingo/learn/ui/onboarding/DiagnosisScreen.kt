@@ -722,7 +722,9 @@ fun DiagnosisScreen(
                     )
                 ) {
                     Text(
-                        text = if (answerState == null) "Check Answer 🚀" else if (currentQuestionIndex < questions.size - 1) "Next Question ➡️" else "Finish Evaluation 🚀",
+                        text = if (answerState == null) stringResource(R.string.check_answer)
+                        else if (currentQuestionIndex < questions.size - 1) stringResource(R.string.next_question) + " ➡️"
+                        else stringResource(R.string.finish_evaluation),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (answerState == null) Color(0xFF2C3E50) else Color.White

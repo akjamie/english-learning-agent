@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import org.akj.lingo.learn.ui.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,7 +48,7 @@ fun SettingsScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = "⚙️ Model & API Settings",
+                    text = stringResource(R.string.settings_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2C3E50)
@@ -200,7 +202,7 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        text = "🌐 App Language",
+                        text = "🌐 " + stringResource(R.string.app_language_label),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF5C6FF2)
@@ -223,7 +225,7 @@ fun SettingsScreen(
                         }
                     }
                     Text(
-                        text = "Restart required to apply language change",
+                        text = stringResource(R.string.language_restart_notice),
                         fontSize = 12.sp,
                         color = Color(0xFF7F8C8D)
                     )
@@ -242,7 +244,7 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        text = "🔔 Daily Reminder",
+                        text = "🔔 " + stringResource(R.string.daily_reminder_label),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF5C6FF2)
@@ -252,13 +254,13 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Remind me to practice daily", fontSize = 14.sp, color = Color(0xFF2C3E50))
+                        Text(stringResource(R.string.daily_reminder_label), fontSize = 14.sp, color = Color(0xFF2C3E50))
                         Switch(
                             checked = uiState.reminderEnabled,
                             onCheckedChange = { viewModel.updateReminderEnabled(it) }
                         )
                     }
-                    Text("Reminder time: ${String.format("%02d:00", uiState.reminderHour)}", fontSize = 13.sp, color = Color(0xFF7F8C8D))
+                    Text(stringResource(R.string.reminder_time_label, uiState.reminderHour), fontSize = 13.sp, color = Color(0xFF7F8C8D))
                     Slider(
                         value = uiState.reminderHour.toFloat(),
                         onValueChange = { viewModel.updateReminderHour(it.toInt()) },
@@ -503,7 +505,7 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Settings Saved Successfully! ✅",
+                        text = stringResource(R.string.settings_saved_alert),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2ECC71)
@@ -527,7 +529,7 @@ fun SettingsScreen(
                     if (uiState.isTestingConnection) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Text("🧪 Test Connection", fontWeight = FontWeight.Bold)
+                        Text("🧪 " + stringResource(R.string.test_connection), fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -542,7 +544,7 @@ fun SettingsScreen(
                         contentColor = Color(0xFF2C3E50)
                     )
                 ) {
-                    Text("💾 Save Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("💾 " + stringResource(R.string.save_settings_button), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
 
@@ -562,9 +564,9 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("🛰️ LLM Call Traces", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                            Text(stringResource(R.string.recent_traces_title), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
                             TextButton(onClick = { viewModel.loadLlmTraces() }) {
-                                Text("Refresh", fontSize = 12.sp, color = Color(0xFF5C6FF2))
+                                Text(stringResource(R.string.refresh_traces_btn), fontSize = 12.sp, color = Color(0xFF5C6FF2))
                             }
                         }
                         if (uiState.llmTraces.isEmpty()) {

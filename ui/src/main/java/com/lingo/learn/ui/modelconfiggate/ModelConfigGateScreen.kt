@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.res.stringResource
+import org.akj.lingo.learn.ui.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,14 +43,14 @@ fun ModelConfigGateScreen(
         Text("🧠", fontSize = 56.sp)
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "Configure Lingo's AI Brain",
+            text = stringResource(R.string.config_gate_title),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2C3E50)
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Set up your API connection to unlock Lingo's full AI features.",
+            text = stringResource(R.string.config_gate_desc),
             fontSize = 14.sp,
             color = Color(0xFF7F8C8D),
             lineHeight = 20.sp,
@@ -113,7 +115,7 @@ fun ModelConfigGateScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text("🔌 Test Connection", fontWeight = FontWeight.Bold)
+                    Text("🔌 " + stringResource(R.string.test_connection), fontWeight = FontWeight.Bold)
                 }
 
                 if (state.testResult != null) {
@@ -280,7 +282,7 @@ fun ModelConfigGateScreen(
                 disabledContainerColor = Color(0xFFB0BEC5)
             )
         ) {
-            Text("✅ Continue", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("✅ " + stringResource(R.string.save_and_continue), fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.height(32.dp))
     }

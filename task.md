@@ -461,7 +461,24 @@
 ### Phase D: 质量
 - [x] **[Unit Test & Build]** 为 `AgentJsonValidator`（schema 校验 + 修复循环上限）、`StudentContextService`（0-1 vs 0-100 归一化）、`ContentGuard`、`LlmRepositoryStream`、`DiagnosisViewModel` 补充单元测试；`./gradlew test assembleDebug` 全绿
 - [x] **[Docs Sync]** 更新 `readme.md`（Agent System 节补充 harness 演进）与 `agents.md`
-- [x] **[MVP Delivery]** 交付 v4.6.0 APK（由 antigravity 验收与发布）
+---
+
+## 🔵 Sprint 22: 中文界面本地化与双语架构 (v4.7.0) - [x] 已交付
+
+> **主题依据**: 全面支持中文界面本地化，同时严格保持核心英语学习内容（单词、句型、拼读、对话、题目选项与发音示范）的原汁原味沉浸式英语呈现。
+> **预计总工作量**: ~3 天
+
+### Phase A: 资源体系与语言切换 (P0)
+- [x] **[Impl S22-001 🔴 P0]** **多语言字符串资源体系规范化** — 扩充 `values/strings.xml`、`values-zh-rCN/strings.xml` 与 `values-zh/strings.xml`，覆盖导航、设置、模型配置引导、周计划、错题本、家长周报、入学诊断和游戏化打卡等所有 UI 字符串。
+- [x] **[Impl S22-002 🔴 P0]** **系统 Locale 动态切换增强** — `MainActivity.attachBaseContext` 升级支持 `Locale.SIMPLIFIED_CHINESE`，确保各类国内与国际 Android 厂商设备准确解析中文资源。
+
+### Phase B: 页面双语架构改造 (P1)
+- [x] **[Impl S22-003 🟡 P1]** **底部导航与控制栏本地化** — 首页、周计划、错题本、设置标签通过 `stringResource` 响应语言切换。
+- [x] **[Impl S22-004 🟡 P1]** **家长管理与配置区本地化** — 设置（API 配置、模型选择、每日提醒、影子跟读延迟、挑战轨道、LLM 调用追踪日志）和模型配置引导页全面本地化。
+- [x] **[Impl S22-005 🟡 P1]** **学习与诊断引导文案本地化** — "检查答案"、"下一题"、"完成诊断"、"按住说话"等交互指令转为中文，学习内容本身（单词卡、练习句、考题选项）严格保持纯英文。
+
+### Phase C: 质量与构建
+- [x] **[Unit Test & Build]** 验证全部单元测试 `./gradlew test` 与双架构 APK 构建 `./gradlew assembleDebug assembleRelease` 全绿通过。
 
 ---
 

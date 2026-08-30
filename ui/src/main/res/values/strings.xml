@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App Navigation -->
+    <string name="app_name">Lingo English</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_plan">Plan</string>
+    <string name="tab_error_book">Error Book</string>
+    <string name="tab_settings">Settings</string>
+
     <!-- Welcome Screen -->
     <string name="welcome_title">Lingo English</string>
     <string name="welcome_subtitle">Your Interactive English Partner\n15 minutes daily to help you speak with confidence</string>
@@ -25,6 +32,16 @@
     <string name="expand_text">Expand ▼</string>
     <string name="hide_text">Hide ▲</string>
 
+    <!-- Model Config Gate -->
+    <string name="config_gate_title">Configure Lingo\'s AI Brain</string>
+    <string name="config_gate_desc">Set up your API connection to unlock Lingo\'s full AI capabilities.</string>
+    <string name="quick_presets">Quick Presets</string>
+    <string name="preset_minimax">MiniMax Official</string>
+    <string name="preset_ark">Volcengine Ark</string>
+    <string name="test_connection">Test Connection</string>
+    <string name="save_and_continue">Save &amp; Continue 🚀</string>
+    <string name="skip_offline_mode">Skip (Use Offline Mode) ➡️</string>
+
     <!-- Diagnosis Screen -->
     <string name="verify">Verify</string>
     <string name="next_question">Next Question</string>
@@ -34,6 +51,11 @@
     <string name="incorrect_prompt">Don\'t worry, let\'s nail the next one! 💪</string>
     <string name="speak_aloud_prompt">Long press the mic and speak out loud!</string>
     <string name="default_question_prompt">Look closely and pick the correct option.</string>
+    <string name="preparing_quiz_title">🦊 Lingo is preparing your quiz...</string>
+    <string name="speech_score_format">Speech Score: %d / 100! 🎉</string>
+    <string name="finish_evaluation">Finish Evaluation 🚀</string>
+    <string name="check_answer">Check Answer 🚀</string>
+    <string name="speak_longer_prompt">Speak a bit longer and try again!</string>
 
     <!-- Dashboard Screen -->
     <string name="welcome_back">Welcome back! 👋</string>
@@ -44,6 +66,14 @@
     <string name="target_weak_areas">Target weak areas</string>
     <string name="completed_review">Completed, review again</string>
     <string name="start_study">Start Study</string>
+    <string name="streak_days">%d Days</string>
+    <string name="streak_label">Streak</string>
+    <string name="makeup_cards_count">Makeup Cards: %d</string>
+    <string name="challenge_unlocked_banner">🔥 Challenge Mode Unlocked!</string>
+    <string name="offline_mode_banner">⚠️ Offline mode — AI features need a model configured in Settings</string>
+    <string name="growth_report_btn">📄 Growth Report</string>
+    <string name="meet_lingo_btn">🦊 Meet Lingo</string>
+    <string name="roleplay_partner_btn">🎭 Roleplay Partner</string>
 
     <!-- Learning: Immersive Audio Screen -->
     <string name="immersion_title">Immersion</string>
@@ -58,12 +88,16 @@
     <string name="next_arrow">Next</string>
     <string name="hold_to_speak">Hold to speak</string>
     <string name="recording_now">Recording... Speak now!</string>
+    <string name="shadow_mode_pill">🦊 Shadow Mode</string>
+    <string name="shadow_mode_hint">Listen and shadow the fox speaking!</string>
 
     <!-- Learning: Quiz Screen -->
     <string name="from_error_book">From Error Book</string>
     <string name="see_results">See Results</string>
     <string name="quiz_score_label">Quiz Score</string>
     <string name="pronunciation_label">Pronunciation</string>
+    <string name="get_hint_btn">💡 Hint</string>
+    <string name="skip_question_btn">Skip ⏭️</string>
 
     <!-- Learning: Task Complete Screen -->
     <string name="you_learned">You learned</string>
@@ -71,11 +105,15 @@
     <string name="share_with_parents">Share with parents</string>
     <string name="back_to_home">Back to Home</string>
     <string name="this_week">This Week</string>
+    <string name="daily_goals_achieved">Daily 3 Goals Achieved! 🏆</string>
 
     <!-- Error Book Screen -->
     <string name="error_book_title">Error Book</string>
     <string name="no_errors_title">No errors yet!</string>
     <string name="no_errors_desc">Great job! All words mastered.</string>
+    <string name="graduation_watch_title">🔵 Graduation Watch</string>
+    <string name="graduation_watch_desc">Almost there! Keep practicing to graduate these words.</string>
+    <string name="needs_practice_title">📖 Needs Practice</string>
     <string name="sort_priority">Priority</string>
     <string name="sort_recent">Recent</string>
     <string name="sort_most_errors">Most Errors</string>
@@ -95,6 +133,9 @@
     <string name="view_report">📊 Report</string>
     <string name="day_today">Today</string>
     <string name="day_start">Start</string>
+    <string name="day_review">Review</string>
+    <string name="plan_day_n">Day %d</string>
+    <string name="plan_why_title">💡 Why this arrangement?</string>
 
     <!-- Weekly Report Screen -->
     <string name="weekly_report_title">Weekly Report</string>
@@ -106,6 +147,37 @@
     <string name="grade_great">Great work! 👍</string>
     <string name="grade_keep_trying">Keep trying! 💪</string>
     <string name="grade_improve">Let\'s improve! 📈</string>
+    <string name="lingo_letter_title">💌 Lingo\'s Letter to Parents</string>
+    <string name="what_lingo_adjusted_title">🧠 What Lingo Adjusted This Week</string>
+
+    <!-- Report Card Screen -->
+    <string name="report_card_title">English Growth Report</string>
+    <string name="export_report_png">Save / Share Image</string>
+    <string name="words_mastered_title">Top Mastered Words</string>
+    <string name="words_reinforce_title">Words to Reinforce</string>
+    <string name="cefr_level_estimated">Estimated CEFR Level: %s</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">⚙️ Settings</string>
+    <string name="api_configuration">API Configuration</string>
+    <string name="base_url_label">Base URL</string>
+    <string name="auth_token_label">Auth Token (API Key)</string>
+    <string name="group_id_label">Group ID (Optional)</string>
+    <string name="primary_model_label">Primary Model</string>
+    <string name="fallback_model_label">Fallback Model</string>
+    <string name="token_budget_label">Monthly Token Limit</string>
+    <string name="app_language_label">App Language</string>
+    <string name="language_restart_notice">Restart required to apply language change</string>
+    <string name="daily_reminder_label">Daily Reminder</string>
+    <string name="reminder_time_label">Reminder Time: %02d:00</string>
+    <string name="shadow_delay_label">Shadowing Delay</string>
+    <string name="challenge_mode_label">Intermediate Challenge Track</string>
+    <string name="ai_growth_notes_title">AI Growth Notes</string>
+    <string name="rerun_onboarding_title">Change Grade / Re-run Onboarding</string>
+    <string name="save_settings_button">Save Settings</string>
+    <string name="settings_saved_alert">Settings saved successfully!</string>
+    <string name="recent_traces_title">🔍 Recent LLM Call Traces</string>
+    <string name="refresh_traces_btn">Refresh Traces</string>
 
     <!-- Error Book Detail -->
     <string name="error_detail_title">Error Detail</string>
