@@ -1,4 +1,4 @@
-package org.akj.lingo.learn
+﻿package org.akj.lingo.learn
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
@@ -7,6 +7,10 @@ import dagger.hilt.android.HiltAndroidApp
 class LingoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        DailyReminderWorker.schedule(this)
+        try {
+            DailyReminderWorker.schedule(this)
+        } catch (_: Exception) {
+            // WorkManager initialization safety guard
+        }
     }
 }

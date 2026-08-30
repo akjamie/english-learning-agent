@@ -1,4 +1,4 @@
-package org.akj.lingo.learn
+﻿package org.akj.lingo.learn
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
@@ -34,9 +34,13 @@ class LingoStreakWidget : GlanceAppWidget() {
          * `updateAll` on GlanceAppWidget, so we enumerate GlanceIds and update each.
          */
         suspend fun refreshAll(context: Context) {
-            GlanceAppWidgetManager(context)
-                .getGlanceIds(LingoStreakWidget::class.java)
-                .forEach { LingoStreakWidget().update(context, it) }
+            try {
+                GlanceAppWidgetManager(context)
+                    .getGlanceIds(LingoStreakWidget::class.java)
+                    .forEach { LingoStreakWidget().update(context, it) }
+            } catch (_: Exception) {
+                // Glance widget manager safety guard
+            }
         }
     }
 

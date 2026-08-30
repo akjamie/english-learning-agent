@@ -1,4 +1,4 @@
-package org.akj.lingo.learn.data.di
+﻿package org.akj.lingo.learn.data.di
 
 import android.content.Context
 import androidx.room.Room
@@ -81,9 +81,19 @@ object DatabaseModule {
             }
         }
 
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `user_profile`")
+                db.execSQL("DROP TABLE IF EXISTS `vocab_item`")
+                db.execSQL("DROP TABLE IF EXISTS `quiz_result`")
+                db.execSQL("DROP TABLE IF EXISTS `daily_streak`")
+                db.execSQL("DROP TABLE IF EXISTS `theme_unit`")
+            }
+        }
+
         // Sprint 21: per-call LLM trace table for the Settings debug panel.
-        // A fresh table needs its own migration so existing installs don't fall
-        // through to the destructive fallback and lose the child's data.
+        // A fresh table needs its own migration so existing installs don't hit
+        // the destructive fallback and lose the child's data.
         val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -108,7 +118,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "english_learning_agent_db"
         )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
         .fallbackToDestructiveMigration()
         .build()
     }

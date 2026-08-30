@@ -1,8 +1,9 @@
-package org.akj.lingo.learn.data.prefs
+﻿package org.akj.lingo.learn.data.prefs
 
 import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -14,17 +15,48 @@ class SecureConfigPrefs @Inject constructor(
     @ApplicationContext private val appContext: Context
 ) {
 
-    private val masterKey = MasterKey.Builder(appContext)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val prefs: SharedPreferences = initPrefs()
 
-    private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        appContext,
-        "secure_config_prefs",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private fun initPrefs(): SharedPreferences {
+        return try {
+            val masterKey = MasterKey.Builder(appContext)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            EncryptedSharedPreferences.create(
+                appContext,
+                "secure_config_prefs",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            try {
+                // Keystore corrupted or restored from backup without key -> clear and retry
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    appContext.deleteSharedPreferences("secure_config_prefs")
+                } else {
+                    appContext.getSharedPreferences("secure_config_prefs", Context.MODE_PRIVATE)
+                        .edit().clear().commit()
+                }
+
+                val masterKey = MasterKey.Builder(appContext)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+
+                EncryptedSharedPreferences.create(
+                    appContext,
+                    "secure_config_prefs",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (fallbackEx: Exception) {
+                // Final safety fallback to standard SharedPreferences if device keystore is broken
+                appContext.getSharedPreferences("lingo_secure_config_fallback_prefs", Context.MODE_PRIVATE)
+            }
+        }
+    }
 
     fun getBaseUrl(): String {
         val saved = prefs.getString(KEY_BASE_URL, "") ?: ""

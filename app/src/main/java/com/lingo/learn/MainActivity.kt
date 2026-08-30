@@ -1,4 +1,4 @@
-package org.akj.lingo.learn
+﻿package org.akj.lingo.learn
 
 import android.content.Context
 import android.content.res.Configuration
@@ -44,12 +44,17 @@ class MainActivity : ComponentActivity() {
     lateinit var prefs: SecureConfigPrefs
 
     override fun attachBaseContext(base: Context) {
-        val langPrefs = base.getSharedPreferences("lingo_lang_prefs", Context.MODE_PRIVATE)
-        val lang = langPrefs.getString("app_language", "en") ?: "en"
-        val locale = when (lang) { "zh" -> Locale.CHINESE else -> Locale.ENGLISH }
-        val config = Configuration(base.resources.configuration)
-        config.setLocale(locale)
-        super.attachBaseContext(base.createConfigurationContext(config))
+        val context = try {
+            val langPrefs = base.getSharedPreferences("lingo_lang_prefs", Context.MODE_PRIVATE)
+            val lang = langPrefs.getString("app_language", "en") ?: "en"
+            val locale = when (lang) { "zh" -> Locale.CHINESE else -> Locale.ENGLISH }
+            val config = Configuration(base.resources.configuration)
+            config.setLocale(locale)
+            base.createConfigurationContext(config)
+        } catch (_: Exception) {
+            base
+        }
+        super.attachBaseContext(context)
     }
 
     override fun onCreate(saved: Bundle?) {
@@ -63,7 +68,9 @@ class MainActivity : ComponentActivity() {
                     // Sprint 14: refresh the widget on app open so it picks up
                     // the latest pre-generated content from WidgetContentCache.
                     LaunchedEffect(Unit) {
-                        LingoStreakWidget.refreshAll(applicationContext)
+                        try {
+                            LingoStreakWidget.refreshAll(applicationContext)
+                        } catch (_: Exception) {}
                     }
 
                     val appPrefs = remember {
@@ -105,7 +112,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else if (!isOnboardingCompleted) {
-                        // Sprint 20: shared onboarding completion — persists the
+                        // Sprint 20: shared onboarding completion ? persists the
                         // grade/textbook/level used by both exit paths below.
                         val completeOnboarding: (String, String, String) -> Unit = { grade, textbook, level ->
                             currentGrade = grade
@@ -123,7 +130,7 @@ class MainActivity : ComponentActivity() {
                         OnboardingContainer(
                             onFinished = { grade, textbook, level ->
                                 // Sprint 20: "Let's Go!" does NOT auto-generate the
-                                // plan — the Dashboard shows the no-plan CTA card
+                                // plan ? the Dashboard shows the no-plan CTA card
                                 // instead, keeping plan generation user-initiated.
                                 completeOnboarding(grade, textbook, level)
                             },
