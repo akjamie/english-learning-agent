@@ -482,6 +482,25 @@
 
 ---
 
+## 🔵 Sprint 23: 家庭定制与系统化课程体系 (v4.8.0) - [x] 已交付
+
+> **主题依据**: 针对家庭自用场景定制，彻底消除对空泛 AI 生成内容的依赖，建立结构化、分阶段、高质量的离线课程库（首批 10 周 Grade 1 课程）与单词掌握度追踪模型。
+> **预计总工作量**: ~3 天
+
+### Phase A: 课程领域模型与存储架构 (P0)
+- [x] **[Impl S23-001 🔴 P0]** **结构化课程领域模型** — 建立 `CurriculumUnit`、`CurriculumVocabItem`、`SentenceStructure`、`CurriculumDialogueLine`、`CurriculumQuizItem` 与 `VocabMasteryState`（6 阶段掌握度状态机）。
+- [x] **[Impl S23-002 🔴 P0]** **Room 数据库版本迁移 (v7 → v8)** — 新增 `curriculum_unit` 与 `vocab_mastery` 数据表及索引，提供 `MIGRATION_7_8` 安全增量迁移。
+- [x] **[Impl S23-003 🔴 P0]** **首批 10 周 Grade 1 离线课程包** — `CurriculumAssetLoader` 内置 10 个精心编排的主题单元（家庭、颜色、动物、食物、身体、衣服、数字、天气、学校、家），每单元包含 8+ 核心词汇（含音标/例句）、3 个句型模板、6 轮狐狸对话及 5 道配套练习题。
+
+### Phase B: 数据仓储与 DI 接入 (P1)
+- [x] **[Impl S23-004 🟡 P1]** **CurriculumRepository 完整实现** — `CurriculumRepositoryImpl` 支持从本地 Assets 自动同步版本、按周/等级加载课程单元，并在查询时自动聚合单词掌握度状态与复习排程。
+- [x] **[Impl S23-005 🟡 P1]** **Hilt DI 接线与自动化测试** — 完成 `DatabaseModule` DAO 注入与 `RepositoryModule` 接口绑定；编写 `CurriculumAssetLoaderTest` (5 用例) 与 `CurriculumRepositoryImplTest` (4 用例)，覆盖课程数据完整性与掌握度流转。
+
+### Phase C: 质量与构建
+- [x] **[Unit Test & Build]** 运行全套单元测试 `./gradlew test` 全部通过。
+
+---
+
 ## V1.1 Deferred Enhancements (剩余)
 - **Enhancement 4/5 已并入 Sprint 14 交付**，无剩余延期项
 
