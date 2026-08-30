@@ -196,6 +196,6 @@ class AgentPromptRegistry @Inject constructor() {
     }
 
     companion object {
-        private val PLACEHOLDER_REGEX = Regex("\\{([a-z_]+)}")
+        private val PLACEHOLDER_REGEX = Regex("\\{([a-z_]+)\\}")
     }
 }
