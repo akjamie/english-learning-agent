@@ -26,6 +26,9 @@ object ProviderEndpoints {
     /**
      * Normalises a raw base URL, migrating the legacy Ark plan URL that was
      * missing the `/v3` gateway segment. Blank input falls back to the default.
+     *
+     * Also repairs a doubled-URL bug where the base URL was accidentally
+     * concatenated with itself (e.g. `…v3…v3`).
      */
     fun normalizeBaseUrl(raw: String?): String {
         val trimmed = raw?.trim().orEmpty()
@@ -33,6 +36,10 @@ object ProviderEndpoints {
         if (trimmed == LEGACY_BASE_URL || trimmed == "$LEGACY_BASE_URL/") {
             return DEFAULT_BASE_URL
         }
+        val doubledDefault = "$DEFAULT_BASE_URL$DEFAULT_BASE_URL"
+        val doubledLegacy = "$LEGACY_BASE_URL$LEGACY_BASE_URL"
+        if (trimmed == doubledDefault) return DEFAULT_BASE_URL
+        if (trimmed == doubledLegacy) return DEFAULT_BASE_URL
         return trimmed.trimEnd('/')
     }
 

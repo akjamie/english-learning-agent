@@ -69,4 +69,16 @@ class ProviderEndpointsTest {
             ProviderEndpoints.chatUrl("https://custom.example.com/api/v1/")
         )
     }
+
+    @Test
+    fun `doubled default base url is repaired to single copy`() {
+        val doubled = "${ProviderEndpoints.DEFAULT_BASE_URL}${ProviderEndpoints.DEFAULT_BASE_URL}"
+        assertEquals(ProviderEndpoints.DEFAULT_BASE_URL, ProviderEndpoints.normalizeBaseUrl(doubled))
+    }
+
+    @Test
+    fun `doubled legacy base url is repaired to default`() {
+        val doubled = "${ProviderEndpoints.LEGACY_BASE_URL}${ProviderEndpoints.LEGACY_BASE_URL}"
+        assertEquals(ProviderEndpoints.DEFAULT_BASE_URL, ProviderEndpoints.normalizeBaseUrl(doubled))
+    }
 }

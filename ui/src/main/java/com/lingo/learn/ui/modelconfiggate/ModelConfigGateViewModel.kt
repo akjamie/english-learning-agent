@@ -61,17 +61,17 @@ class ModelConfigGateViewModel @Inject constructor(
             // The setup page remains visible on every launch. Existing credentials
             // are prefilled and may be confirmed; changing either field requires a
             // fresh connection test before the user can continue.
-            isConfigured = savedBaseUrl.isNotBlank() && savedAuthToken.length >= 10
+            isConfigured = savedBaseUrl.isNotBlank() && savedAuthToken.isNotBlank()
         )
     )
     val state: StateFlow<ModelConfigGateState> = _state.asStateFlow()
 
     fun updateBaseUrl(value: String) {
-        _state.update { it.copy(baseUrl = value, testSuccess = null, testResult = null, isConfigured = false) }
+        _state.update { it.copy(baseUrl = value, testSuccess = null, testResult = null) }
     }
 
     fun updateAuthToken(value: String) {
-        _state.update { it.copy(authToken = value, testSuccess = null, testResult = null, isConfigured = false) }
+        _state.update { it.copy(authToken = value, testSuccess = null, testResult = null) }
     }
 
     fun updateTtsBaseUrl(value: String) {
