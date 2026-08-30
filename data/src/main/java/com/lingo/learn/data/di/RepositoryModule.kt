@@ -91,4 +91,10 @@ abstract class RepositoryModule {
     abstract fun bindLlmTraceRepository(
         impl: LlmTraceRepositoryImpl
     ): LlmTraceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCurriculumRepository(
+        impl: CurriculumRepositoryImpl
+    ): CurriculumRepository
 }

@@ -17,9 +17,11 @@ import org.akj.lingo.learn.data.local.entity.*
         AgentDecisionLogEntity::class,
         GamificationStateEntity::class,
         ConversationHistoryEntity::class,
-        LlmTraceEntity::class
+        LlmTraceEntity::class,
+        CurriculumUnitEntity::class,
+        VocabMasteryEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -33,4 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun gamificationStateDao(): GamificationStateDao
     abstract fun conversationHistoryDao(): ConversationHistoryDao
     abstract fun llmTraceDao(): LlmTraceDao
+    // Sprint 26: structured curriculum content
+    abstract fun curriculumDao(): CurriculumDao
+    abstract fun vocabMasteryDao(): VocabMasteryDao
 }

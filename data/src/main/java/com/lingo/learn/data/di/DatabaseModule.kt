@@ -1,4 +1,4 @@
-﻿package org.akj.lingo.learn.data.di
+package org.akj.lingo.learn.data.di
 
 import android.content.Context
 import androidx.room.Room
@@ -113,12 +113,61 @@ object DatabaseModule {
             }
         }
 
+        // Sprint 26: structured curriculum content tables.
+        val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `curriculum_unit` (
+                        `id` TEXT NOT NULL,
+                        `gradeBand` TEXT NOT NULL,
+                        `weekNumber` INTEGER NOT NULL,
+                        `theme` TEXT NOT NULL,
+                        `themeEmoji` TEXT NOT NULL,
+                        `vocabItemsJson` TEXT NOT NULL,
+                        `sentenceStructuresJson` TEXT NOT NULL,
+                        `dialogueLinesJson` TEXT NOT NULL,
+                        `quizItemsJson` TEXT NOT NULL,
+                        `contentVersion` TEXT NOT NULL,
+                        `isAvailableOffline` INTEGER NOT NULL DEFAULT 0,
+                        `roleplayScenarioId` TEXT,
+                        `lastSyncedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_curriculum_unit_gradeBand_weekNumber` " +
+                        "ON `curriculum_unit` (`gradeBand`, `weekNumber`)"
+                )
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `vocab_mastery` (
+                        `vocabItemId` TEXT NOT NULL,
+                        `unitId` TEXT NOT NULL,
+                        `gradeBand` TEXT NOT NULL,
+                        `word` TEXT NOT NULL,
+                        `masteryState` TEXT NOT NULL DEFAULT 'UNKNOWN',
+                        `consecutiveCorrect` INTEGER NOT NULL DEFAULT 0,
+                        `nextReviewTimestamp` INTEGER NOT NULL DEFAULT 0,
+                        `lastUpdated` INTEGER NOT NULL,
+                        PRIMARY KEY(`vocabItemId`)
+                    )
+                """)
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_vocab_mastery_unitId_gradeBand` " +
+                        "ON `vocab_mastery` (`unitId`, `gradeBand`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_vocab_mastery_nextReviewTimestamp` " +
+                        "ON `vocab_mastery` (`nextReviewTimestamp`)"
+                )
+            }
+        }
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "english_learning_agent_db"
         )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -149,4 +198,10 @@ object DatabaseModule {
 
     @Provides
     fun provideLlmTraceDao(db: AppDatabase): LlmTraceDao = db.llmTraceDao()
+
+    @Provides
+    fun provideCurriculumDao(db: AppDatabase): CurriculumDao = db.curriculumDao()
+
+    @Provides
+    fun provideVocabMasteryDao(db: AppDatabase): VocabMasteryDao = db.vocabMasteryDao()
 }
