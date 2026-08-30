@@ -441,27 +441,27 @@
 
 ---
 
-## 🔵 Sprint 21: AI Agent Harness 硬化与循环工程 (v4.6.0) - [ ] 规划中
+## 🔵 Sprint 21: AI Agent Harness 硬化与循环工程 (v4.6.0) - [x] 已交付
 
 > **主题依据**: v4.5.1-v4.5.4 已修复用户可见的 agent 行为缺陷；本 Sprint 转向 agent *基础设施* —— 结构化输出校验、共享学生上下文、LLM 可观测性与 validate-and-repair 循环，将"随机失败"变成"极少失败"。
 > **预计总工作量**: ~6 天
 
 ### Phase A: 结构化输出 + 修复循环 (P0 — 最高杠杆)
-- [ ] **[Impl S21-001 🔴 P0]** **LLM JSON Schema 校验与自动修复循环** — 在 `LlmRepositoryImpl` 增加结构化输出模式：PLAN / DIAGNOSIS / ROLEPLAY_SCENARIO 结果先过 `JSONObject` + 必需字段/类型校验；校验失败时携带解析错误重新调用 LLM 一次（validate-and-repair，上限 2 次），之后才向上抛错。将各 agent 散落的 try/catch + 模糊映射收敛到统一 `AgentJsonValidator` (`LlmRepositoryImpl.kt`, `WeeklyPlanRepositoryImpl.kt`, `DiagnosisViewModel.kt`, `RoleplayScenarioBank.kt`)
-- [ ] **[Impl S21-002 🔴 P0]** **prompt 注册表与版本化** — 将 6 处内联在业务代码里的 prompt（PLAN / DIAGNOSIS / EXPLAIN / ENCOURAGEMENT / LINGO_LETTER / ROLEPLAY_SCENARIO / QUIZ_HINT）集中为 `AgentPromptRegistry`（taskType → template + 版本号），便于统一迭代与回滚，消除同一 prompt 多处漂移 (`LlmRepositoryImpl.kt` 及各处 use case)
+- [x] **[Impl S21-001 🔴 P0]** **LLM JSON Schema 校验与自动修复循环** — 在 `LlmRepositoryImpl` 增加结构化输出模式：PLAN / DIAGNOSIS / ROLEPLAY_SCENARIO 结果先过 `JSONObject` + 必需字段/类型校验；校验失败时携带解析错误重新调用 LLM 一次（validate-and-repair，上限 2 次），之后才向上抛错。将各 agent 散落的 try/catch + 模糊映射收敛到统一 `AgentJsonValidator` (`LlmRepositoryImpl.kt`, `WeeklyPlanRepositoryImpl.kt`, `DiagnosisViewModel.kt`, `RoleplayScenarioBank.kt`)
+- [x] **[Impl S21-002 🔴 P0]** **prompt 注册表与版本化** — 将 6 处内联在业务代码里的 prompt（PLAN / DIAGNOSIS / EXPLAIN / ENCOURAGEMENT / LINGO_LETTER / ROLEPLAY_SCENARIO / QUIZ_HINT）集中为 `AgentPromptRegistry`（taskType → template + 版本号），便于统一迭代与回滚，消除同一 prompt 多处漂移 (`LlmRepositoryImpl.kt` 及各处 use case)
 
 ### Phase B: 共享学生上下文 (P1)
-- [ ] **[Impl S21-003 🟡 P1]** **StudentContextService 取代重复推导** — 新增 `StudentContext` (accuracy / weak categories / streak / error count / diagnostic level / CEFR) 由单一用例统一计算并缓存；`WeeklyPlanViewModel` / `PlanGeneratingViewModel` / `WeeklyReportViewModel` 全部改走该服务，消除 accuracy 0-1 vs 0-100 之类因各自推导产生的漂移与重复查询 (`WeeklyPlanViewModel.kt`, `PlanGeneratingViewModel.kt`, `WeeklyReportViewModel.kt`)
+- [x] **[Impl S21-003 🟡 P1]** **StudentContextService 取代重复推导** — 新增 `StudentContext` (accuracy / weak categories / streak / error count / diagnostic level / CEFR) 由单一用例统一计算并缓存；`WeeklyPlanViewModel` / `PlanGeneratingViewModel` / `WeeklyReportViewModel` 全部改走该服务，消除 accuracy 0-1 vs 0-100 之类因各自推导产生的漂移与重复查询 (`WeeklyPlanViewModel.kt`, `PlanGeneratingViewModel.kt`, `WeeklyReportViewModel.kt`)
 
 ### Phase C: LLM 可观测性 + 流式输出 (P1-P2)
-- [ ] **[Impl S21-004 🟡 P1]** **LLM 调用追踪** — `AgentDecisionLog` 之外新增调用级 trace：taskType / prompt 版本 / 模型 / fallback 是否触发 / token 用量 / 耗时 / 结果哈希；Settings 调试面板可查看最近 N 条，辅助 prompt 排障 (`LlmRepositoryImpl.kt`, `AgentDecisionLog`, Settings)
-- [ ] **[Impl S21-005 🟢 P2]** **诊断题流式生成 (渐进式)** — 将 `complete()` 升级为支持流式分块；`DiagnosisViewModel` 边收边解析，替代当前 20-40s 的"静态等待 + 状态轮换" (`LlmRepositoryImpl.kt`, `DiagnosisViewModel.kt`, `DiagnosisScreen.kt`)
-- [ ] **[Impl S21-006 🟢 P2]** **输出安全护栏** — ROLEPLAY_SCENARIO / EXPLAIN / QUIZ_HINT 的模型输出在展示前过轻量内容检查（禁用词 + 长度上限），异常时回退到离线模板 (`RoleplayScenarioBank.kt`, `ExplanationAgentUseCase.kt`, `LearningViewModel.kt`)
+- [x] **[Impl S21-004 🟡 P1]** **LLM 调用追踪** — `AgentDecisionLog` 之外新增调用级 trace：taskType / prompt 版本 / 模型 / fallback 是否触发 / token 用量 / 耗时 / 结果哈希；Settings 调试面板可查看最近 N 条，辅助 prompt 排障 (`LlmRepositoryImpl.kt`, `AgentDecisionLog`, Settings)
+- [x] **[Impl S21-005 🟢 P2]** **诊断题流式生成 (渐进式)** — 将 `complete()` 升级为支持流式分块；`DiagnosisViewModel` 边收边解析，替代当前 20-40s 的"静态等待 + 状态轮换" (`LlmRepositoryImpl.kt`, `DiagnosisViewModel.kt`, `DiagnosisScreen.kt`)
+- [x] **[Impl S21-006 🟢 P2]** **输出安全护栏** — ROLEPLAY_SCENARIO / EXPLAIN / QUIZ_HINT 的模型输出在展示前过轻量内容检查（禁用词 + 长度上限），异常时回退到离线模板 (`RoleplayScenarioBank.kt`, `ExplanationAgentUseCase.kt`, `LearningViewModel.kt`)
 
 ### Phase D: 质量
-- [ ] **[Unit Test & Build]** 为 `AgentJsonValidator`（schema 校验 + 修复循环上限）、`StudentContextService`（0-1 vs 0-100 归一化）补充单元测试；`./gradlew test assembleDebug` 全绿
-- [ ] **[Docs Sync]** 更新 `readme.md`（Agent System 节补充 harness 演进）与 `agents.md`
-- [ ] **[MVP Delivery]** 交付 v4.6.0 APK（由 antigravity 验收与发布）
+- [x] **[Unit Test & Build]** 为 `AgentJsonValidator`（schema 校验 + 修复循环上限）、`StudentContextService`（0-1 vs 0-100 归一化）、`ContentGuard`、`LlmRepositoryStream`、`DiagnosisViewModel` 补充单元测试；`./gradlew test assembleDebug` 全绿
+- [x] **[Docs Sync]** 更新 `readme.md`（Agent System 节补充 harness 演进）与 `agents.md`
+- [x] **[MVP Delivery]** 交付 v4.6.0 APK（由 antigravity 验收与发布）
 
 ---
 

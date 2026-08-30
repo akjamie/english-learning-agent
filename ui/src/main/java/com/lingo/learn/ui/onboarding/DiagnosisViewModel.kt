@@ -1,4 +1,4 @@
-﻿package org.akj.lingo.learn.ui.onboarding
+package org.akj.lingo.learn.ui.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.akj.lingo.learn.domain.repository.LlmRepository
 import org.akj.lingo.learn.domain.model.GradeBand
 import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.domain.repository.AsrRepository
@@ -33,6 +34,7 @@ import android.content.Context
 class DiagnosisViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val structuredLlmUseCase: StructuredLlmUseCase,
+    private val llmRepository: LlmRepository,
     private val promptRegistry: AgentPromptRegistry,
     private val asrRepository: AsrRepository,
     private val voiceRecorder: VoiceRecorder,
@@ -67,22 +69,7 @@ class DiagnosisViewModel @Inject constructor(
             _isLoading.value = true
             _loadError.value = null
             _loadingStatus.value = "Talking to Lingo's teacher…"
-            // Rotate staged status messages while the LLM composes the quiz, so the
-            // (legitimately 20-40s) generation never looks like a hang.
-            val statusTicker = viewModelScope.launch {
-                val stages = listOf(
-                    "Talking to Lingo's teacher…",
-                    "Picking words just for you…",
-                    "Writing your questions…",
-                    "Almost ready…"
-                )
-                var i = 1
-                while (true) {
-                    delay(8000)
-                    _loadingStatus.value = stages[i % stages.size]
-                    i++
-                }
-            }
+
             val band = GradeBand.fromGrade(grade)
             val prompt = promptRegistry.render(
                 "DIAGNOSIS",
@@ -95,23 +82,57 @@ class DiagnosisViewModel @Inject constructor(
                 )
             )
 
-            _loadError.value = null
-            structuredLlmUseCase.completeJson(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
-                .onSuccess { json ->
-                    val generatedList = parseQuestionsJson(json)
-                    if (generatedList.isNotEmpty()) {
-                        _questions.value = generatedList
-                    } else {
-                        _loadError.value = userFacingError(
-                            classifyError(Exception("Could not parse the AI quiz. Please retry."))
-                        )
+            val accumulated = StringBuilder()
+
+            runCatching {
+                llmRepository.completeStream(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
+                    .collect { chunk ->
+                        accumulated.append(chunk)
+                        val partialQuestions = parseProgressiveQuestions(accumulated.toString())
+                        if (partialQuestions.isNotEmpty()) {
+                            _questions.value = partialQuestions
+                            _loadingStatus.value = "Questions ready: ${partialQuestions.size}..."
+                            if (_isLoading.value) {
+                                _isLoading.value = false
+                            }
+                        }
                     }
+            }.onFailure { _ ->
+                if (_questions.value.isEmpty()) {
+                    structuredLlmUseCase.completeJson(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
+                        .onSuccess { json ->
+                            val generatedList = parseQuestionsJson(json)
+                            if (generatedList.isNotEmpty()) {
+                                _questions.value = generatedList
+                            } else {
+                                _loadError.value = userFacingError(
+                                    classifyError(Exception("Could not parse the AI quiz. Please retry."))
+                                )
+                            }
+                        }
+                        .onFailure { e ->
+                            _questions.value = emptyList()
+                            _loadError.value = userFacingError(classifyError(e))
+                        }
                 }
-                .onFailure { e ->
-                    _questions.value = emptyList()
-                    _loadError.value = userFacingError(classifyError(e))
+            }
+
+            if (_questions.value.isEmpty() && accumulated.isNotEmpty()) {
+                val finalList = parseQuestionsJson(accumulated.toString())
+                if (finalList.isNotEmpty()) {
+                    _questions.value = finalList
+                } else if (_loadError.value == null) {
+                    _loadError.value = userFacingError(
+                        classifyError(Exception("Could not parse the AI quiz. Please retry."))
+                    )
                 }
-            statusTicker.cancel()
+            } else if (_questions.value.isNotEmpty()) {
+                val finalList = parseQuestionsJson(accumulated.toString())
+                if (finalList.isNotEmpty()) {
+                    _questions.value = finalList
+                }
+            }
+
             _loadingStatus.value = ""
             _isLoading.value = false
         }
@@ -264,6 +285,55 @@ class DiagnosisViewModel @Inject constructor(
         return result.getOrElse {
             asrRepository.getOfflineFallbackResult(referenceText)
         }
+    }
+
+    /**
+     * Extracts all complete JSON objects from a potentially incomplete streaming JSON array string.
+     * Allows progressive extraction of completed questions as tokens stream in.
+     */
+    fun parseProgressiveQuestions(raw: String): List<DiagnosticQuestion> {
+        val trimmed = raw.trim()
+        val startIndex = trimmed.indexOf('[')
+        if (startIndex == -1) return emptyList()
+
+        val text = trimmed.substring(startIndex)
+        val objects = mutableListOf<String>()
+        var depth = 0
+        var objStart = -1
+        var inString = false
+        var escape = false
+
+        for (i in text.indices) {
+            val c = text[i]
+            if (escape) {
+                escape = false
+                continue
+            }
+            if (c == '\\') {
+                escape = true
+                continue
+            }
+            if (c == '"') {
+                inString = !inString
+                continue
+            }
+            if (!inString) {
+                if (c == '{') {
+                    if (depth == 0) objStart = i
+                    depth++
+                } else if (c == '}') {
+                    depth--
+                    if (depth == 0 && objStart != -1) {
+                        objects.add(text.substring(objStart, i + 1))
+                        objStart = -1
+                    }
+                }
+            }
+        }
+
+        if (objects.isEmpty()) return emptyList()
+        val jsonArrayStr = "[" + objects.joinToString(",") + "]"
+        return parseQuestionsJson(jsonArrayStr)
     }
 
     private fun parseQuestionsJson(jsonStr: String?): List<DiagnosticQuestion> {

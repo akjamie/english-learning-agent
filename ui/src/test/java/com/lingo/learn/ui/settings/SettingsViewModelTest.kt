@@ -105,6 +105,9 @@ class SettingsViewModelTest {
         }
 
         override suspend fun chat(messages: List<ChatMessage>, taskType: String, maxTokens: Int): Result<String> = result
+
+        override fun completeStream(prompt: String, taskType: String, maxTokens: Int): kotlinx.coroutines.flow.Flow<String> =
+            kotlinx.coroutines.flow.emptyFlow()
     }
 
     private class FakeLlmTraceRepository(

@@ -1,5 +1,6 @@
 package org.akj.lingo.learn.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import org.akj.lingo.learn.domain.model.ChatMessage
 
 interface LlmRepository {
@@ -14,4 +15,11 @@ interface LlmRepository {
         taskType: String,
         maxTokens: Int = 500
     ): Result<String>
+
+    fun completeStream(
+        prompt: String,
+        taskType: String,
+        maxTokens: Int = 500
+    ): Flow<String>
 }
+

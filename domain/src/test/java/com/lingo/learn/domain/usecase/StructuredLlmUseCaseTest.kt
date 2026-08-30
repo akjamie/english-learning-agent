@@ -23,6 +23,9 @@ class StructuredLlmUseCaseTest {
         override suspend fun chat(messages: List<ChatMessage>, taskType: String, maxTokens: Int): Result<String> {
             throw UnsupportedOperationException("not used")
         }
+
+        override fun completeStream(prompt: String, taskType: String, maxTokens: Int): kotlinx.coroutines.flow.Flow<String> =
+            kotlinx.coroutines.flow.emptyFlow()
     }
 
     @Test

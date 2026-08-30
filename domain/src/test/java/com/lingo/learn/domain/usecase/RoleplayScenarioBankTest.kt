@@ -17,10 +17,14 @@ class RoleplayScenarioBankTest {
 
                 override suspend fun chat(messages: List<org.akj.lingo.learn.domain.model.ChatMessage>, taskType: String, maxTokens: Int): Result<String> =
                     Result.failure(Exception("not configured"))
+
+                override fun completeStream(prompt: String, taskType: String, maxTokens: Int): kotlinx.coroutines.flow.Flow<String> =
+                    kotlinx.coroutines.flow.emptyFlow()
             },
             jsonValidator = AgentJsonValidator()
         ),
-        AgentPromptRegistry()
+        AgentPromptRegistry(),
+        ContentGuard()
     )
 
     @Test

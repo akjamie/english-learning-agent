@@ -416,3 +416,26 @@ about their child {name}.
 3. Note any agent adjustments (e.g. "We added extra listening practice on Wednesday").
 4. Max 60 words. Do not mention scores as grades — frame as growth.
 ```
+
+---
+
+## 🛡️ Sprint 21: AI Agent Harness & Loop Engineering (v4.6.0)
+
+Sprint 21 introduces structural resilience for all LLM agents:
+
+1. **Structured Output Validation & Repair (`StructuredLlmUseCase` + `AgentJsonValidator`)**:
+   - Every JSON-producing task (`PLAN`, `DIAGNOSIS`, `ROLEPLAY_SCENARIO`) runs through strict schema and field validation.
+   - If validation fails, the error reason is fed back into an automatic self-repair loop (up to 2 attempts) before surfacing errors to users.
+2. **Centralized Versioned Prompt Registry (`AgentPromptRegistry`)**:
+   - All 8 agent prompt templates are unified and versioned (e.g. `1.0.0`), preventing prompt drift across business layers.
+3. **Single-Source Student Context Service (`StudentContextService`)**:
+   - Derives standard `StudentContext` metrics (0-100 normalized accuracy, CEFR level, weak categories, error stats) once and caches them across `WeeklyPlanViewModel`, `PlanGeneratingViewModel`, and `WeeklyReportViewModel`.
+4. **LLM Observability (`LlmTraceRepository` + Settings Debug Panel)**:
+   - Tracks call-level duration, tokens, model used, success, and response hash in `llm_trace` Room table.
+   - Displays real-time call traces in Settings for debugging and auditing.
+5. **Progressive SSE Streaming Diagnosis (`LlmRepository.completeStream` + `parseProgressiveQuestions`)**:
+   - Streams diagnosis question generation over Server-Sent Events (SSE).
+   - Dynamically parses completed question objects in real time, letting the child start answering question 1 immediately without waiting 20-40s.
+6. **Output Safety Guardrails (`ContentGuard`)**:
+   - Lightweight content filter enforcing length limits, filtering forbidden words/topics, and rejecting prompt injection attempts for `HINT`, `EXPLAIN`, and `ROLEPLAY_SCENARIO`.
+

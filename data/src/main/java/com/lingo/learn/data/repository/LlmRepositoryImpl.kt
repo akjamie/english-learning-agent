@@ -9,6 +9,9 @@ import org.akj.lingo.learn.data.remote.minimax.*
 import org.akj.lingo.learn.domain.model.ChatMessage
 import org.akj.lingo.learn.domain.provider.ProviderEndpoints
 import org.akj.lingo.learn.domain.repository.LlmRepository
+import com.google.gson.Gson
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,8 +23,102 @@ class LlmRepositoryImpl @Inject constructor(
     private val tokenUsageLogDao: TokenUsageLogDao,
     private val llmTraceDao: LlmTraceDao
 ) : LlmRepository {
+    private val gson = Gson()
+
     override suspend fun complete(prompt: String, taskType: String, maxTokens: Int): Result<String> {
         return chat(listOf(ChatMessage(role = "user", content = prompt)), taskType, maxTokens)
+    }
+
+    override fun completeStream(prompt: String, taskType: String, maxTokens: Int): Flow<String> = flow {
+        val authToken = prefs.getAuthToken()
+        val apiKey = "Bearer $authToken"
+        val groupId = prefs.getGroupId()
+        val baseUrl = prefs.getBaseUrl()
+        val url = ProviderEndpoints.chatUrl(baseUrl)
+
+        if (authToken.length < 10) {
+            throw Exception("Auth Token is not configured")
+        }
+
+        if (isBudgetExceeded()) {
+            if (taskType in STRICT_CONTENT_TASK_TYPES) {
+                throw Exception("Monthly token budget exceeded")
+            } else {
+                emit(getFallbackTemplate(taskType))
+                return@flow
+            }
+        }
+
+        val primaryModel = prefs.getPrimaryModel()
+        val messages = listOf(MinimaxMessage(role = "user", content = prompt))
+        val groupIdParam = groupId.takeIf { it.isNotBlank() }
+
+        val startedAt = System.currentTimeMillis()
+        var streamSucceeded = false
+        val accumulated = java.lang.StringBuilder()
+
+        runCatching {
+            withTimeout(timeoutFor(taskType)) {
+                val request = MinimaxChatRequest(
+                    model = primaryModel,
+                    messages = messages,
+                    maxTokens = maxTokens,
+                    stream = true
+                )
+                val response = service.chatCompletionStream(url, apiKey, groupIdParam, request)
+                if (response.isSuccessful && response.body() != null) {
+                    val reader = response.body()!!.byteStream().bufferedReader()
+                    reader.useLines { lines ->
+                        for (line in lines) {
+                            val trimmed = line.trim()
+                            if (trimmed.startsWith("data:")) {
+                                val data = trimmed.removePrefix("data:").trim()
+                                if (data == "[DONE]") break
+                                try {
+                                    val chunk = gson.fromJson(data, MinimaxStreamChunk::class.java)
+                                    val delta = chunk?.choices?.firstOrNull()?.delta?.content
+                                    if (!delta.isNullOrEmpty()) {
+                                        accumulated.append(delta)
+                                        emit(delta)
+                                    }
+                                } catch (_: Exception) {
+                                }
+                            }
+                        }
+                    }
+                    if (accumulated.isNotEmpty()) {
+                        streamSucceeded = true
+                    }
+                }
+            }
+        }
+
+        val durationMs = System.currentTimeMillis() - startedAt
+
+        if (streamSucceeded) {
+            llmTraceDao.insertTrace(
+                LlmTraceEntity(
+                    timestamp = startedAt,
+                    taskType = taskType,
+                    model = "primary-stream",
+                    success = true,
+                    durationMs = durationMs,
+                    inputTokens = 0,
+                    outputTokens = 0,
+                    totalTokens = 0,
+                    detail = accumulated.toString().hashCode().toString()
+                )
+            )
+            return@flow
+        }
+
+        // Streaming was unavailable or failed; fall back to non-streaming complete()
+        val completeResult = complete(prompt, taskType, maxTokens)
+        if (completeResult.isSuccess) {
+            emit(completeResult.getOrThrow())
+        } else {
+            throw completeResult.exceptionOrNull() ?: Exception("Streaming completion failed")
+        }
     }
 
     override suspend fun chat(messages: List<ChatMessage>, taskType: String, maxTokens: Int): Result<String> {

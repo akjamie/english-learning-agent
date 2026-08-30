@@ -12,6 +12,7 @@ import org.akj.lingo.learn.domain.repository.GamificationRepository
 import org.akj.lingo.learn.domain.repository.TtsRepository
 import org.akj.lingo.learn.domain.usecase.AdaptiveDifficultyEngine
 import org.akj.lingo.learn.domain.usecase.AgentPromptRegistry
+import org.akj.lingo.learn.domain.usecase.ContentGuard
 import org.akj.lingo.learn.domain.usecase.DailyGoalTracker
 import org.akj.lingo.learn.domain.usecase.MakeupCardManager
 import org.akj.lingo.learn.domain.usecase.Observation
@@ -118,7 +119,8 @@ class LearningViewModel @Inject constructor(
     private val makeupCardManager: MakeupCardManager,
     private val gamificationRepository: GamificationRepository,
     private val productionTaskScorer: ProductionTaskScorer,
-    private val audioEngine: AudioPlaybackEngine
+    private val audioEngine: AudioPlaybackEngine,
+    private val contentGuard: ContentGuard = ContentGuard()
 ) : ViewModel() {
 
     private val _stage = MutableStateFlow(LearningStage.PRE_TEACH)
@@ -843,14 +845,20 @@ class LearningViewModel @Inject constructor(
                 val result = llmRepository.complete(prompt, "HINT")
                 
                 result.onSuccess { hint ->
+                    val safeHint = if (contentGuard.isSafe(hint, "HINT")) {
+                        hint
+                    } else {
+                        "Think about the first letter of the word, or look closely at the question!"
+                    }
                     _quizState.value = _quizState.value.copy(
                         isGeneratingHint = false,
-                        dynamicHint = hint,
+                        dynamicHint = safeHint,
                         hintLevel = 1
                     )
                 }.onFailure {
                     _quizState.value = _quizState.value.copy(
                         isGeneratingHint = false,
+                        dynamicHint = "Think about the first letter of the word, or look closely at the question!",
                         hintLevel = 1
                     )
                 }

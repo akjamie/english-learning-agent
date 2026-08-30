@@ -22,8 +22,8 @@ android {
         applicationId = "org.akj.lingo.learn"
         minSdk = 26
         targetSdk = 34
-        versionCode = 14
-        versionName = "4.5.4"
+        versionCode = 15
+        versionName = "4.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

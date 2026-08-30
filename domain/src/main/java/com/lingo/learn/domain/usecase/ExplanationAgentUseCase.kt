@@ -13,7 +13,8 @@ import javax.inject.Inject
  */
 class ExplanationAgentUseCase @Inject constructor(
     private val llmRepository: LlmRepository,
-    private val promptRegistry: AgentPromptRegistry
+    private val promptRegistry: AgentPromptRegistry,
+    private val contentGuard: ContentGuard = ContentGuard()
 ) {
     suspend operator fun invoke(word: String, errorType: String, grade: String): Result<String> {
         return invoke(word = word, errorType = errorType, grade = grade, errorHistoryJson = null)
@@ -49,6 +50,12 @@ class ExplanationAgentUseCase @Inject constructor(
             )
         )
 
-        return llmRepository.complete(prompt = prompt, taskType = "EXPLAIN", maxTokens = 150)
+        val result = llmRepository.complete(prompt = prompt, taskType = "EXPLAIN", maxTokens = 150)
+        return result.mapCatching { rawText ->
+            when (val check = contentGuard.check(rawText, "EXPLAIN")) {
+                is ContentGuard.GuardResult.Safe -> check.sanitizedText
+                is ContentGuard.GuardResult.Unsafe -> throw Exception("Explanation blocked by safety guard: ${check.reason}")
+            }
+        }
     }
 }

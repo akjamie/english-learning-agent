@@ -23,6 +23,9 @@ class DailyEncouragerUseCaseTest {
 
         override suspend fun chat(messages: List<org.akj.lingo.learn.domain.model.ChatMessage>, taskType: String, maxTokens: Int): Result<String> =
             result
+
+        override fun completeStream(prompt: String, taskType: String, maxTokens: Int): kotlinx.coroutines.flow.Flow<String> =
+            kotlinx.coroutines.flow.emptyFlow()
     }
 
     @Test

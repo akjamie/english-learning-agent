@@ -23,6 +23,9 @@ class ExplanationAgentUseCaseTest {
 
         override suspend fun chat(messages: List<org.akj.lingo.learn.domain.model.ChatMessage>, taskType: String, maxTokens: Int): Result<String> =
             result
+
+        override fun completeStream(prompt: String, taskType: String, maxTokens: Int): kotlinx.coroutines.flow.Flow<String> =
+            kotlinx.coroutines.flow.emptyFlow()
     }
 
     @Test
@@ -91,13 +94,11 @@ class ExplanationAgentUseCaseTest {
     }
 
     @Test
-    fun `prompt includes guidelines section`() = runTest {
-        val fake = CapturingLlmRepository()
+    fun `unsafe LLM output is rejected by safety guard`() = runTest {
+        val fake = CapturingLlmRepository(result = Result.success("This is stupid and has a gun"))
         val useCase = ExplanationAgentUseCase(fake, AgentPromptRegistry())
-        useCase.invoke(word = "write", errorType = "grammar", grade = "Grade 6")
-        val prompt = fake.lastPrompt!!
-        assertTrue(prompt.contains("encouraging"))
-        assertTrue(prompt.contains("mnemonic"))
-        assertTrue(prompt.contains("100 words"))
+        val result = useCase.invoke(word = "test", errorType = "spelling", grade = "Grade 4")
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()!!.message!!.contains("safety guard"))
     }
 }

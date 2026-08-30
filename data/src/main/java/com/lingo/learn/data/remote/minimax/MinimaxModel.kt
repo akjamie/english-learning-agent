@@ -7,12 +7,29 @@ import com.google.gson.annotations.SerializedName
 data class MinimaxChatRequest(
     val model: String,
     val messages: List<MinimaxMessage>,
-    @SerializedName("max_tokens") val maxTokens: Int = 1024
+    @SerializedName("max_tokens") val maxTokens: Int = 1024,
+    val stream: Boolean? = null
 )
 
 data class MinimaxMessage(
     val role: String,
     val content: String
+)
+
+// OpenAI-compatible streaming response chunk
+data class MinimaxStreamChunk(
+    val choices: List<MinimaxStreamChoice>? = null,
+    val usage: MinimaxUsage? = null
+)
+
+data class MinimaxStreamChoice(
+    val delta: MinimaxDelta? = null,
+    @SerializedName("finish_reason") val finishReason: String? = null
+)
+
+data class MinimaxDelta(
+    val role: String? = null,
+    val content: String? = null
 )
 
 // OpenAI-compatible response format

@@ -15,7 +15,8 @@ import javax.inject.Singleton
 @Singleton
 class RoleplayScenarioBank @Inject constructor(
     private val structuredLlmUseCase: StructuredLlmUseCase,
-    private val promptRegistry: AgentPromptRegistry
+    private val promptRegistry: AgentPromptRegistry,
+    private val contentGuard: ContentGuard
 ) {
 
     /** All curated scenarios, in display order. */
@@ -37,8 +38,8 @@ class RoleplayScenarioBank @Inject constructor(
 
     /**
      * Optionally asks the LLM for an enriched system prompt + opening line for a
-     * scenario. On any failure (no model / offline / parse error) returns null so
-     * the caller keeps the curated offline-safe script.
+     * scenario. On any failure (no model / offline / parse error / safety guard rejection)
+     * returns null so the caller keeps the curated offline-safe script.
      */
     suspend fun enrichWithLlm(scenario: RoleplayScenario, grade: String): RoleplayScenario? {
         val prompt = promptRegistry.render(
@@ -57,8 +58,14 @@ class RoleplayScenarioBank @Inject constructor(
             val obj = org.json.JSONObject(json)
             val systemPrompt = obj.optString("system_prompt").takeIf { it.isNotBlank() }
             val openingLine = obj.optString("opening_line").takeIf { it.isNotBlank() }
-            if (systemPrompt == null || openingLine == null) null
-            else scenario.copy(systemPrompt = systemPrompt, openingLine = openingLine)
+            if (systemPrompt == null || openingLine == null) {
+                null
+            } else if (!contentGuard.isSafe(systemPrompt, "ROLEPLAY_SCENARIO") ||
+                       !contentGuard.isSafe(openingLine, "ROLEPLAY_SCENARIO")) {
+                null // Fall back to curated scenario if output fails safety checks
+            } else {
+                scenario.copy(systemPrompt = systemPrompt, openingLine = openingLine)
+            }
         } catch (_: Exception) {
             null
         }

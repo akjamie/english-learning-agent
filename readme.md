@@ -125,5 +125,6 @@ Generated APKs:
 | **v4.5.2** | Sprint 20.5 | UX & Reliability Fix Pack (all diagnostic question types render & are tappable, plan errors retryable with friendly messages, weekly-plan accuracy fix, English parent tips, report/error-book layout polish, structured session journey stepper) | ✅ Released |
 | **v4.5.3** | Sprint 20.5 | Voice Check & Loading Experience Fix Pack (30s ASR WebSocket timeout so voice check can't hang, diagnostic voice-check error messages by cause, progressive quiz-loading status) | ✅ Released |
 | **v4.5.4** | Sprint 20.5 | Answer Layout & Read-Along Resilience Fix Pack (no mid-word wrapping in answer options, read-along Skip when ASR service is down) | ✅ Released |
+| **v4.6.0** | Sprint 21 | AI Agent Harness Hardening (validate-and-repair JSON schema loop, versioned prompt registry, single-source StudentContextService, LLM call trace panel, progressive SSE streaming diagnosis, output safety guardrails) | ✅ Released |
 
 > For complete detailed task checklists and backlog item status, see [task.md](file:///d:/workbench/sandbox/english-learning-agent/task.md).

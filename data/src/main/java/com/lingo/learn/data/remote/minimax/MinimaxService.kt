@@ -16,6 +16,15 @@ interface MinimaxService {
         @Body request: MinimaxChatRequest
     ): Response<MinimaxChatResponse>
 
+    @Streaming
+    @POST
+    suspend fun chatCompletionStream(
+        @Url url: String,
+        @Header("Authorization") authorization: String,
+        @Query("GroupId") groupId: String?,
+        @Body request: MinimaxChatRequest
+    ): Response<ResponseBody>
+
     @POST
     suspend fun textToAudio(
         @Url url: String,
