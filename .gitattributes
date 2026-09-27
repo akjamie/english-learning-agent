@@ -1,0 +1,3 @@
+# Keep shell / hooks LF so git hooks run on every platform.
+*.sh text eol=lf
+.githooks/* text eol=lf
