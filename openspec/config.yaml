@@ -1,0 +1,55 @@
+schema: agentic-repo-change
+
+# Read-only upstream context (coordination store). Uncomment for repos that
+# consume System Design + Context Index. See implementation plan section 4 (D-2).
+# references:
+#   - team-plans
+
+context: |
+  This repo uses the enterprise Agentic SDLC flow (OpenSpec-based).
+  - Repo-local Spec (spec.md) is APPROVED INTENT: immutable after PR merge.
+  - tasks.md is MUTABLE EXECUTION STATE. Never edit spec.md to record progress.
+  - review.md is produced by a separate fresh-context Reviewer agent (read-only).
+  - If a change touches a cross-repo contract, reference the System Design
+    version in proposal.md and keep requirements consistent with its contracts.md.
+
+# Per-artifact rules (advisory guidance shown to the agent)
+rules:
+  specs:
+    - Use SHALL/MUST. Every requirement needs at least one scenario (exactly 4 '#').
+    - Do not include internal class/function names or implementation steps.
+  review:
+    - The Reviewer MUST be a different agent context than the Draft agent.
+    - Never modify spec.md/design.md/tasks.md; the only output is review.md.
+  tasks:
+    - Every task states how to verify completion in its own description.
+    - Each group lands its own tests and docs; no final catch-all test group.
+
+# Per-operation guidance
+operations:
+  apply:
+    guidance:
+      - Do not modify spec.md (approved intent). Low-risk repo-local gap -> append a task.
+      - Cross-repo contract gap -> stop and raise a System Design Amendment.
+  archive:
+    guidance:
+      - Confirm spec.md is unchanged since the approved commit before archiving.
+
+# CI gate — external checks (run by `asdlc gate` after the built-ins:
+# traceability, approved-spec SHA, openspec validate). Wire your test/contract/
+# security/AI-verification steps here so they appear in the gate report.
+#   Environment available to each command:
+#     ASDLC_CHANGE_ID, ASDLC_REPO, ASDLC_SPEC_SHA, ASDLC_COORDINATION
+# gates:
+#   external:
+#     - name: unit-tests
+#       command: npm test
+#     - name: contract-tests
+#       command: npm run test:contract
+#     - name: security
+#       command: npm audit --audit-level=high
+#     - name: ai-verify
+#       command: your-verifier --change "$ASDLC_CHANGE_ID" --repo "$ASDLC_REPO"
+
+# Coordination store (read-only upstream context).
+coordination: ../asdlc-coordination

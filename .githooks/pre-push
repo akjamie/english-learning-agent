@@ -1,0 +1,21 @@
+#!/bin/sh
+# asdlc pre-push: trigger the Jenkins review/gate when a change branch is pushed.
+# Enable once with:  git config core.hooksPath .githooks
+JENKINS_URL="${ASDLC_JENKINS_URL:-http://localhost:8080}"
+REPO="$(basename "$(git rev-parse --show-toplevel)")"
+BRANCH="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
+if [ -z "$BRANCH" ] || [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  echo "[asdlc] not a change branch ('$BRANCH'); skipping Jenkins trigger"
+  exit 0
+fi
+CHANGE_ID="$(printf '%s' "${BRANCH##*/}" | tr '[:lower:]' '[:upper:]')"
+MODE="spec"
+case "$BRANCH" in *impl*) MODE="impl" ;; esac
+echo "[asdlc] push: branch=$BRANCH change=$CHANGE_ID mode=$MODE repo=$REPO"
+CODE="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+  "$JENKINS_URL/job/asdlc-pr/buildWithParameters" \
+  --data-urlencode "CHANGE_ID=$CHANGE_ID" \
+  --data-urlencode "MODE=$MODE" \
+  --data-urlencode "REPO=$REPO" 2>/dev/null || echo 000)"
+echo "[asdlc] Jenkins trigger http=$CODE -> $JENKINS_URL/job/asdlc-pr/"
+exit 0
