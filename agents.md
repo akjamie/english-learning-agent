@@ -439,3 +439,19 @@ Sprint 21 introduces structural resilience for all LLM agents:
 6. **Output Safety Guardrails (`ContentGuard`)**:
    - Lightweight content filter enforcing length limits, filtering forbidden words/topics, and rejecting prompt injection attempts for `HINT`, `EXPLAIN`, and `ROLEPLAY_SCENARIO`.
 
+---
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the five default mattpocock/skills labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
