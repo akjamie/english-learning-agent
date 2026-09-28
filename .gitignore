@@ -47,4 +47,11 @@ Thumbs.db
 # Backup files
 *.bak
 *~
+
+# Local agent / tool state
 .omo
+.codex/
+.opencode/
+
+# Generated test artifacts
+e2e-screenshots/
