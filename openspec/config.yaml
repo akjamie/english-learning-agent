@@ -1,4 +1,16 @@
 schema: agentic-repo-change
+# BU-managed schema is centralized (installed once per machine by `asdlc schema
+# install`). This repo pins the version it is governed by and must NOT vendor a copy.
+schemaVersion: "1"
+
+# Spec lint policy (policy-as-code). Severity per rule: blocker | major | off.
+# Bump lint.version when you change policy; `asdlc lint` reports it so historic
+# changes can be grandfathered instead of silently invalidated.
+lint:
+  version: "2"
+  rules:
+    R4-given: major
+    R6-ac-missing-test: blocker
 
 # Read-only upstream context (coordination store). Uncomment for repos that
 # consume System Design + Context Index. See implementation plan section 4 (D-2).
