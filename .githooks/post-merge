@@ -1,0 +1,27 @@
+#!/bin/sh
+# asdlc post-merge: when a merge/pull updates main, record the approval for any
+# change that was just merged. Enable: git config core.hooksPath .githooks
+JENKINS_URL="${ASDLC_JENKINS_URL:-http://localhost:8080}"
+BRANCH="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
+case "$BRANCH" in main|master) ;; *) exit 0 ;; esac
+
+REPO="$(basename "$(git rev-parse --show-toplevel)")"
+SHA="$(git rev-parse HEAD)"
+SLUGS="$(git diff-tree --no-commit-id --name-only -r HEAD^1 HEAD 2>/dev/null \
+  | sed -n 's#^openspec/changes/\([^/]*\)/.*#\1#p' | sort -u)"
+if [ -z "$SLUGS" ]; then
+  echo "[asdlc] post-merge: no change dirs changed; skipping approval"
+  exit 0
+fi
+
+for slug in $SLUGS; do
+  [ "$slug" = "archive" ] && continue
+  CHANGE_ID="$(printf '%s' "$slug" | tr '[:lower:]' '[:upper:]')"
+  echo "[asdlc] post-merge: approving $CHANGE_ID @ $SHA"
+  curl -s -o /dev/null -w "[asdlc] approve trigger http=%{http_code}\n" -X POST \
+    "$JENKINS_URL/job/asdlc-approve/buildWithParameters" \
+    --data-urlencode "CHANGE_ID=$CHANGE_ID" \
+    --data-urlencode "REPO=$REPO" \
+    --data-urlencode "SPEC_SHA=$SHA"
+done
+exit 0
