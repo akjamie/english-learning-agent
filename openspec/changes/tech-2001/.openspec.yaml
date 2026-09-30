@@ -1,5 +1,0 @@
-schema: agentic-repo-change
-created: 2026-09-27
-# SHA of the approved spec commit this implementation PR targets.
-# `asdlc gate` reads this and checks it against the approval record.
-specSha: 932d750fbe4bbcf0f3fccf52afd8b1fb732ff302

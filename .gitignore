@@ -55,3 +55,7 @@ Thumbs.db
 
 # Generated test artifacts
 e2e-screenshots/
+
+# Local agent/tool state
+.agents/
+.pi/
