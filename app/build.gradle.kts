@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
@@ -22,8 +22,8 @@ android {
         applicationId = "org.akj.lingo.learn"
         minSdk = 26
         targetSdk = 34
-        versionCode = 15
-        versionName = "4.6.0"
+        versionCode = 16
+        versionName = "5.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
