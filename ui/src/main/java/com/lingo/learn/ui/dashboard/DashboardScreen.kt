@@ -70,30 +70,38 @@ fun DashboardScreen(
     onReportCardClick: () -> Unit = {},
     onGeneratePlan: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: DashboardViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    viewModel: DashboardViewModel? = null,
+    stateOverride: DashboardUiState? = null
 ) {
-    LaunchedEffect(Unit) {
-        viewModel.loadDashboardData()
+    val activeViewModel = viewModel ?: if (stateOverride == null) {
+        androidx.hilt.navigation.compose.hiltViewModel()
+    } else {
+        null
     }
+    LaunchedEffect(activeViewModel) { activeViewModel?.loadDashboardData() }
 
-    val uiState by viewModel.uiState.collectAsState()
+    val liveState by (
+        activeViewModel?.uiState?.collectAsState()
+            ?: remember { mutableStateOf(DashboardUiState()) }
+        )
+    val uiState = stateOverride ?: liveState
 
     // Sprint 8: Diagnostic Calibration prompt dialog
     uiState.calibrationPrompt?.let { reason ->
         AlertDialog(
-            onDismissRequest = { viewModel.dismissCalibrationPrompt() },
+            onDismissRequest = { activeViewModel?.dismissCalibrationPrompt() },
             title = { Text("📊 Level Check-In", fontWeight = FontWeight.Bold) },
             text = { Text(reason, lineHeight = 22.sp) },
             confirmButton = {
                 Button(onClick = {
-                    viewModel.dismissCalibrationPrompt()
+                    activeViewModel?.dismissCalibrationPrompt()
                     onUpdateLevel() // Sprint 12: re-run the diagnosis to recalibrate the level
                 }) {
                     Text("Update My Level")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissCalibrationPrompt() }) {
+                TextButton(onClick = { activeViewModel?.dismissCalibrationPrompt() }) {
                     Text("Maybe Later")
                 }
             }
@@ -121,7 +129,7 @@ fun DashboardScreen(
                 lineHeight = 20.sp
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { viewModel.retry() }) {
+            Button(onClick = { activeViewModel?.retry() }) {
                 Text("Retry")
             }
         }
@@ -296,6 +304,23 @@ fun DashboardScreen(
             }
         }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(onClick = onPlanClick, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.weekly_plan))
+            }
+            OutlinedButton(onClick = onRoleplayClick, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_practice))
+            }
+            OutlinedButton(onClick = onReportCardClick, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_progress))
+            }
+        }
+
         // Sprint 10.5: offline-mode banner (cloud AI not configured)
         if (uiState.isOfflineMode) {
             Card(
@@ -432,6 +457,15 @@ fun DashboardScreen(
                             Text(
                                 text = "Est. time $taskDuration | Goal: $taskTarget",
                                 fontSize = 15.sp,
+                                color = Color(0xFF7F8C8D)
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.lesson_progress_percent,
+                                    (todayProgress.coerceIn(0f, 1f) * 100).toInt()
+                                ),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
                                 color = Color(0xFF7F8C8D)
                             )
                         }

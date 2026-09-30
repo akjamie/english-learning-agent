@@ -64,6 +64,9 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.10.0")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
 
 tasks.withType<Test>().configureEach {

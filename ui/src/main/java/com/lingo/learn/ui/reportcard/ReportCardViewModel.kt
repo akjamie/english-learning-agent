@@ -26,8 +26,12 @@ data class ReportCardUiState(
     val totalSessions: Int = 0,
     val weeklyAccuracy: Float = 0f,
     val totalWordsLearned: Int = 0,
+    val learningMinutes: Int = 0,
+    val skillAccuracyPercent: Map<String, Int> = emptyMap(),
     val masteredWords: List<String> = emptyList(),
     val weakWords: List<String> = emptyList(),
+    val errorBookCount: Int = 0,
+    val grammarErrorCount: Int = 0,
     val encouragement: String? = null,
     val isLoading: Boolean = false,
     val loadError: String? = null
@@ -63,9 +67,15 @@ class ReportCardViewModel @Inject constructor(
                 } else 0f
 
                 // Top error entries map to weak words; observation entries to mastered words.
-                val topErrors = errorBookRepository.getTopPriorityErrors(10)
+                val allErrors = errorBookRepository.getTopPriorityErrors(1000)
+                val topErrors = allErrors.take(10)
                 val weakWords = topErrors.take(3).map { it.vocabId }
                 val masteredWords = errorBookRepository.getErrorsInObservation().take(5).map { it.vocabId }
+                val skillAccuracyPercent = weeklyRecords
+                    .filter { it.taskType.uppercase() in setOf("QUIZ", "GAME", "SPEAKING") }
+                    .groupBy { it.taskType.uppercase() }
+                    .mapValues { (_, records) -> (records.map { it.accuracy }.average() * 100).toInt().coerceIn(0, 100) }
+                val errorCount = errorBookRepository.getErrorCount()
 
                 _uiState.value = ReportCardUiState(
                     childName = childName,
@@ -74,9 +84,17 @@ class ReportCardViewModel @Inject constructor(
                     streakDays = streak,
                     totalSessions = weeklyRecords.size,
                     weeklyAccuracy = weeklyAccuracy,
-                    totalWordsLearned = (weeklyRecords.size * 3).coerceAtLeast(0),
+                    totalWordsLearned = weeklyRecords
+                        .filterNot { it.taskType.equals("DAILY_PRACTICE", ignoreCase = true) }
+                        .map { it.taskId }
+                        .distinct()
+                        .size,
+                    learningMinutes = (weeklyRecords.sumOf { it.duration } / 60).toInt(),
+                    skillAccuracyPercent = skillAccuracyPercent,
                     masteredWords = masteredWords,
                     weakWords = weakWords,
+                    errorBookCount = errorCount,
+                    grammarErrorCount = allErrors.count { it.errorType.equals("GRAMMAR_WRONG", ignoreCase = true) },
                     encouragement = buildEncouragement(weeklyAccuracy),
                     isLoading = false
                 )

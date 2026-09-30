@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,7 @@ fun WelcomeScreen(
 
     // Lingo mascot initial wave and happy expression cycle
     var expression by remember { mutableStateOf(LingoExpression.HAPPY) }
+    val settingsLabel = stringResource(R.string.welcome_settings)
     
     LaunchedEffect(Unit) {
         // Delay to showcase thinking then happy greetings
@@ -60,7 +63,12 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            androidx.compose.material3.IconButton(onClick = onOpenSettings) {
+            androidx.compose.material3.IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.semantics {
+                    contentDescription = settingsLabel
+                }
+            ) {
                 Text("⚙️", fontSize = 24.sp)
             }
         }
@@ -72,6 +80,15 @@ fun WelcomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Spacer(modifier = Modifier.weight(1f))
+
+            Text(
+                text = stringResource(R.string.welcome_brand),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF7F8C8D),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Lingo Companion Avatar
             LingoAvatar(
@@ -92,11 +109,21 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            Text(
+                text = stringResource(R.string.welcome_tagline),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF465660),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Subtitle descriptors
             Text(
                 text = stringResource(R.string.welcome_subtitle),
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
+                fontSize = 15.sp,
+                lineHeight = 22.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF7F8C8D),
                 textAlign = TextAlign.Center

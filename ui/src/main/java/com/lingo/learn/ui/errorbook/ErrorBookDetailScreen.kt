@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,14 +36,20 @@ fun ErrorBookDetailScreen(
     entry: ErrorBookEntry,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ErrorBookViewModel = hiltViewModel()
+    viewModel: ErrorBookViewModel? = null,
+    explanationOverride: String? = null
 ) {
-    val explanationState by viewModel.explanationState.collectAsState()
+    val activeViewModel = viewModel ?: if (explanationOverride == null) hiltViewModel() else null
+    val liveExplanationState by (
+        activeViewModel?.explanationState?.collectAsState()
+            ?: remember { mutableStateOf(emptyMap<String, String>()) }
+        )
+    val explanation = explanationOverride ?: liveExplanationState[entry.vocabId] ?: "Thinking..."
     val currentGrade = LocalContext.current.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
         .getString("grade", "Grade 4") ?: "Grade 4"
     
-    LaunchedEffect(entry.vocabId) {
-        viewModel.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
+    LaunchedEffect(activeViewModel, entry.vocabId) {
+        activeViewModel?.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
     }
     var isFlipped by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
@@ -81,7 +89,8 @@ fun ErrorBookDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(320.dp)
-                    .clickable { isFlipped = !isFlipped },
+                    .clickable { isFlipped = !isFlipped }
+                    .semantics { contentDescription = "Word detail card" },
                 contentAlignment = Alignment.Center
             ) {
                 Card(
@@ -107,7 +116,7 @@ fun ErrorBookDetailScreen(
                         ) {
                             FlipCardBack(
                                 entry = entry,
-                                explanation = explanationState[entry.vocabId] ?: "Thinking..."
+                                explanation = explanation
                             )
                         }
                     }

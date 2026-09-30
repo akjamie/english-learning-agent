@@ -40,16 +40,28 @@ fun WeeklyPlanScreen(
     onViewReport: () -> Unit,
     onStartLearning: (dayIndex: Int) -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: WeeklyPlanViewModel = hiltViewModel()
+    viewModel: WeeklyPlanViewModel? = null,
+    stateOverride: WeeklyPlanUiState? = null,
+    todayOverride: Int? = null,
+    formattedDateRangeOverride: String? = null,
+    onGeneratePlanOverride: (() -> Unit)? = null,
+    onRetryOverride: (() -> Unit)? = null
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val today = viewModel.getDayOfWeek()
+    val activeViewModel = viewModel ?: if (stateOverride == null) hiltViewModel() else null
+    val liveUiState by (activeViewModel?.uiState?.collectAsState() ?: remember {
+        mutableStateOf(WeeklyPlanUiState())
+    })
+    val uiState = stateOverride ?: liveUiState
+    val today = todayOverride ?: activeViewModel?.getDayOfWeek() ?: 1
 
     // Sprint 10.5: read the child's diagnostic level so plan generation can match difficulty
     // to the selected grade AND the measured level (A/B/C).
     val diagnosticLevel = LocalContext.current
         .getSharedPreferences("lingo_app_prefs", android.content.Context.MODE_PRIVATE)
         .getString("diagnostic_level", "B") ?: "B"
+    val generatePlan: () -> Unit = onGeneratePlanOverride ?: {
+        activeViewModel?.generateNewPlan(grade, diagnosticLevel)
+    }
 
     Column(
         modifier = modifier
@@ -91,7 +103,7 @@ fun WeeklyPlanScreen(
                         lineHeight = 20.sp
                     )
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadPlan() }) {
+                    Button(onClick = { onRetryOverride?.invoke() ?: activeViewModel?.loadPlan() }) {
                         Text("Retry")
                     }
                 }
@@ -130,7 +142,7 @@ fun WeeklyPlanScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                viewModel.getFormattedDateRange(),
+                                formattedDateRangeOverride ?: activeViewModel?.getFormattedDateRange().orEmpty(),
                                 fontSize = 13.sp,
                                 color = Color(0xFF7F8C8D)
                             )
@@ -176,7 +188,7 @@ fun WeeklyPlanScreen(
                 if (uiState.days.isEmpty()) {
                     // No plan yet: show full-width primary CTA
                     Button(
-                        onClick = { viewModel.generateNewPlan(grade, diagnosticLevel) },
+                        onClick = generatePlan,
                         enabled = !uiState.isGenerating,
                         modifier = Modifier.fillMaxWidth().height(54.dp),
                         shape = RoundedCornerShape(16.dp),
@@ -206,7 +218,7 @@ fun WeeklyPlanScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         TextButton(
-                            onClick = { viewModel.generateNewPlan(grade, diagnosticLevel) },
+                            onClick = generatePlan,
                             enabled = !uiState.isGenerating
                         ) {
                             if (uiState.isGenerating) {
@@ -251,7 +263,7 @@ fun WeeklyPlanScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -> Unit = {}, getFocusEmoji: (String) -> String = ::getFocusEmoji) {
+internal fun PlanDayCard(dayItem: PlanDayItem, isToday: Boolean, onStart: (Int) -> Unit = {}, getFocusEmoji: (String) -> String = ::getFocusEmoji) {
     val animatedProgress by animateFloatAsState(
         targetValue = if (dayItem.isCompleted) 1f else 0f,
         animationSpec = tween(600),

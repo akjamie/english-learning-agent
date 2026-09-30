@@ -1,0 +1,10 @@
+# System Design Registry (repo-local)
+# current      - version consumers must reference
+# owner        - who reviews amendments; DEFAULT = last change author.
+#                No platform team required: ownership follows the work.
+# derivedFrom  - evidence the current version was reconciled against code.
+#
+# <domain>:
+#   current: v1
+#   owner: <git-user or team-handle>
+#   derivedFrom: <context-index commit or date>

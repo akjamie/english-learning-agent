@@ -14,6 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +89,7 @@ fun MicButton(
                 modifier = Modifier
                     .size(76.dp)
                     .scale(buttonScale)
+                    .semantics { contentDescription = if (isRecording) "Stop recording" else "Start recording" }
                     .clip(CircleShape)
                     .background(mainColor)
                     .border(3.dp, if (isRecording) Color(0xFFFF8A8A) else Color(0xFFFFF0B3), CircleShape)

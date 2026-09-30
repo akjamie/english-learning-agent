@@ -22,9 +22,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ReportCardScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReportCardViewModel = hiltViewModel()
+    viewModel: ReportCardViewModel? = null,
+    stateOverride: ReportCardUiState? = null,
+    onShareOverride: (() -> Unit)? = null
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val activeViewModel = viewModel ?: if (stateOverride == null) hiltViewModel() else null
+    val liveUiState by (activeViewModel?.uiState?.collectAsState() ?: remember {
+        mutableStateOf(ReportCardUiState())
+    })
+    val uiState = stateOverride ?: liveUiState
 
     Column(
         modifier = modifier
@@ -56,7 +62,7 @@ fun ReportCardScreen(
                     Spacer(Modifier.height(16.dp))
                     Text(uiState.loadError!!, fontSize = 14.sp, color = Color(0xFF7F8C8D))
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadReportCard() }) { Text("Retry") }
+                    Button(onClick = { activeViewModel?.loadReportCard() }) { Text("Retry") }
                 }
             }
         } else if (uiState.isLoading) {
@@ -105,6 +111,30 @@ fun ReportCardScreen(
                             StatChip("📖", "${uiState.totalWordsLearned}", Modifier.weight(1f))
                             StatChip("🎯", "${(uiState.weeklyAccuracy * 100).toInt()}%", Modifier.weight(1f))
                         }
+                        Spacer(Modifier.height(10.dp))
+                        val hours = uiState.learningMinutes / 60
+                        val minutes = uiState.learningMinutes % 60
+                        StatChip("⏱️", if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m", Modifier.fillMaxWidth())
+
+                        if (uiState.skillAccuracyPercent.isNotEmpty()) {
+                            Spacer(Modifier.height(18.dp))
+                            Text("Skill practice", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                            Spacer(Modifier.height(8.dp))
+                            uiState.skillAccuracyPercent.toSortedMap().forEach { (skill, percent) ->
+                                val skillLabel = when (skill.uppercase()) {
+                                    "QUIZ" -> "Quiz"
+                                    "GAME" -> "Game"
+                                    "SPEAKING" -> "Speaking"
+                                    else -> skill
+                                }
+                                Text(
+                                    text = "$skillLabel $percent%",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF2C3E50),
+                                    modifier = Modifier.padding(vertical = 3.dp)
+                                )
+                            }
+                        }
 
                         Spacer(Modifier.height(18.dp))
                         Text("Top 5 Mastered Words", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
@@ -119,6 +149,12 @@ fun ReportCardScreen(
                         Spacer(Modifier.height(18.dp))
                         Text("Top 3 Words to Practice", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
                         Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "My Error Book · ${uiState.errorBookCount} words · ${uiState.grammarErrorCount} grammar points to review",
+                            fontSize = 13.sp,
+                            color = Color(0xFF7F8C8D)
+                        )
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = if (uiState.weakWords.isNotEmpty()) uiState.weakWords.joinToString(" · ")
                             else "No words in the error book — awesome job!",
@@ -148,7 +184,7 @@ fun ReportCardScreen(
                 Spacer(Modifier.height(20.dp))
 
                 Button(
-                    onClick = { viewModel.shareReportCard() },
+                    onClick = { onShareOverride?.invoke() ?: activeViewModel?.shareReportCard() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),

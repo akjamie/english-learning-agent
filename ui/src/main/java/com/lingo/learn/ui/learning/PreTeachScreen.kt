@@ -18,16 +18,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.hilt.navigation.compose.hiltViewModel
+import org.akj.lingo.learn.domain.model.LearningSession
+import org.akj.lingo.learn.ui.R
 import org.akj.lingo.learn.ui.components.AutoResizeText
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
 
 @Composable
 fun PreTeachScreen(
-    viewModel: LearningViewModel,
+    viewModel: LearningViewModel? = null,
     theme: GradeTheme,
-    onProceed: () -> Unit
+    onProceed: () -> Unit,
+    sessionOverride: LearningSession? = null,
+    onSpeakWord: ((String) -> Unit)? = null
 ) {
-    val session by viewModel.session.collectAsState()
+    val activeViewModel = viewModel ?: if (sessionOverride == null) hiltViewModel() else null
+    val liveSession by (
+        activeViewModel?.session?.collectAsState()
+            ?: remember { mutableStateOf(emptyLearningSession()) }
+        )
+    val session = sessionOverride ?: liveSession
+    val speakWord = onSpeakWord ?: { word -> activeViewModel?.speakWord(word) }
     val targetWords = session.targetNewWords
 
     var currentIndex by remember { mutableIntStateOf(0) }
@@ -94,7 +108,7 @@ fun PreTeachScreen(
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.White)
                         .clickable {
-                            viewModel.speakWord(currentWord)
+                            speakWord(currentWord)
                         }
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
@@ -150,12 +164,13 @@ fun PreTeachScreen(
                             onClick = {
                                 if (isCorrect) {
                                     engaged = true
-                                    viewModel.speakWord(currentWord)
+                                    speakWord(currentWord)
                                 }
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .heightIn(min = 56.dp),
+                                .heightIn(min = 56.dp)
+                                .semantics { contentDescription = "Choose word: $choice" },
                             shape = RoundedCornerShape(14.dp),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                         ) {
@@ -171,6 +186,17 @@ fun PreTeachScreen(
                         }
                     }
                 }
+            }
+
+            if (engaged) {
+                Text(
+                    text = stringResource(R.string.word_answer_feedback, currentWord),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2E9E69),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -201,3 +227,12 @@ fun PreTeachScreen(
         }
     }
 }
+
+private fun emptyLearningSession() = LearningSession(
+    theme = "",
+    subtitleLines = emptyList(),
+    readAlongSentences = emptyList(),
+    gameQuestions = emptyList(),
+    quizQuestions = emptyList(),
+    targetNewWords = emptyList()
+)

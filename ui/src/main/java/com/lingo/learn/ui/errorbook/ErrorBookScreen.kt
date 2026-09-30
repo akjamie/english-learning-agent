@@ -35,10 +35,21 @@ fun ErrorBookScreen(
     onBack: () -> Unit,
     onEntryClick: (ErrorBookEntry) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ErrorBookViewModel = hiltViewModel()
+    viewModel: ErrorBookViewModel? = null,
+    stateOverride: ErrorBookUiState? = null,
+    onExplainWord: ((ErrorBookEntry) -> Unit)? = null,
+    onRetryWord: ((String) -> Unit)? = null
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val explanationState by viewModel.explanationState.collectAsState()
+    val activeViewModel = viewModel ?: if (stateOverride == null) hiltViewModel() else null
+    val liveUiState by (
+        activeViewModel?.uiState?.collectAsState()
+            ?: remember { mutableStateOf(ErrorBookUiState()) }
+        )
+    val uiState = stateOverride ?: liveUiState
+    val explanationState by (
+        activeViewModel?.explanationState?.collectAsState()
+            ?: remember { mutableStateOf(emptyMap<String, String>()) }
+        )
     val currentGrade = LocalContext.current.getSharedPreferences("lingo_app_prefs", Context.MODE_PRIVATE)
         .getString("grade", "Grade 4") ?: "Grade 4"
     
@@ -48,7 +59,7 @@ fun ErrorBookScreen(
     // Sprint 20: refresh every time the tab re-enters composition.
     // The ViewModel is Activity-scoped, so init{} alone would only
     // load once per process and miss errors written during learning.
-    LaunchedEffect(Unit) { viewModel.loadErrors() }
+    LaunchedEffect(activeViewModel) { activeViewModel?.loadErrors() }
 
     Column(
         modifier = modifier
@@ -80,7 +91,7 @@ fun ErrorBookScreen(
                     Spacer(Modifier.height(16.dp))
                     Text(uiState.loadError!!, fontSize = 14.sp, color = Color(0xFF7F8C8D), lineHeight = 20.sp)
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadErrors() }) { Text("Retry") }
+                    Button(onClick = { activeViewModel?.loadErrors() }) { Text("Retry") }
                 }
             }
         } else if (uiState.isLoading) {
@@ -108,7 +119,7 @@ fun ErrorBookScreen(
                 consolidated = uiState.consolidatedCount
             )
             Spacer(Modifier.height(12.dp))
-            SortChips(mode = uiState.sortMode, onModeChange = viewModel::setSortMode)
+            SortChips(mode = uiState.sortMode, onModeChange = { activeViewModel?.setSortMode(it) })
             Spacer(Modifier.height(12.dp))
             LazyColumn(
                 modifier = Modifier.weight(1f),
@@ -130,10 +141,12 @@ fun ErrorBookScreen(
                             onClick = {
                                 selectedEntry = entry
                                 showExplanationDialog = true
-                                viewModel.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
+                                activeViewModel?.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
+                                onExplainWord?.invoke(entry)
                                 onEntryClick(entry)
                             },
-                            viewModel = viewModel
+                            viewModel = activeViewModel,
+                            onRetryWord = onRetryWord
                         )
                     }
                     if (uiState.entries.isNotEmpty()) {
@@ -153,10 +166,12 @@ fun ErrorBookScreen(
                         onClick = {
                             selectedEntry = entry
                             showExplanationDialog = true
-                            viewModel.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
+                            activeViewModel?.fetchExplanation(entry.vocabId, entry.errorType, currentGrade)
+                            onExplainWord?.invoke(entry)
                             onEntryClick(entry)
                         },
-                        viewModel = viewModel
+                        viewModel = activeViewModel,
+                        onRetryWord = onRetryWord
                     )
                 }
             }
@@ -308,7 +323,12 @@ private fun SortChips(mode: ErrorBookSortMode, onModeChange: (ErrorBookSortMode)
 }
 
 @Composable
-private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: ErrorBookViewModel) {
+private fun ErrorCard(
+    entry: ErrorBookEntry,
+    onClick: () -> Unit,
+    viewModel: ErrorBookViewModel?,
+    onRetryWord: ((String) -> Unit)?
+) {
     val daysAgo = ((System.currentTimeMillis() - entry.lastErrorTimestamp) / (24 * 3600 * 1000)).toInt()
     val priorityPct = (entry.priorityScore / 10f).coerceIn(0f, 1f)
 
@@ -328,7 +348,7 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(viewModel.getErrorTypeEmoji(entry.errorType), fontSize = 20.sp)
+                    Text(viewModel?.getErrorTypeEmoji(entry.errorType) ?: errorTypeEmoji(entry.errorType), fontSize = 20.sp)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = entry.vocabId,
@@ -338,10 +358,10 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
                     )
                 }
                 Badge(
-                    containerColor = Color(viewModel.getStatusColor(entry.status)),
+                    containerColor = Color(viewModel?.getStatusColor(entry.status) ?: statusColor(entry.status)),
                     contentColor = Color.White
                 ) {
-                    Text(viewModel.getStatusEmoji(entry.status), fontSize = 10.sp)
+                    Text(viewModel?.getStatusEmoji(entry.status) ?: statusEmoji(entry.status), fontSize = 10.sp)
                     Spacer(Modifier.width(4.dp))
                     Text(
                         when (entry.status) {
@@ -363,7 +383,7 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Type: ${viewModel.getErrorTypeDisplay(entry.errorType)}",
+                        "Type: ${viewModel?.getErrorTypeDisplay(entry.errorType) ?: errorTypeDisplay(entry.errorType)}",
                         fontSize = 13.sp,
                         color = Color(0xFF7F8C8D),
                         maxLines = 1,
@@ -413,7 +433,10 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
             // for the next daily review quiz instead of waiting for its
             // Ebbinghaus schedule to elapse.
             Button(
-                onClick = { viewModel.retryWord(entry.vocabId) },
+                onClick = {
+                    if (onRetryWord != null) onRetryWord(entry.vocabId)
+                    else viewModel?.retryWord(entry.vocabId)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp),
@@ -428,4 +451,41 @@ private fun ErrorCard(entry: ErrorBookEntry, onClick: () -> Unit, viewModel: Err
             }
         }
     }
+}
+
+private fun errorTypeDisplay(type: String): String = when (type.uppercase()) {
+    "SPELLED_WRONG" -> "Spelling"
+    "LISTENING_WRONG" -> "Listening"
+    "GRAMMAR_WRONG" -> "Grammar"
+    "PRONUNCIATION_WRONG" -> "Pronunciation"
+    "SPEAKING_MISPRONOUNCED" -> "Speaking"
+    "GAME_WRONG_ANSWER" -> "Game"
+    "QUIZ_WRONG_ANSWER" -> "Quiz"
+    "PRODUCTION_WRONG" -> "Writing"
+    else -> type
+}
+
+private fun errorTypeEmoji(type: String): String = when (type.uppercase()) {
+    "SPELLED_WRONG", "PRODUCTION_WRONG" -> "✍️"
+    "LISTENING_WRONG" -> "👂"
+    "GRAMMAR_WRONG", "QUIZ_WRONG_ANSWER" -> "📝"
+    "PRONUNCIATION_WRONG", "SPEAKING_MISPRONOUNCED" -> "🗣️"
+    "GAME_WRONG_ANSWER" -> "🎮"
+    else -> "❓"
+}
+
+private fun statusColor(status: String): Long = when (status) {
+    "TO_REVIEW" -> 0xFFFF7052L
+    "CONSOLIDATED" -> 0xFF5C6FF2L
+    "GRADUATION_OBSERVATION" -> 0xFFFFD449L
+    "GRADUATED" -> 0xFF2ECC71L
+    else -> 0xFF7F8C8DL
+}
+
+private fun statusEmoji(status: String): String = when (status) {
+    "TO_REVIEW" -> "🔴"
+    "CONSOLIDATED" -> "🟡"
+    "GRADUATION_OBSERVATION" -> "🔵"
+    "GRADUATED" -> "🟢"
+    else -> "⚪"
 }

@@ -85,7 +85,7 @@ class DiagnosisViewModel @Inject constructor(
             val accumulated = StringBuilder()
 
             runCatching {
-                llmRepository.completeStream(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
+                llmRepository.completeStream(prompt, taskType = "DIAGNOSIS", maxTokens = 4000)
                     .collect { chunk ->
                         accumulated.append(chunk)
                         val partialQuestions = parseProgressiveQuestions(accumulated.toString())
@@ -99,7 +99,7 @@ class DiagnosisViewModel @Inject constructor(
                     }
             }.onFailure { _ ->
                 if (_questions.value.isEmpty()) {
-                    structuredLlmUseCase.completeJson(prompt, taskType = "DIAGNOSIS", maxTokens = 1500)
+                    structuredLlmUseCase.completeJson(prompt, taskType = "DIAGNOSIS", maxTokens = 4000)
                         .onSuccess { json ->
                             val generatedList = parseQuestionsJson(json)
                             if (generatedList.isNotEmpty()) {

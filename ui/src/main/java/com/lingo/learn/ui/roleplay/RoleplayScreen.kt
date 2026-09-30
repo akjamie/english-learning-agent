@@ -39,15 +39,28 @@ import java.io.File
 @Composable
 fun RoleplayScreen(
     onNavigateBack: () -> Unit,
-    viewModel: RoleplayViewModel = hiltViewModel()
+    viewModel: RoleplayViewModel? = null,
+    stateOverride: RoleplayScreenState? = null,
+    onSendMessage: ((String) -> Unit)? = null,
+    onStartRecording: (() -> Unit)? = null,
+    onStopRecording: (() -> Unit)? = null
 ) {
-    val messages by viewModel.messages.collectAsState()
-    val scenarios by viewModel.scenarios.collectAsState()
-    val scenario by viewModel.scenario.collectAsState()
-    val isRecording by viewModel.isRecording.collectAsState()
-    val isThinking by viewModel.isThinking.collectAsState()
-    val isSpeaking by viewModel.isSpeaking.collectAsState()
-    val audioToPlay by viewModel.audioToPlay.collectAsState()
+    val activeViewModel = viewModel ?: if (stateOverride == null) hiltViewModel() else null
+    val liveMessages by (activeViewModel?.messages?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
+    val liveScenarios by (activeViewModel?.scenarios?.collectAsState() ?: remember { mutableStateOf(emptyList()) })
+    val liveScenario by (activeViewModel?.scenario?.collectAsState() ?: remember { mutableStateOf(null) })
+    val liveRecording by (activeViewModel?.isRecording?.collectAsState() ?: remember { mutableStateOf(false) })
+    val liveThinking by (activeViewModel?.isThinking?.collectAsState() ?: remember { mutableStateOf(false) })
+    val liveSpeaking by (activeViewModel?.isSpeaking?.collectAsState() ?: remember { mutableStateOf(false) })
+    val liveAudio by (activeViewModel?.audioToPlay?.collectAsState() ?: remember { mutableStateOf(null) })
+    var submittedMessages by remember { mutableStateOf(emptyList<ChatMessage>()) }
+    val messages = stateOverride?.messages?.plus(submittedMessages) ?: liveMessages
+    val scenarios = stateOverride?.scenarios ?: liveScenarios
+    val scenario = stateOverride?.scenario ?: liveScenario
+    val isRecording = stateOverride?.isRecording ?: liveRecording
+    val isThinking = stateOverride?.isThinking ?: liveThinking
+    val isSpeaking = stateOverride?.isSpeaking ?: liveSpeaking
+    val audioToPlay = if (stateOverride != null) null else liveAudio
     var textInput by remember { mutableStateOf("") }
 
     val listState = rememberLazyListState()
@@ -68,7 +81,7 @@ fun RoleplayScreen(
                 prepare()
                 start()
                 setOnCompletionListener {
-                    viewModel.onAudioPlaybackComplete()
+                    activeViewModel?.onAudioPlaybackComplete()
                 }
             }
         }
@@ -98,7 +111,7 @@ fun RoleplayScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { viewModel.resetConversation() }) {
+                    TextButton(onClick = { activeViewModel?.resetConversation() }) {
                         Text("Reset")
                     }
                 },
@@ -127,7 +140,7 @@ fun RoleplayScreen(
                     val selected = scenario?.id == s.id
                     FilterChip(
                         selected = selected,
-                        onClick = { viewModel.selectScenario(s.id) },
+                        onClick = { activeViewModel?.selectScenario(s.id) },
                         label = { Text("${s.emoji} ${s.title}") }
                     )
                 }
@@ -137,7 +150,7 @@ fun RoleplayScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 val expression = when {
@@ -148,7 +161,7 @@ fun RoleplayScreen(
                 }
                 LingoAvatar(
                     expression = expression,
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(76.dp)
                 )
             }
 
@@ -192,7 +205,9 @@ fun RoleplayScreen(
                 FilledIconButton(
                     onClick = {
                         if (textInput.isNotBlank()) {
-                            viewModel.sendUserMessage(textInput)
+                            val submitted = textInput.trim()
+                            if (stateOverride != null) submittedMessages = submittedMessages + ChatMessage("user", submitted)
+                            (onSendMessage ?: activeViewModel?.let { vm -> { text: String -> vm.sendUserMessage(text) } })?.invoke(submitted)
                             textInput = ""
                         }
                     },
@@ -212,13 +227,22 @@ fun RoleplayScreen(
             ) {
                 RecordButton(
                     isRecording = isRecording,
-                    onStartRecording = { viewModel.startRecording() },
-                    onStopRecording = { viewModel.stopRecordingAndSend() }
+                    onStartRecording = { (onStartRecording ?: activeViewModel?.let { vm -> { vm.startRecording() } })?.invoke() },
+                    onStopRecording = { (onStopRecording ?: activeViewModel?.let { vm -> { vm.stopRecordingAndSend() } })?.invoke() }
                 )
             }
         }
     }
 }
+
+data class RoleplayScreenState(
+    val messages: List<ChatMessage>,
+    val scenarios: List<org.akj.lingo.learn.domain.model.RoleplayScenario>,
+    val scenario: org.akj.lingo.learn.domain.model.RoleplayScenario?,
+    val isRecording: Boolean = false,
+    val isThinking: Boolean = false,
+    val isSpeaking: Boolean = false
+)
 
 @Composable
 fun ChatBubble(message: ChatMessage) {
@@ -315,7 +339,7 @@ fun RecordButton(
     Box(
         modifier = Modifier
             .scale(scale)
-            .size(80.dp)
+            .size(64.dp)
             .clip(CircleShape)
             .background(if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
             .pointerInput(Unit) {
@@ -326,7 +350,8 @@ fun RecordButton(
                         onStopRecording()
                     }
                 )
-            },
+            }
+            .semantics { contentDescription = if (isRecording) "Stop voice response" else "Record voice response" },
         contentAlignment = Alignment.Center
     ) {
         Text(

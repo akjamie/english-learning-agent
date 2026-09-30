@@ -29,6 +29,27 @@ graph TD
   ```
 - **零报错原则**：必须确保 `BUILD SUCCESSFUL`，不得带着编译报错或警告性崩溃进入下一步。
 
+### Compose UI tests and Huawei Mate 80 display regression
+- Write each UI behavior test first at the screen-to-ViewModel boundary. Prefer visible text, roles, and content descriptions over private composable structure or implementation-only tags.
+- Use controlled state and assert the rendered result and user action. For each vertical slice, confirm the new test fails before the UI change and passes afterward.
+- The `:ui` module's instrumented Compose tests use `createComposeRule()` and the Compose BOM-aligned `ui-test-junit4` dependency. Run them with `:ui:connectedDebugAndroidTest`.
+- The emulator is named `HuaweiMate80`, uses the Android SDK at `D:\system\android-sdk`, and stores its AVD data at `D:\system\android-sdk\avd\HuaweiMate80.avd`. It is configured at portrait 1280×2832 and 460 dpi. The Android system image is a screen-matched test profile; it does not emulate Huawei hardware or HarmonyOS.
+- Before running the suite, boot the emulator and verify the target and display:
+  ```powershell
+  $env:JAVA_HOME = 'D:\system\jdk21'
+  $env:ANDROID_SDK_ROOT = 'D:\system\android-sdk'
+  $env:ANDROID_HOME = $env:ANDROID_SDK_ROOT
+  $env:ANDROID_AVD_HOME = Join-Path $env:USERPROFILE '.android\avd'
+  Start-Process -FilePath "$env:ANDROID_SDK_ROOT\emulator\emulator.exe" -ArgumentList @('-avd', 'HuaweiMate80', '-no-snapshot') -WindowStyle Hidden
+  & "$env:ANDROID_SDK_ROOT\platform-tools\adb.exe" devices -l
+  & "$env:ANDROID_SDK_ROOT\platform-tools\adb.exe" -s emulator-5554 shell wm size
+  $gradleCache = Join-Path $env:USERPROFILE '.gradle\wrapper\dists\gradle-8.13-bin'
+  $gradleLauncher = Get-ChildItem -Path $gradleCache -Directory | ForEach-Object { Join-Path $_.FullName 'gradle-8.13\bin\gradle.bat' } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+  & $gradleLauncher :ui:connectedDebugAndroidTest --console=plain
+  ```
+- The PowerShell block resolves the cached Gradle 8.13 launcher because this workstation's wrapper points to a missing repository-local distribution ZIP. In a checkout with a valid wrapper distribution, `.\gradlew.bat :ui:connectedDebugAndroidTest --console=plain` is the equivalent command.
+- Mate 80 regression checks must measure required visible action bounds against the Compose root viewport. Scroll an action into view before checking it on scrollable screens.
+
 ### 3. 代码审查与反思总结 (Review & Reflection - `[Review & Reflection]`)
 - **边界条件审查**：检查空指针、网络断开、权限拒绝、内存泄漏等边缘场景。
 - **反思与 Skill 沉淀**：总结开发中踩过的坑（如 JDK 版本兼容、Gradle 语法约束、Compose 重绘优化等），并记录到项目文档与 Skill 库中。

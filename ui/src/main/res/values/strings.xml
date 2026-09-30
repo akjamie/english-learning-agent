@@ -8,9 +8,12 @@
     <string name="tab_settings">Settings</string>
 
     <!-- Welcome Screen -->
-    <string name="welcome_title">Lingo English</string>
-    <string name="welcome_subtitle">Your Interactive English Partner\n15 minutes daily to help you speak with confidence</string>
-    <string name="get_started">Get Started!</string>
+    <string name="welcome_brand">lingo. For curious minds</string>
+    <string name="welcome_title">Your English Adventure</string>
+    <string name="welcome_tagline">Small steps. Big English.</string>
+    <string name="welcome_subtitle">Meet your fox study buddy for a playful 15-minute lesson that adapts to your level every day.</string>
+    <string name="get_started">Start my journey</string>
+    <string name="welcome_settings">Settings</string>
 
     <!-- Grade Select Screen -->
     <string name="select_grade_title">Select Your Grade</string>
@@ -61,6 +64,10 @@
     <string name="welcome_back">Welcome back! 👋</string>
     <string name="today_goal">🎯 Today\'s Goal</string>
     <string name="weekly_plan">Weekly Plan</string>
+    <string name="home_practice">Practice</string>
+    <string name="home_progress">Progress</string>
+    <string name="lesson_progress_percent">%1$d%% complete</string>
+    <string name="word_answer_feedback">Nice work! “%1$s” unlocked.</string>
     <string name="track_daily_progress">Track daily progress</string>
     <string name="error_book">Error Book</string>
     <string name="target_weak_areas">Target weak areas</string>

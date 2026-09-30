@@ -15,12 +15,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.akj.lingo.learn.domain.model.GameQuestion
 import org.akj.lingo.learn.domain.model.GameType
+import org.akj.lingo.learn.domain.model.PronunciationResult
 import org.akj.lingo.learn.ui.components.AutoResizeText
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
@@ -206,85 +209,24 @@ private fun ReadAlongContent(
 
         // Score display (when result available)
         if (pronunciationResult != null) {
-            val score = pronunciationResult.overallScore
-            val scoreColor = if (score >= 80) Color(0xFF52D68A) else Color(0xFFFFA726)
-
-            Text(
-                text = "Score: $score",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = scoreColor
+            ReadAlongResultPanel(
+                result = pronunciationResult,
+                isPlayingSelf = readAlongState.isPlayingSelf,
+                onCompare = { viewModel.playReadAlongSelf() },
+                onRecordAgain = { viewModel.retryReadAlong() },
+                onContinue = { viewModel.nextReadAlongSentence() },
+                theme = theme,
+                continueLabel = if (readAlongState.currentIndex < total - 1) "Next ->" else "Games ->"
             )
-            Text(
-                text = pronunciationResult.feedback,
-                fontSize = 14.sp,
-                color = Color(0xFF7F8C8D),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { viewModel.playReadAlongSelf() },
-                    modifier = Modifier.weight(1f).height(50.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = !readAlongState.isPlayingSelf
-                ) {
-                    Text(if (readAlongState.isPlayingSelf) "Playing..." else "🔁 Compare", fontWeight = FontWeight.Bold)
-                }
-                OutlinedButton(
-                    onClick = { viewModel.retryReadAlong() },
-                    modifier = Modifier.weight(1f).height(50.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("🔄 Retry", fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = { viewModel.nextReadAlongSentence() },
-                    modifier = Modifier.weight(1f).height(50.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = theme.primaryColor,
-                        contentColor = theme.buttonContentColor
-                    )
-                ) {
-                    Text(
-                        text = if (readAlongState.currentIndex < total - 1) "Next ->" else "Games ->",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
         } else if (readAlongState.asrErrorMessage != null) {
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "⚠️ ${readAlongState.asrErrorMessage}",
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                color = Color(0xFFE67E22),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            // Mic stays available so the child can retry the recording.
-            MicButton(
+            ReadAlongFailurePanel(
+                errorMessage = readAlongState.asrErrorMessage.orEmpty(),
                 isRecording = readAlongState.isRecording,
-                onPressDown = { viewModel.startRecording() },
-                onPressUp = { viewModel.stopRecording() }
+                onStartRecording = { viewModel.startRecording() },
+                onStopRecording = { viewModel.stopRecording() },
+                onSkip = { viewModel.nextReadAlongSentence() },
+                modifier = Modifier.weight(1f)
             )
-            // If the ASR service is unreachable, don't trap the child on this
-            // sentence — a Skip lets them move on without a fabricated score.
-            TextButton(
-                onClick = { viewModel.nextReadAlongSentence() },
-                modifier = Modifier.heightIn(min = 40.dp)
-            ) {
-                Text("Skip this one", fontSize = 13.sp, color = Color(0xFF7F8C8D))
-            }
         } else if (readAlongState.isShadowMode) {
             Spacer(modifier = Modifier.weight(1f))
             if (readAlongState.isRecording) {
@@ -314,7 +256,103 @@ private fun ReadAlongContent(
     }
 }
 
+@Composable
+fun ReadAlongFailurePanel(
+    errorMessage: String,
+    isRecording: Boolean,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    onSkip: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "⚠️ $errorMessage",
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            color = Color(0xFFE67E22),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        MicButton(
+            isRecording = isRecording,
+            onPressDown = onStartRecording,
+            onPressUp = onStopRecording
+        )
+        TextButton(onClick = onSkip, modifier = Modifier.heightIn(min = 40.dp)) {
+            Text("Skip this one", fontSize = 13.sp, color = Color(0xFF7F8C8D))
+        }
+    }
+}
+
 //endregion
+
+@Composable
+fun ReadAlongResultPanel(
+    result: PronunciationResult,
+    isPlayingSelf: Boolean,
+    onCompare: () -> Unit,
+    onRecordAgain: () -> Unit,
+    onContinue: () -> Unit,
+    theme: GradeTheme = org.akj.lingo.learn.ui.dashboard.getThemeForGrade("Grade 4"),
+    continueLabel: String = "Continue",
+    modifier: Modifier = Modifier
+) {
+    val scoreColor = if (result.overallScore >= 80) Color(0xFF52D68A) else Color(0xFFFFA726)
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "Score: ${result.overallScore}",
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = scoreColor
+        )
+        Text(
+            text = result.feedback,
+            fontSize = 14.sp,
+            color = Color(0xFF7F8C8D),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onCompare,
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isPlayingSelf
+            ) {
+                Text(if (isPlayingSelf) "Playing..." else "🔁 Compare", fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(
+                onClick = onRecordAgain,
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("🔄 Record again", fontWeight = FontWeight.Bold)
+            }
+            Button(
+                onClick = onContinue,
+                modifier = Modifier.weight(1f).height(50.dp)
+                    .semantics { contentDescription = "Continue" },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = theme.primaryColor,
+                    contentColor = theme.buttonContentColor
+                )
+            ) {
+                Text(continueLabel, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
 
 //region Game Sub-Phase
 

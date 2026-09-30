@@ -8,9 +8,12 @@
     <string name="tab_settings">设置</string>
 
     <!-- Welcome Screen -->
-    <string name="welcome_title">Lingo 英语</string>
-    <string name="welcome_subtitle">你的互动英语学习伙伴\n每天15分钟，自信开口说英语</string>
-    <string name="get_started">开始学习！</string>
+    <string name="welcome_brand">lingo · 为好奇心而学</string>
+    <string name="welcome_title">开启英语冒险</string>
+    <string name="welcome_tagline">每天一点点，英语进步看得见。</string>
+    <string name="welcome_subtitle">认识你的狐狸学习伙伴，每天用 15 分钟趣味课程，按你的水平轻松学习。</string>
+    <string name="get_started">开启我的旅程</string>
+    <string name="welcome_settings">设置</string>
 
     <!-- Grade Select Screen -->
     <string name="select_grade_title">选择你的年级</string>
@@ -61,6 +64,10 @@
     <string name="welcome_back">欢迎回来！👋</string>
     <string name="today_goal">🎯 今日学习目标</string>
     <string name="weekly_plan">周计划</string>
+    <string name="home_practice">练习</string>
+    <string name="home_progress">进度</string>
+    <string name="lesson_progress_percent">已完成 %1$d%%</string>
+    <string name="word_answer_feedback">做得好！解锁了“%1$s”。</string>
     <string name="track_daily_progress">追踪每日学习进度</string>
     <string name="error_book">错题本</string>
     <string name="target_weak_areas">针对性查漏补缺</string>

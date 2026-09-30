@@ -64,22 +64,11 @@ fun LearningContainer(
 
     // Resume checkpoint dialog
     if (restoredFromCheckpoint) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Welcome back!") },
-            text = { Text("You have an unfinished session. Continue where you left off?") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.dismissCheckpoint() }) {
-                    Text("Continue")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    viewModel.dismissCheckpoint()
-                    viewModel.pauseTask()
-                }) {
-                    Text("Start Over")
-                }
+        CheckpointResumeDialog(
+            onContinue = { viewModel.dismissCheckpoint() },
+            onStartOver = {
+                viewModel.dismissCheckpoint()
+                viewModel.pauseTask()
             }
         )
     }
@@ -212,18 +201,7 @@ fun LearningContainer(
         // Sprint 10.5: offline-mode banner (cloud AI channels not configured)
         val isOfflineMode by viewModel.isOfflineMode.collectAsState()
         if (isOfflineMode) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFFFFF3E0),
-                shape = RoundedCornerShape(0.dp)
-            ) {
-                Text(
-                    text = "⚠️ Offline mode: using device voice & local scoring. Configure an AI model in Settings for full features.",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    fontSize = 12.sp,
-                    color = Color(0xFFE67E22)
-                )
-            }
+            OfflineModeBanner()
         }
 
         // Sprint 19: challenge track identifier
@@ -300,6 +278,40 @@ fun LearningContainer(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun CheckpointResumeDialog(
+    onContinue: () -> Unit,
+    onStartOver: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { },
+        title = { Text("Welcome back!") },
+        text = { Text("You have an unfinished session. Continue where you left off?") },
+        confirmButton = {
+            TextButton(onClick = onContinue) { Text("Continue") }
+        },
+        dismissButton = {
+            TextButton(onClick = onStartOver) { Text("Start Over") }
+        }
+    )
+}
+
+@Composable
+fun OfflineModeBanner() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFFFF3E0),
+        shape = RoundedCornerShape(0.dp)
+    ) {
+        Text(
+            text = "⚠️ Offline mode: using device voice & local scoring. Configure an AI model in Settings for full features.",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            fontSize = 12.sp,
+            color = Color(0xFFE67E22)
+        )
     }
 }
 

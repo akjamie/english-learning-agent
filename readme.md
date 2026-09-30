@@ -102,6 +102,34 @@ Generated APKs:
 - Debug: `app\build\outputs\apk\debug\app-debug.apk`
 - Release: `app\build\outputs\apk\release\app-release.apk`
 
+## First launch and onboarding
+
+New learners start on the **Your English Adventure** welcome page. **Start my journey** opens the existing onboarding sequence: select a grade, confirm a textbook, complete the diagnostic, then review the result and choose whether to begin learning or generate a plan. The Settings action remains available from the welcome page. Onboarding does not require account sign-in.
+
+## Home destinations
+
+Home shows the active grade, streak, XP, today's saved lesson, and completion percentage from the current dashboard data. **Start Study** continues the existing lesson entry. The **Weekly Plan** shortcut opens Plan, **Practice** opens the existing Roleplay conversation, and **Progress** opens the existing Growth Report. These shortcuts reuse existing destinations and learning state.
+
+## Vocabulary and Error Book review
+
+Saved learning errors remain in Error Book with their current priority, type, history, and review status. Open a word to view its existing explanation and error history; **Practice Again** marks that word for the existing daily review flow. Error capture, scoring, and spaced-repetition processing remain unchanged by the screen refresh.
+
+## Daily learning activities
+
+The warm-up reveals each saved target word after a correct match and lets the learner advance to the next word. Read-aloud results show the existing pronunciation score, word-level highlighting, and feedback, with Compare, Record again, and Continue actions. Quiz answers expose correct and incorrect feedback and advance through the existing question sequence; answer scoring remains in `LearningViewModel`.
+
+## Plan and Progress
+
+Plan uses the saved weekly theme, days, rationale, target words, duration, and completion state. Selecting a day starts that same lesson day. Progress uses recorded session duration, accuracy, streak, unique recorded practice words, and available Quiz/Game/Speaking attempt accuracy; categories with no records are omitted. Its Error Book summary uses the saved error count, grammar error count, and current mastered/weak words rather than prototype sample values.
+
+## Roleplay and speaking practice
+
+Roleplay keeps the current curated scenarios, conversation history, typed replies, and press-to-record voice interaction. The prototype does not define another help flow, so no separate Roleplay hint behavior is added.
+
+## Offline and recovery behavior
+
+When cloud AI is unavailable, the learning flow identifies its existing device voice and local scoring mode. A read-aloud evaluation error keeps the existing recording retry and skip actions and does not show a fabricated score. Restored lessons keep the existing Continue and Start Over checkpoint choices; plan loading errors keep their Retry action. Recovery does not add connection retry, system-settings, last-plan, or diagnostic-reference actions that the current app does not provide.
+
 ---
 
 ## 🚀 Release History Summary

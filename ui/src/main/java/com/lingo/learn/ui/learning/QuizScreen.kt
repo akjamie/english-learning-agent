@@ -19,14 +19,42 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import org.akj.lingo.learn.domain.model.QuizQuestion
 import org.akj.lingo.learn.domain.model.QuizQuestionType
+import org.akj.lingo.learn.domain.model.LearningSession
 import org.akj.lingo.learn.ui.components.AutoResizeText
 import org.akj.lingo.learn.ui.components.LingoAvatar
 import org.akj.lingo.learn.ui.components.LingoExpression
 import org.akj.lingo.learn.ui.components.MicButton
 import org.akj.lingo.learn.ui.components.QuizProgressBar
 import org.akj.lingo.learn.ui.dashboard.GradeTheme
+
+data class QuizScreenState(
+    val session: LearningSession,
+    val quizState: QuizState,
+    val readAlongState: ReadAlongState
+)
+
+data class QuizScreenActions(
+    val onPlayAudio: (String) -> Unit = {},
+    val onSelectAnswer: (Int) -> Unit = {},
+    val onProductionSubmit: (String) -> Unit = {},
+    val onStartRecording: () -> Unit = {},
+    val onStopRecording: () -> Unit = {},
+    val onNextQuestion: () -> Unit = {},
+    val onIncrementHint: () -> Unit = {},
+    val onSkipQuestion: () -> Unit = {}
+)
+
+private fun emptyLearningSession() = LearningSession(
+    theme = "",
+    subtitleLines = emptyList(),
+    readAlongSentences = emptyList(),
+    gameQuestions = emptyList(),
+    quizQuestions = emptyList(),
+    targetNewWords = emptyList()
+)
 
 /**
  * Stage 3: Daily Micro-Quiz.
@@ -41,14 +69,31 @@ import org.akj.lingo.learn.ui.dashboard.GradeTheme
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun QuizScreen(
-    viewModel: LearningViewModel,
+    viewModel: LearningViewModel? = null,
     theme: GradeTheme,
     onComplete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    stateOverride: QuizScreenState? = null,
+    actionsOverride: QuizScreenActions? = null
 ) {
-    val quizState by viewModel.quizState.collectAsState()
-    val readAlongState by viewModel.readAlongState.collectAsState()
-    val session by viewModel.session.collectAsState()
+    val activeViewModel = viewModel ?: if (stateOverride == null) hiltViewModel() else null
+    val liveQuizState by (activeViewModel?.quizState?.collectAsState() ?: remember { mutableStateOf(QuizState()) })
+    val liveReadAlongState by (activeViewModel?.readAlongState?.collectAsState() ?: remember { mutableStateOf(ReadAlongState()) })
+    val liveSession by (activeViewModel?.session?.collectAsState() ?: remember { mutableStateOf(emptyLearningSession()) })
+    val screenState = stateOverride ?: QuizScreenState(liveSession, liveQuizState, liveReadAlongState)
+    val quizState = screenState.quizState
+    val readAlongState = screenState.readAlongState
+    val session = screenState.session
+    val actions = actionsOverride ?: QuizScreenActions(
+        onPlayAudio = { activeViewModel?.playQuizAudio(it) },
+        onSelectAnswer = { activeViewModel?.submitQuizAnswer(it) },
+        onProductionSubmit = { activeViewModel?.submitProductionAnswer(it) },
+        onStartRecording = { activeViewModel?.startQuizRecording() },
+        onStopRecording = { activeViewModel?.submitQuizReadAloud(session.quizQuestions.getOrNull(quizState.currentIndex)?.audioText.orEmpty()) },
+        onNextQuestion = { activeViewModel?.nextQuizQuestion() },
+        onIncrementHint = { activeViewModel?.incrementHint() },
+        onSkipQuestion = { activeViewModel?.skipQuizQuestion() }
+    )
 
     val currentQuestion = session.quizQuestions.getOrNull(quizState.currentIndex) ?: return
 
@@ -119,11 +164,11 @@ fun QuizScreen(
                 dynamicHint = quizState.dynamicHint,
                 isGeneratingHint = quizState.isGeneratingHint,
                 readAlongState = readAlongState,
-                onPlayAudio = { text -> viewModel.playQuizAudio(text) },
-                onSelectAnswer = { index -> viewModel.submitQuizAnswer(index) },
-                onProductionSubmit = { text -> viewModel.submitProductionAnswer(text) },
-                onStartRecording = { viewModel.startQuizRecording() },
-                onStopRecording = { viewModel.submitQuizReadAloud(currentQuestion.audioText ?: "") }
+                onPlayAudio = actions.onPlayAudio,
+                onSelectAnswer = actions.onSelectAnswer,
+                onProductionSubmit = actions.onProductionSubmit,
+                onStartRecording = actions.onStartRecording,
+                onStopRecording = actions.onStopRecording
             )
         }
 
@@ -133,7 +178,7 @@ fun QuizScreen(
         if (quizState.lastAnswerCorrect != null) {
             val isLast = quizState.currentIndex >= session.quizQuestions.size - 1
             Button(
-                onClick = { viewModel.nextQuizQuestion() },
+                onClick = actions.onNextQuestion,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -156,7 +201,7 @@ fun QuizScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
-                    onClick = { viewModel.incrementHint() },
+                    onClick = actions.onIncrementHint,
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
@@ -166,7 +211,7 @@ fun QuizScreen(
                     )
                 }
                 TextButton(
-                    onClick = { viewModel.skipQuizQuestion() },
+                    onClick = actions.onSkipQuestion,
                     modifier = Modifier.weight(1f).height(50.dp)
                 ) {
                     Text("⏭️ Skip (No Penalty)", color = Color.Gray, fontWeight = FontWeight.Bold)
@@ -589,7 +634,13 @@ private fun RowScope.QuizOptionButton(
             .background(backgroundColor)
             .border(2.dp, borderColor, RoundedCornerShape(16.dp))
             .clickable(enabled = !answered, onClick = onClick)
-            .semantics { contentDescription = "Answer: $text" },
+            .semantics {
+                contentDescription = when {
+                    !answered -> "Answer: $text"
+                    isCorrect -> "Correct answer: $text"
+                    else -> "Incorrect answer: $text"
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
         AutoResizeText(
