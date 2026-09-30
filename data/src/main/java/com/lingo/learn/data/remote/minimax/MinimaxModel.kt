@@ -8,7 +8,8 @@ data class MinimaxChatRequest(
     val model: String,
     val messages: List<MinimaxMessage>,
     @SerializedName("max_tokens") val maxTokens: Int = 1024,
-    val stream: Boolean? = null
+    val stream: Boolean? = null,
+    @SerializedName("reasoning_effort") val reasoningEffort: String? = null
 )
 
 data class MinimaxMessage(

@@ -78,10 +78,10 @@ class SecureConfigPrefs @Inject constructor(
     fun getGroupId(): String = prefs.getString(KEY_GROUP_ID, "") ?: ""
     fun setGroupId(value: String) = prefs.edit().putString(KEY_GROUP_ID, value).apply()
 
-    fun getPrimaryModel(): String = prefs.getString(KEY_PRIMARY_MODEL, "glm-5.2") ?: "glm-5.2"
+    fun getPrimaryModel(): String = prefs.getString(KEY_PRIMARY_MODEL, "glm-5.3-flash") ?: "glm-5.3-flash"
     fun setPrimaryModel(value: String) = prefs.edit().putString(KEY_PRIMARY_MODEL, value).apply()
 
-    fun getFallbackModel(): String = prefs.getString(KEY_FALLBACK_MODEL, "deepseek-v4-flash") ?: "deepseek-v4-flash"
+    fun getFallbackModel(): String = prefs.getString(KEY_FALLBACK_MODEL, "deepseek-v4.1-flash") ?: "deepseek-v4.1-flash"
     fun setFallbackModel(value: String) = prefs.edit().putString(KEY_FALLBACK_MODEL, value).apply()
 
     fun getTtsModel(): String = prefs.getString(KEY_TTS_MODEL, "seed-tts-2.0") ?: "seed-tts-2.0"

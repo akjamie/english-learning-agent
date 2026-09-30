@@ -184,4 +184,33 @@ class AsrRepositoryTest {
             audioFile.delete()
         }
     }
+
+    @Test
+    fun `evaluatePronunciation with empty transcript scores 0 instead of crashing`() {
+        kotlinx.coroutines.runBlocking {
+            // Silence / unintelligible speech returns an empty ASR transcript. This must
+            // produce a real (non-fallback) 0-score result, never NoSuchElementException.
+            Mockito.`when`(prefs.getAuthToken()).thenReturn("valid-token-0123456789")
+            Mockito.`when`(prefs.getGroupId()).thenReturn("group123")
+            Mockito.`when`(prefs.getBaseUrl()).thenReturn("https://example.com")
+            Mockito.`when`(prefs.getAsrModel()).thenReturn("volc.seedasr.sauc.duration")
+            Mockito.`when`(prefs.getAsrResourceId()).thenReturn("volc.seedasr.sauc.duration")
+            Mockito.`when`(prefs.getAsrWsUrl()).thenReturn("")
+
+            val ok = retrofit2.Response.success(MinimaxAsrResponse(text = "", detailedInfo = null, baseResp = null))
+            whenever(service.audioToText(any(), any(), any(), anyOrNull(), any(), any())).thenReturn(ok)
+
+            val audioFile = java.io.File.createTempFile("test", ".m4a")
+            val result = repository.evaluatePronunciation(audioFile, "The dog is under the table.")
+
+            assertTrue(result.isSuccess, "failure=${result.exceptionOrNull()}")
+            val pronunciationResult = result.getOrThrow()
+            assertFalse(pronunciationResult.isFromFallback)
+            assertEquals(0, pronunciationResult.overallScore)
+            assertEquals(6, pronunciationResult.wordScores.size)
+            assertTrue(pronunciationResult.wordScores.all { it.score == 0 })
+
+            audioFile.delete()
+        }
+    }
 }

@@ -38,6 +38,7 @@ class AsrRepositoryImpl @Inject constructor(
         return runCatching {
             val asrText = if (!wsUrl.isNullOrBlank()) {
                 val pcm16 = Pcm16Decoder.decode(audioFile)
+                android.util.Log.i("LingoAsr", "decode ok file=${audioFile.name} pcmBytes=${pcm16.size}")
                 planAsrClient.transcribe(pcm16, 16000, resourceId, authToken, wsUrl)
             } else {
                 transcribeLegacy(audioFile)
@@ -70,6 +71,18 @@ class AsrRepositoryImpl @Inject constructor(
 
         val referenceWords = sanitizedReference.split("\\s+".toRegex()).filter { it.isNotEmpty() }
         val asrWords = sanitizedAsr.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+
+        // The mic can capture silence or unintelligible speech; the ASR transcript
+        // then comes back empty. Score 0 instead of crashing (minBy on an empty list).
+        if (asrWords.isEmpty()) {
+            return PronunciationResult(
+                overallScore = 0,
+                wordScores = referenceWords.map { WordScore(word = it, score = 0) },
+                feedback = "We couldn't hear you clearly. Speak a little louder and try again!",
+                isFromFallback = false,
+                phonemeHints = phonemeHintEngine.detectHints(referenceText, asrText)
+            )
+        }
 
         val distance = calculateLevenshteinDistance(sanitizedReference, sanitizedAsr)
         val maxLength = maxOf(sanitizedReference.length, sanitizedAsr.length)

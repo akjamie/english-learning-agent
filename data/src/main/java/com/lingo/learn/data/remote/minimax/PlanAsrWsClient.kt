@@ -193,6 +193,7 @@ class PlanAsrWsClient @Inject constructor(
         var completed = false
         val listener = object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
+                android.util.Log.i("LingoAsr", "ws open code=${response.code} pcmBytes=${pcm16.size}")
                 val segment = maxOf(1, sampleRate * 2 * 200 / 1000) // 200ms PCM16 mono
                 val initJson = gson.toJson(
                     mapOf(
@@ -257,6 +258,7 @@ class PlanAsrWsClient @Inject constructor(
                 if (frame.type == C_ERROR) {
                     if (!completed) {
                         completed = true
+                        android.util.Log.w("LingoAsr", "server error frame code=${frame.errorCode}")
                         cont.resumeWithException(Exception("ASR server error code ${frame.errorCode}"))
                     }
                     return
@@ -282,6 +284,7 @@ class PlanAsrWsClient @Inject constructor(
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                android.util.Log.w("LingoAsr", "ws onFailure: ${t.javaClass.simpleName}: ${t.message}", t)
                 if (!completed) {
                     completed = true
                     cont.resumeWithException(t)
@@ -289,6 +292,7 @@ class PlanAsrWsClient @Inject constructor(
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                android.util.Log.i("LingoAsr", "ws onClosed code=$code reason=$reason textLen=${text.length}")
                 if (!completed) {
                     completed = true
                     if (text.isNotEmpty()) cont.resume(text) else

@@ -63,7 +63,8 @@ class LlmRepositoryImpl @Inject constructor(
                     model = primaryModel,
                     messages = messages,
                     maxTokens = maxTokens,
-                    stream = true
+                    stream = true,
+                    reasoningEffort = "low"
                 )
                 val response = service.chatCompletionStream(url, apiKey, groupIdParam, request)
                 if (response.isSuccessful && response.body() != null) {
@@ -215,7 +216,8 @@ class LlmRepositoryImpl @Inject constructor(
                 val request = MinimaxChatRequest(
                     model = model,
                     messages = minimaxMessages,
-                    maxTokens = maxTokens
+                    maxTokens = maxTokens,
+                    reasoningEffort = "low"
                 )
                 val response = service.chatCompletion(url, apiKey, groupIdParam, request)
                 if (response.isSuccessful && response.body() != null) {

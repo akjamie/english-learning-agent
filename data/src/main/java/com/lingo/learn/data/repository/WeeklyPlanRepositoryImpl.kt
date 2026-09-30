@@ -57,7 +57,7 @@ class WeeklyPlanRepositoryImpl @Inject constructor(
         // 500-token budget truncates it (observed: glm-5.2 spent it all on reasoning
         // with empty content; the fallback was cut mid-day-6). Match the DIAGNOSIS
         // budget so the full valid JSON survives.
-        val llmResult = structuredLlmUseCase.completeJson(prompt, taskType = "PLAN", maxTokens = 1500)
+        val llmResult = structuredLlmUseCase.completeJson(prompt, taskType = "PLAN", maxTokens = 4000)
         val now = System.currentTimeMillis()
 
         // The AI plan is the child's actual curriculum — propagate generation
